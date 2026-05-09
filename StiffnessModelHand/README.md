@@ -109,6 +109,18 @@ task-space springs (joint springs contribute zero).
 
 ---
 
+### `normal_viz_gui.py`
+
+Interactive GUI showing the 3D hand skeleton with one quiver arrow per fingertip
+representing the contact normal `n` used by `tip_stiffness_JointSpace`. Sliders
+control all 15 motor angles in real time.
+
+```bash
+python3 StiffnessModelHand/normal_viz_gui.py
+```
+
+---
+
 ## Quick test commands
 
 ```bash

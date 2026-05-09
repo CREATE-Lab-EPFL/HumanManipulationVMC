@@ -11,7 +11,8 @@ See [`KINEMATICS_DOCUMENTATION.md`](KINEMATICS_DOCUMENTATION.md) for the full AP
 
 - `motor_to_joint(q_motor)` — converts motor positions to joint angles
 - `joint_to_motor(theta)` — inverse conversion
-- `fk_MCP(theta)`, `fk_PIP(theta)`, `fk_DIP(theta)`, `fk_tip(theta)` — position of each phalanx
+- `FK_MCP(q_motor, r_local)`, `FK_PIP(q_motor, r_local)`, `FK_DIP(q_motor, r_local)` — world-frame position of a local point on the proximal/intermediate/distal phalanx
+- `FK(q_motor, link, r_local)` — general FK for an arbitrary link and local point
 
 Transmission: θ_MCP = (r_pulley/r_motor)·q_MCP, θ_PIP = (r_motor/c_param)·q_PIP, θ_DIP = θ_PIP.
 

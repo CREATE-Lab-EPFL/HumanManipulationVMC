@@ -9,3 +9,8 @@ in finger experiments (proprioceptive sensing validation, efficiency identificat
 
 Reads force measurements from the load cell over USB serial and publishes them
 to ROS2 topics (shear, normal, and total force).
+
+### `Real_res1_twoLoadCells_HW/Real_res1_twoLoadCells_HW.ino`
+
+Arduino sketch that runs on the load cell hardware. Reads the two load cell
+channels and streams the measurements over serial to `arduino_force.py`.

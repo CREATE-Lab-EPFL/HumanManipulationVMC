@@ -18,9 +18,9 @@ and spread motion ratios.
 
 `HandJacobians` class: pre-compiled symbolic Jacobians for all 15 motors.
 
-- `get_finger_jacobian(finger, q)` — Jacobian for index/middle/ring/pinky fingertip
-- `get_thumb_jacobian(q)` — Jacobian for thumb tip
-- `get_wrist_palm_jacobian(q)` — Jacobian for palm/wrist point
+- `get_finger_jacobian(finger, link, q_motor, r_local)` — Jacobian for index/middle/ring/pinky fingertip
+- `get_thumb_jacobian(link, q_motor, r_local)` — Jacobian for thumb tip
+- `get_wrist_palm_jacobian(q_motor, r_local)` — Jacobian for palm/wrist point
 
 ### `HessiansHand.py`
 

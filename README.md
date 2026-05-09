@@ -134,7 +134,7 @@ stiffness mapping K_d → K_x.
 |------|----------|-------------|
 | `elastic_band_sweep.py` | finger | UR5 descent + load cell recording — no motors, elastic bands on all joints |
 | `20mm_mimic_real_springs.py` | finger | UR5 descent + load cell — motors, K_d set to match the run-average stiffness of soft/hard bands |
-| `instant_mimic_real_springs.py` | finger | UR5 descent + load cell — motors, K_d updated online by gradient descent to track instantaneous K_x target |
+| `instant_mimic_real_springs.py` | finger | UR5 descent + load cell — motors, K_d set via feed-forward stiffness inversion + ref_descent force feedback to track instantaneous K_x(d) profile |
 | `plot_elastic_band.ipynb` | — | Plot elastic band experiment |
 
 ---
