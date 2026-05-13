@@ -144,71 +144,6 @@ class tip_stiffness_FingerSpace():
 
         return f
     
-    # ------------------------------------------------------------------
-    # Sensitivities
-    # ------------------------------------------------------------------
-
-    def tip_sensitivity(self, q, theta_ref_deg):
-        """
-        Compute df_x / dvec(K)^T for general (non-diagonal) K in FingerSpace.
-
-        Args:
-            q:             (2,) current motor angles [deg]
-            theta_ref_deg: (3,) joint-space reference angles [deg]
-
-        Returns:
-            C_tip: (3, 9) matrix  df_x / dvec(K)^T
-        """
-        q_rad = np.radians(q)
-        theta_ref = np.radians(theta_ref_deg)
-        J_theta = self.J_theta(q_rad[0], q_rad[1])
-        J_tip_P = self.P @ self.J_tip(q_rad[0], q_rad[1], self.rtip[0], self.rtip[1], self.rtip[2])
-        J_pinv_tip_P = np.linalg.pinv(J_tip_P)
-
-        # Compute joint deflection
-        delta_theta = theta_ref - motor_to_joint(q_rad)
-
-        # A = ((P · J_x)*)^T · η · J_θ^T  ∈ R^{3×3}
-        A = J_pinv_tip_P.T @ self.eta @ J_theta.T
-
-        # df_x / dvec(K)^T = δθ^T ⊗ A   ∈ R^{3×9}
-        C_tip = np.kron(delta_theta.reshape(1, -1), A)
-
-        return C_tip
-
-    def ref_sensitivity(self, q, K):
-        """
-        Compute S = df_x / dtheta_ref  ∈ R^{3×3}  (joint space, 3-DOF).
-
-        From the report (boxed equation):
-            f_x = ((P·J_x)*)^T · η · J_θ^T · K · (θ_ref − θ)
-
-        Since d(θ_ref - θ)/dθ_ref = I, differentiating directly:
-            S = ((P·J_x)*)^T · η · J_θ^T · K   ∈ R^{3×3}
-
-        This is the exact symmetric counterpart of tip_sensitivity:
-          - tip_sensitivity : df/dvec(K)^T  → gradient direction for K-tuning
-          - ref_sensitivity : df/dtheta_ref → gradient direction for θ_ref-tuning
-
-        Args:
-            q: (2,) current motor angles [deg]
-            K: (3,3) stiffness matrix in FingerSpace [N/rad]
-
-        Returns:
-            S: (3, 3) sensitivity df_x / dtheta_ref
-        """
-        q_rad = np.radians(q)
-
-        J_theta  = self.J_theta(q_rad[0], q_rad[1])
-        J_tip_P  = self.P @ self.J_tip(q_rad[0], q_rad[1],
-                                       self.rtip[0], self.rtip[1], self.rtip[2])
-        J_pinv_tip_P = np.linalg.pinv(J_tip_P)
-
-        # S = ((P·J_x)*)^T · η · J_θ^T · K   ∈ R^{3×3}
-        S = J_pinv_tip_P.T @ self.eta @ J_theta.T @ K
-
-        return S
-
     def stiffness_inversion(self, q, K_des):
         """
         Minimum-norm K_ff such that tip_stiffness(q, K_ff) best approximates K_des.
@@ -257,10 +192,19 @@ class tip_stiffness_FingerSpace():
         Returns:
             K_new: (3, 3) updated stiffness matrix
         """
-        C = self.tip_sensitivity(q, theta_ref_deg)     # (3, 9)
-        error = f_meas - f_des                     # (3,)
-        grad_K_vec = C.T @ error                   # (9,)
-        grad_K = grad_K_vec.reshape(3, 3, order='F')
+        q_rad = np.radians(q)
+        theta_ref = np.radians(theta_ref_deg)
+
+        J_theta = self.J_theta(q_rad[0], q_rad[1])
+        J_tip_P = self.P @ self.J_tip(q_rad[0], q_rad[1], self.rtip[0], self.rtip[1], self.rtip[2])
+        J_pinv_tip_P = np.linalg.pinv(J_tip_P)
+
+        delta_theta = theta_ref - motor_to_joint(q_rad)
+        A = J_pinv_tip_P.T @ self.eta @ J_theta.T
+
+        error = f_meas - f_des
+        grad_K = A.T @ error.reshape(-1, 1) @ delta_theta.reshape(1, -1)
+
         return K - lr * grad_K
 
     def ref_descent(self, q, K, theta_ref_deg, f_meas, f_des, lr=4.84e-03):
@@ -278,8 +222,14 @@ class tip_stiffness_FingerSpace():
         Returns:
             theta_ref_deg_new: (3,) updated VMC target [deg]
         """
-        S     = self.ref_sensitivity(q, K)                  # (3, 3), in [N/rad]
-        error = f_meas - f_des                              # (3,)
+        q_rad = np.radians(q)
+
+        J_theta = self.J_theta(q_rad[0], q_rad[1])
+        J_tip_P = self.P @ self.J_tip(q_rad[0], q_rad[1], self.rtip[0], self.rtip[1], self.rtip[2])
+        J_pinv_tip_P = np.linalg.pinv(J_tip_P)
+
+        S = J_pinv_tip_P.T @ self.eta @ J_theta.T @ K
+        error = f_meas - f_des
         return theta_ref_deg - lr * np.degrees(S.T @ error) # stay in degrees
 
 
@@ -316,25 +266,6 @@ if __name__ == "__main__":
         print(f"  eps={eps:.4f}°  1st-order rel={np.mean(errs_1):.2e}"
               f"  2nd-order rel={np.mean(errs_2):.2e}"
               f"  (ratio {np.mean(errs_1) / np.mean(errs_2):.1f}x)")
-
-    # --- tip_sensitivity finite-difference test ---
-    print("\n--- tip_sensitivity finite-difference test (finger space) ---")
-    np.random.seed(0)
-
-    C = model.tip_sensitivity(q_base, theta_ref_deg)
-    print(f"C shape: {C.shape}")
-
-    dK = np.random.randn(3, 3) * 0.01
-    dK_vec = dK.flatten('F')
-
-    f0 = model.tip_force(q_base, theta_ref_deg, K)
-    f1 = model.tip_force(q_base, theta_ref_deg, K + dK)
-    df_fd  = f1 - f0
-    df_lin = C @ dK_vec
-
-    print(f"FD   δf: {df_fd}")
-    print(f"Lin  δf: {df_lin}")
-    print(f"Error  : {np.linalg.norm(df_fd - df_lin):.2e}  (should be O(|dK|²))")
 
     # --- stiffness_descent convergence test ---
     print("\n--- stiffness_descent convergence test (finger space) ---")
