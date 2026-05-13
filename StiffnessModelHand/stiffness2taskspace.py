@@ -259,53 +259,6 @@ class tip_stiffness_TaskSpace:
         """
         return {f: self.tip_force(f, q, d_ref_dict, K_dict) for f in FINGERS_ALL}
 
-    # ------------------------------------------------------------------
-    # Sensitivities
-    # ------------------------------------------------------------------
-
-    def tip_sensitivity(self, finger, point, q, d_ref_dict):
-        """
-        df_finger / dvec(K_point)^T  ∈  R^{3 × 9}
-
-            C = Δx_p^T ⊗ (pinv(P_f · J_xf)^T · η · J_xp^T)
-
-        Args:
-            finger:     output fingertip
-            point:      spring attachment point whose K is being varied
-            q:          (15,) current motor angles [rad]
-            d_ref_dict: dict of (3,) reference positions [m]
-
-        Returns:
-            C: (3,9)
-        """
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)
-        J_p    = self._J_pos(point, q)
-        delta  = d_ref_dict[point] - self._pos(point, q)
-        A      = J_pinv.T @ eta @ J_p.T                  # (3,3)
-        return np.kron(delta.reshape(1, -1), A)           # (3,9)
-
-    def ref_sensitivity(self, finger, q, K_dict):
-        """
-        df_finger / dx_ref_p  for each point p  →  dict of (3,3) matrices.
-
-            S_p = pinv(P_f · J_xf)^T · η · J_xp^T · K_p
-
-        Args:
-            finger:     output fingertip
-            q:          (15,) current motor angles [rad]
-            K_dict:     dict of per-point (3,3) stiffness matrices
-
-        Returns:
-            {point: (3,3)} sensitivity df_finger / dx_ref_point
-        """
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)
-        return {
-            point: J_pinv.T @ eta @ self._J_pos(point, q).T @ K
-            for point, K in K_dict.items()
-        }
-
     def stiffness_inversion(self, finger, point, q, K_des):
         """
         Minimum-norm K_ff_point that best produces K_des via tip_stiffness.
@@ -390,12 +343,16 @@ class tip_stiffness_TaskSpace:
         Returns:
             K_dict_new: updated copy of K_dict
         """
+        eta    = np.diag(self.eta)
+        J_pinv = self._J_tip_P_pinv(finger, q)
         error = f_meas - f_des
         K_new = {}
         for point, K in K_dict.items():
             lr_p  = lr[point] if isinstance(lr, dict) else lr
-            C     = self.tip_sensitivity(finger, point, q, d_ref_dict)
-            grad  = (C.T @ error).reshape(3, 3, order='F')
+            J_p   = self._J_pos(point, q)
+            delta = d_ref_dict[point] - self._pos(point, q)
+            A     = J_pinv.T @ eta @ J_p.T
+            grad  = A.T @ error.reshape(-1, 1) @ delta.reshape(1, -1)
             K_new[point] = K - lr_p * grad
         return K_new
 
@@ -417,12 +374,13 @@ class tip_stiffness_TaskSpace:
         Returns:
             d_ref_dict_new: updated copy of d_ref_dict
         """
+        eta    = np.diag(self.eta)
+        J_pinv = self._J_tip_P_pinv(finger, q)
         error = f_meas - f_des
-        S_dict = self.ref_sensitivity(finger, q, K_dict)
         x_new  = {}
         for point, x_ref in d_ref_dict.items():
             lr_p = lr[point] if isinstance(lr, dict) else lr
-            S    = S_dict[point]   # (3,3)
+            S    = J_pinv.T @ eta @ self._J_pos(point, q).T @ K_dict[point]
             x_new[point] = x_ref - lr_p * (S.T @ error)
         return x_new
 
@@ -492,22 +450,8 @@ if __name__ == "__main__":
                   f"  2nd-order rel={np.mean(errs_2):.2e}"
                   f"  (ratio {np.mean(errs_1) / np.mean(errs_2):.1f}x)")
 
-    # 3. FD sensitivity check (thumb and index)
-    print("\n3. FD sensitivity check:")
-    for finger in ['thumb', 'index']:
-        C  = model.tip_sensitivity(finger, finger, q_base, d_ref_dict)
-        dK = np.random.randn(3, 3) * 1e-4
-        K2 = dict(K_dict)
-        K2[finger] = K_dict[finger] + dK
-        f0     = model.tip_force(finger, q_base, d_ref_dict, K_dict)
-        f1     = model.tip_force(finger, q_base, d_ref_dict, K2)
-        df_fd  = f1 - f0
-        df_lin = C @ dK.flatten('F')
-        print(f"  {finger:6s}  FD δf = {np.round(df_fd,6)}  Lin δf = {np.round(df_lin,6)}")
-        print(f"          Error = {np.linalg.norm(df_fd - df_lin):.2e}  (should be O(|dK|²))")
-
-    # 4. stiffness_descent convergence (thumb and index)
-    print("\n4. stiffness_descent convergence ...")
+    # 3. stiffness_descent convergence (thumb and index)
+    print("\n3. stiffness_descent convergence ...")
     f_des = np.array([0.0, 0.02, 0.5])
     for finger in ['thumb', 'index']:
         K_opt = {p: K.copy() for p, K in K_dict.items()}
@@ -523,8 +467,8 @@ if __name__ == "__main__":
         final = np.linalg.norm(model.tip_force(finger, q_base, d_ref_dict, K_opt) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")
 
-    # 5. ref_descent convergence (thumb and index)
-    print("\n5. ref_descent convergence ...")
+    # 4. ref_descent convergence (thumb and index)
+    print("\n4. ref_descent convergence ...")
     f_des = np.array([0.0, 0.02, 0.5])
     for finger in ['thumb', 'index']:
         x_ref_opt = {p: x.copy() for p, x in d_ref_dict.items()}
@@ -539,8 +483,8 @@ if __name__ == "__main__":
         final = np.linalg.norm(model.tip_force(finger, q_base, x_ref_opt, K_dict) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")
 
-    # 6. stiffness_inversion check (thumb and index)
-    print("\n6. stiffness_inversion check:")
+    # 5. stiffness_inversion check (thumb and index)
+    print("\n5. stiffness_inversion check:")
     for finger in ['thumb', 'index']:
         K_target    = {p: K.copy() * 1.2 for p, K in K_dict.items()}
         K_des_stiff = model.tip_stiffness(finger, q_base, K_target, d_ref_dict)

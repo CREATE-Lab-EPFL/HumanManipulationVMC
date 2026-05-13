@@ -142,79 +142,6 @@ class tip_stiffness_TaskSpace():
             J_ti.T @ K_tip  @ (d_ref['tip']  - FK_DIP(q_rad, self.rtip)) +
             J_ba.T @ K_base @ (d_ref['base'] - FK_MCP(q_rad, self.rbase)))
 
-    # ------------------------------------------------------------------
-    # Sensitivities
-    # ------------------------------------------------------------------
-
-    def tip_sensitivity_K_tip(self, q, d_ref):
-        """
-        Compute df_x / dvec(K_tip)^T for general (non-diagonal) K_tip.
-
-        Args:
-            q:     (2,) motor angles [deg]
-            d_ref: dict with 'tip' (3,) reference position [m]
-
-        Returns:
-            C: (3, 9) matrix  df / dvec(K_tip)^T
-        """
-        q_rad = np.radians(q)
-        J_ti, _, J_pinv = self._jacs(q_rad)
-        return np.kron(
-            (d_ref['tip'] - FK_DIP(q_rad, self.rtip)).reshape(1, -1),
-            J_pinv.T @ self.eta @ J_ti.T)
-
-    def tip_sensitivity_K_base(self, q, d_ref):
-        """
-        Compute df_x / dvec(K_base)^T for general (non-diagonal) K_base.
-
-        Args:
-            q:     (2,) motor angles [deg]
-            d_ref: dict with 'base' (3,) reference position [m]
-
-        Returns:
-            C: (3, 9) matrix  df / dvec(K_base)^T
-        """
-        q_rad = np.radians(q)
-        _, J_ba, J_pinv = self._jacs(q_rad)
-        return np.kron(
-            (d_ref['base'] - FK_MCP(q_rad, self.rbase)).reshape(1, -1),
-            J_pinv.T @ self.eta @ J_ba.T)
-
-    def ref_sensitivity_K_tip(self, q, K_tip):
-        """
-        Compute S_tip = df_x / dd_ref ∈ R^{3×3} from the tip spring contribution.
-
-        S_tip = ((P·J_x)*)^T · η · J_tip(q)^T · K_tip
-
-        Specular counterpart of tip_sensitivity_K_tip.
-
-        Args:
-            q:     (2,) current motor angles [deg]
-            K_tip:  (3,3) stiffness at fingertip [N/m]
-            K_base: (3,3) stiffness at base [N/m]
-            f_meas, f_des: (3,) measured and desired tip forces [N]
-        """
-        J_ti, _, J_pinv = self._jacs(np.radians(q))
-        return J_pinv.T @ self.eta @ J_ti.T @ K_tip
-
-    def ref_sensitivity_K_base(self, q, K_base):
-        """
-        Compute S_base = df_x / dd_ref ∈ R^{3×3} from the base spring contribution.
-
-        S_base = ((P·J_x)*)^T · η · J_base(q)^T · K_base
-
-        Specular counterpart of tip_sensitivity_K_base.
-
-        Args:
-            q:      (2,) current motor angles [deg]
-            K_base: (3,3) stiffness at base [N/m]
-
-        Returns:
-            S_base: (3, 3) sensitivity df_x / dd_ref from base spring
-        """
-        _, J_ba, J_pinv = self._jacs(np.radians(q))
-        return J_pinv.T @ self.eta @ J_ba.T @ K_base
-
     def stiffness_inversion(self, q, K_des):
         """
         Joint minimum-norm inversion for K_tip and K_base given K_des.
@@ -268,9 +195,21 @@ class tip_stiffness_TaskSpace():
             K_tip_new: (3, 3) updated tip stiffness
             K_base_new: (3, 3) updated base stiffness
         """
+        q_rad = np.radians(q)
+        J_ti, J_ba, J_pinv = self._jacs(q_rad)
+
+        delta_x_tip  = d_ref['tip']  - FK_DIP(q_rad, self.rtip)
+        delta_x_base = d_ref['base'] - FK_MCP(q_rad, self.rbase)
+
+        A_tip  = J_pinv.T @ self.eta @ J_ti.T
+        A_base = J_pinv.T @ self.eta @ J_ba.T
+
         error = f_meas - f_des
-        return (K_tip  - lr * (self.tip_sensitivity_K_tip( q, d_ref).T @ error).reshape(3, 3, order='F'),
-                K_base - lr * (self.tip_sensitivity_K_base(q, d_ref).T @ error).reshape(3, 3, order='F'))
+        grad_K_tip  = A_tip.T  @ error.reshape(-1, 1) @ delta_x_tip.reshape(1, -1)
+        grad_K_base = A_base.T @ error.reshape(-1, 1) @ delta_x_base.reshape(1, -1)
+
+        return (K_tip  - lr * grad_K_tip,
+            K_base - lr * grad_K_base)
 
     def ref_descent(self, q, d_ref, K_tip, K_base, f_meas, f_des, lr=7e-04):
         """
@@ -289,8 +228,9 @@ class tip_stiffness_TaskSpace():
         Returns:
             d_ref_new: dict with updated 'tip' and/or 'base' positions [m]
         """
-        S_tip  = self.ref_sensitivity_K_tip(q, K_tip)
-        S_base = self.ref_sensitivity_K_base(q, K_base)
+        J_ti, J_ba, J_pinv = self._jacs(np.radians(q))
+        S_tip  = J_pinv.T @ self.eta @ J_ti.T @ K_tip
+        S_base = J_pinv.T @ self.eta @ J_ba.T @ K_base
         error  = f_meas - f_des
         d_ref_new = dict(d_ref)
         if 'tip'  in d_ref: d_ref_new['tip']  = d_ref['tip']  - lr * (S_tip.T  @ error)
@@ -337,30 +277,6 @@ if __name__ == "__main__":
         print(f"  eps={eps:.4f}°  1st-order rel={np.mean(errs_1):.2e}"
               f"  2nd-order rel={np.mean(errs_2):.2e}"
               f"  (ratio {np.mean(errs_1) / np.mean(errs_2):.1f}x)")
-
-    # --- tip_sensitivity finite-difference test ---
-    print("\n--- tip_sensitivity finite-difference test (task space) ---")
-    np.random.seed(0)
-
-    # K_tip test
-    C_tip = model.tip_sensitivity_K_tip(q_base, d_ref)
-    print(f"C_tip shape: {C_tip.shape}")
-    dK_tip = np.random.randn(3, 3) * 0.01
-    f0 = model.tip_force(q_base, d_ref, K_tip,          K_base)
-    f1 = model.tip_force(q_base, d_ref, K_tip + dK_tip, K_base)
-    print(f"K_tip  FD   δf: {f1 - f0}")
-    print(f"K_tip  Lin  δf: {C_tip @ dK_tip.flatten('F')}")
-    print(f"K_tip  Error  : {np.linalg.norm((f1 - f0) - C_tip @ dK_tip.flatten('F')):.2e}  (should be O(|dK|²))")
-
-    # K_base test
-    C_base = model.tip_sensitivity_K_base(q_base, d_ref)
-    print(f"\nC_base shape: {C_base.shape}")
-    dK_base = np.random.randn(3, 3) * 0.01
-    f0 = model.tip_force(q_base, d_ref, K_tip, K_base)
-    f1 = model.tip_force(q_base, d_ref, K_tip, K_base + dK_base)
-    print(f"K_base FD   δf: {f1 - f0}")
-    print(f"K_base Lin  δf: {C_base @ dK_base.flatten('F')}")
-    print(f"K_base Error  : {np.linalg.norm((f1 - f0) - C_base @ dK_base.flatten('F')):.2e}  (should be O(|dK|²))")
 
     # --- stiffness_descent convergence test ---
     print("\n--- stiffness_descent convergence test (task space) ---")

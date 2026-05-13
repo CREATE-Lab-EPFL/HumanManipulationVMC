@@ -274,69 +274,6 @@ class tip_stiffness_JointSpace:
         """
         return {f: self.tip_force(f, q, theta_ref_deg, K_dict) for f in FINGERS_ALL}
 
-    # ------------------------------------------------------------------
-    # Sensitivities
-    # ------------------------------------------------------------------
-
-    def tip_sensitivity(self, finger, group, q, theta_ref_deg, K_dict):
-        """
-        df_finger / dvec(K_group)^T  ∈  R^{3 × n_g²}
-
-            C = Δθ_g^T ⊗ (pinv(P_f · J_xf)^T · η · J_θg^T)
-
-        Args:
-            finger:        output fingertip
-            group:         spring group whose K is being varied
-            q:             (15,) current motor angles [rad]
-            theta_ref_deg: (n_total,) concatenated joint-space reference [deg] (K_dict ordering)
-            K_dict:        dict of per-group stiffness matrices (defines theta_ref ordering)
-
-        Returns:
-            C: (3, n_g²)
-        """
-        theta_ref = np.radians(theta_ref_deg)
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)         # (15,3)
-        J_g    = self._J_angle(group, q)                # (n_g,15)
-
-        # find deflection for this group from concatenated theta_ref
-        idx = 0
-        for g in K_dict.keys():
-            n_tmp = self._J_angle(g, q).shape[0]
-            if g == group:
-                delta = self._deflection(group, q, theta_ref[idx:idx + n_tmp])
-                break
-            idx += n_tmp
-
-        A = J_pinv.T @ eta @ J_g.T                     # (3,n_g)
-        return np.kron(delta.reshape(1, -1), A)          # (3,n_g²)
-
-    def ref_sensitivity(self, finger, q, K_dict):
-        """
-        df_finger / dtheta_ref  ∈ R^{3 × n_total}
-
-        Sensitivity of tip force to changes in the Lagrangian joint-reference
-        vector (theta_ref). This derivative does NOT depend on the numeric
-        values of the references, so no reference values are required.
-
-        Args:
-            finger: output fingertip
-            q:      (15,) current motor angles [rad]
-            K_dict: dict of per-group stiffness matrices (ordering defines theta_ref)
-
-        Returns:
-            S: (3, n_total) mapping changes in joint-reference values to tip force
-        """
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)
-
-        cols = []
-        for group, K in K_dict.items():
-            J_q = self._J_angle(group, q)              # (n_g, 15)
-            cols.append(J_q.T @ np.atleast_2d(K))     # (15, n_g)
-        S_mat = np.hstack(cols) if cols else np.zeros((15, 0))
-        return J_pinv.T @ eta @ S_mat                  # (3, n_total)
-
     def stiffness_inversion(self, finger, group, q, K_des):
         """
         Minimum-norm K_ff_group that best produces K_des via tip_stiffness.
@@ -425,14 +362,22 @@ class tip_stiffness_JointSpace:
         Returns:
             K_dict_new: updated copy of K_dict
         """
+        theta_ref = np.radians(theta_ref_deg)
+        eta    = np.diag(self.eta)
+        J_pinv = self._J_tip_P_pinv(finger, q)
         error = f_meas - f_des
+
+        idx = 0
         K_new = {}
         for group, K in K_dict.items():
             lr_g = lr[group] if isinstance(lr, dict) else lr
-            C    = self.tip_sensitivity(finger, group, q, theta_ref_deg, K_dict)
-            n    = int(round(C.shape[1] ** 0.5))
-            grad = (C.T @ error).reshape(n, n, order='F')
+            J_g  = self._J_angle(group, q)
+            n_g  = J_g.shape[0]
+            delta = self._deflection(group, q, theta_ref[idx:idx + n_g])
+            A = J_pinv.T @ eta @ J_g.T
+            grad = A.T @ error.reshape(-1, 1) @ delta.reshape(1, -1)
             K_new[group] = K - lr_g * grad
+            idx += n_g
         return K_new
 
     def ref_descent(self, finger, q, theta_ref_deg, K_dict, f_meas, f_des, lr=1e-06):
@@ -452,7 +397,16 @@ class tip_stiffness_JointSpace:
         Returns:
             theta_ref_deg_new: (n_total,) updated joint-reference vector [deg]
         """
-        S     = self.ref_sensitivity(finger, q, K_dict)             # (3, n_total), in [N/rad]
+        eta    = np.diag(self.eta)
+        J_pinv = self._J_tip_P_pinv(finger, q)
+
+        cols = []
+        for group, K in K_dict.items():
+            J_q = self._J_angle(group, q)
+            cols.append(J_q.T @ np.atleast_2d(K))
+        S_mat = np.hstack(cols) if cols else np.zeros((15, 0))
+
+        S = J_pinv.T @ eta @ S_mat
         error = f_meas - f_des
         return theta_ref_deg - lr * np.degrees(S.T @ error)          # stay in degrees
 
@@ -540,23 +494,8 @@ if __name__ == "__main__":
                   f"  2nd-order rel={np.mean(errs_2nd):.2e}"
                   f"  (ratio {np.mean(errs_1st)/np.mean(errs_2nd):.1f}x)")
 
-    # 3. FD sensitivity check (thumb and index)
-    print("\n3. FD sensitivity check:")
-    for finger in ['thumb', 'index']:
-        C   = model.tip_sensitivity(finger, finger, q_base, theta_ref_deg, K_dict)
-        n_g = int(round(C.shape[1] ** 0.5))
-        dK  = np.random.randn(n_g, n_g) * 1e-5
-        K2  = dict(K_dict)
-        K2[finger] = K_dict[finger] + dK
-        f0     = model.tip_force(finger, q_base, theta_ref_deg, K_dict)
-        f1     = model.tip_force(finger, q_base, theta_ref_deg, K2)
-        df_fd  = f1 - f0
-        df_lin = C @ dK.flatten('F')
-        print(f"  {finger:6s}  FD δf = {np.round(df_fd,6)}  Lin δf = {np.round(df_lin,6)}")
-        print(f"          Error = {np.linalg.norm(df_fd - df_lin):.2e}  (should be O(|dK|²))")
-
-    # 4. stiffness_descent convergence (thumb and index)
-    print("\n4. stiffness_descent convergence ...")
+    # 3. stiffness_descent convergence (thumb and index)
+    print("\n3. stiffness_descent convergence ...")
     f_des = np.array([0.0, 0.02, 0.03])
     MAX_ITERS = 10000
     for finger in ['thumb', 'index']:
@@ -571,8 +510,8 @@ if __name__ == "__main__":
         final = np.linalg.norm(model.tip_force(finger, q_base, theta_ref_deg, K_opt) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")
 
-    # 5. ref_descent convergence (thumb and index) — operate on theta_ref_deg
-    print("\n5. ref_descent convergence ...")
+    # 4. ref_descent convergence (thumb and index) — operate on theta_ref_deg
+    print("\n4. ref_descent convergence ...")
     f_des = np.array([0.0, 0.02, 0.02])
     for finger in ['thumb', 'index']:
         theta_ref_opt_deg = model.motor_to_theta_deg(q_ref, K_dict)
@@ -587,8 +526,8 @@ if __name__ == "__main__":
         final = np.linalg.norm(model.tip_force(finger, q_base, theta_ref_opt_deg, K_dict) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")
 
-    # 6. stiffness_inversion check (thumb and index)
-    print("\n6. stiffness_inversion check:")
+    # 5. stiffness_inversion check (thumb and index)
+    print("\n5. stiffness_inversion check:")
     for finger in ['thumb', 'index']:
         K_target    = {g: K.copy() * 1.2 for g, K in K_dict.items()}
         K_des_stiff = model.tip_stiffness(finger, q_base, K_target)

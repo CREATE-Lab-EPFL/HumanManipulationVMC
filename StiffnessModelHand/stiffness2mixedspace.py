@@ -301,82 +301,6 @@ class tip_stiffness_MixedSpace:
         }
 
     # ------------------------------------------------------------------
-    # Sensitivities
-    # ------------------------------------------------------------------
-
-    def tip_sensitivity_K_joint(self, finger, group, q, theta_ref_deg, K_joint_dict):
-        """
-        df_finger / dvec(K_group)^T  ∈  R^{3 × n_g²}  (joint-space spring).
-
-            C = Δθ_g^T ⊗ (pinv(P_f·J_xf)^T · η · J_θg^T)
-
-        Args:
-            finger:        output fingertip
-            group:         joint spring group
-            q:             (15,) current motor angles [rad]
-            theta_ref_deg: (n_total,) concatenated joint reference [deg]
-            K_joint_dict:  dict used to determine group offset in theta_ref_deg
-        """
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)
-        J_g    = self._J_angle(group, q)
-        idx    = 0
-        for g in K_joint_dict:
-            if g == group:
-                break
-            idx += self._J_angle(g, q).shape[0]
-        n_g         = J_g.shape[0]
-        theta_group = np.radians(theta_ref_deg[idx:idx + n_g])
-        delta       = self._deflection_joint(group, q, theta_group)
-        A           = J_pinv.T @ eta @ J_g.T
-        return np.kron(delta.reshape(1, -1), A)
-
-    def tip_sensitivity_K_task(self, finger, point, q, x_ref_dict):
-        """
-        df_finger / dvec(K_point)^T  ∈  R^{3 × 9}  (task-space spring).
-
-            C = Δx_p^T ⊗ (pinv(P_f·J_xf)^T · η · J_xp^T)
-        """
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)
-        J_p    = self._J_pos(point, q)
-        delta  = x_ref_dict[point] - self._pos(point, q)
-        A      = J_pinv.T @ eta @ J_p.T
-        return np.kron(delta.reshape(1, -1), A)
-
-    def ref_sensitivity(self, finger, q, K_joint_dict, K_task_dict):
-        """
-        Total sensitivity df_finger / d(theta_ref, x_ref):
-
-            S_joint = pinv(P_f·J_xf)^T · η · [J_θg(q)^T · K_θg]_concatenated  ∈ R^{3×n_total}
-            S_task  = {p: pinv(P_f·J_xf)^T · η · J_xp(q)^T · K_p}              ∈ {p: R^{3×3}}
-
-        Note: the sensitivity w.r.t. Lagrangian joint-reference coordinates does
-        not depend on reference numeric values, so no reference inputs are
-        required. The ordering of `theta_ref` must match the ordering used to
-        concatenate the joint groups (iteration order of `K_joint_dict`).
-
-        Returns:
-            S_joint: (3,n_total)
-            S_task:  dict {point: (3,3)}
-        """
-        eta    = np.diag(self.eta)
-        J_pinv = self._J_tip_P_pinv(finger, q)
-
-        cols = []
-        for group, K in K_joint_dict.items():
-            J_q = self._J_angle(group, q)               # (n_g, 15)
-            cols.append(J_q.T @ np.atleast_2d(K))       # (15, n_g)
-        M_joint = np.hstack(cols) if cols else np.zeros((15, 0))
-        S_joint = J_pinv.T @ eta @ M_joint
-
-        S_task = {
-            point: J_pinv.T @ eta @ self._J_pos(point, q).T @ K
-            for point, K in K_task_dict.items()
-        }
-        return S_joint, S_task
-
-    # ------------------------------------------------------------------
     # Gradient descent
     # ------------------------------------------------------------------
 
@@ -403,21 +327,30 @@ class tip_stiffness_MixedSpace:
         Returns:
             K_joint_new, K_task_new: updated copies
         """
+        theta_ref = np.radians(theta_ref_deg)
+        eta    = np.diag(self.eta)
+        J_pinv = self._J_tip_P_pinv(finger, q)
         error = f_meas - f_des
 
         K_joint_new = {}
+        idx = 0
         for group, K in K_joint_dict.items():
             lr_g = lr_joint[group] if isinstance(lr_joint, dict) else lr_joint
-            C    = self.tip_sensitivity_K_joint(finger, group, q, theta_ref_deg, K_joint_dict)
-            n    = int(round(C.shape[1] ** 0.5))
-            grad = (C.T @ error).reshape(n, n, order='F')
+            J_g  = self._J_angle(group, q)
+            n_g  = J_g.shape[0]
+            delta = self._deflection_joint(group, q, theta_ref[idx:idx + n_g])
+            A    = J_pinv.T @ eta @ J_g.T
+            grad = A.T @ error.reshape(-1, 1) @ delta.reshape(1, -1)
             K_joint_new[group] = K - lr_g * grad
+            idx += n_g
 
         K_task_new = {}
         for point, K in K_task_dict.items():
             lr_p = lr_task[point] if isinstance(lr_task, dict) else lr_task
-            C    = self.tip_sensitivity_K_task(finger, point, q, d_ref_dict)
-            grad = (C.T @ error).reshape(3, 3, order='F')
+            J_p  = self._J_pos(point, q)
+            delta = d_ref_dict[point] - self._pos(point, q)
+            A    = J_pinv.T @ eta @ J_p.T
+            grad = A.T @ error.reshape(-1, 1) @ delta.reshape(1, -1)
             K_task_new[point] = K - lr_p * grad
 
         return K_joint_new, K_task_new
@@ -446,8 +379,20 @@ class tip_stiffness_MixedSpace:
             theta_ref_deg_new: (n_total,) updated joint reference [deg]
             d_ref_dict_new:    updated copy
         """
-        S_joint, S_task = self.ref_sensitivity(
-            finger, q, K_joint_dict, K_task_dict)
+        eta    = np.diag(self.eta)
+        J_pinv = self._J_tip_P_pinv(finger, q)
+
+        cols = []
+        for group, K in K_joint_dict.items():
+            J_q = self._J_angle(group, q)
+            cols.append(J_q.T @ np.atleast_2d(K))
+        M_joint = np.hstack(cols) if cols else np.zeros((15, 0))
+        S_joint = J_pinv.T @ eta @ M_joint
+
+        S_task = {
+            point: J_pinv.T @ eta @ self._J_pos(point, q).T @ K
+            for point, K in K_task_dict.items()
+        }
         error = f_meas - f_des
 
         theta_ref_deg_new = theta_ref_deg - lr_joint * np.degrees(S_joint.T @ error)
@@ -646,39 +591,8 @@ if __name__ == "__main__":
                   f"  2nd-order rel={np.mean(errs_2):.2e}"
                   f"  (ratio {np.mean(errs_1) / np.mean(errs_2):.1f}x)")
 
-    # 3. FD sensitivity checks (thumb and index)
-    print("\n3. FD sensitivity checks:")
-    for finger in ['thumb', 'index']:
-        print(f"  --- {finger} ---")
-        for label, get_C, is_joint in [
-            (f'K_{finger} (joint)',
-             lambda f=finger: model.tip_sensitivity_K_joint(f, f, q_base, theta_ref_init_deg, K_joint_dict),
-             True),
-            (f'K_{finger} (task)',
-             lambda f=finger: model.tip_sensitivity_K_task(f, f, q_base, d_ref_dict),
-             False),
-        ]:
-            C  = get_C()
-            n_g = int(round(C.shape[1] ** 0.5))
-            dK = np.random.randn(n_g, n_g) * 1e-5
-            if is_joint:
-                Kj2 = {**K_joint_dict, finger: K_joint_dict[finger] + dK}
-                f0  = model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict,
-                                      K_joint_dict, K_task_dict)
-                f1  = model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict,
-                                      Kj2, K_task_dict)
-            else:
-                Kt2 = {**K_task_dict, finger: K_task_dict[finger] + dK}
-                f0  = model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict,
-                                      K_joint_dict, K_task_dict)
-                f1  = model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict,
-                                      K_joint_dict, Kt2)
-            df_fd  = f1 - f0
-            df_lin = C @ dK.flatten('F')
-            print(f"    {label}: error = {np.linalg.norm(df_fd - df_lin):.2e}  (should be O(|dK|²))")
-
-    # 4. stiffness_descent convergence (thumb and index)
-    print("\n4. stiffness_descent convergence ...")
+    # 3. stiffness_descent convergence (thumb and index)
+    print("\n3. stiffness_descent convergence ...")
     f_des = np.array([0.0, 0.02, 0.03])
     for finger in ['thumb', 'index']:
         Kj_opt = {g: K.copy() for g, K in K_joint_dict.items()}
@@ -696,8 +610,8 @@ if __name__ == "__main__":
             model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict, Kj_opt, Kt_opt) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")
 
-    # 5. ref_descent convergence (thumb and index)
-    print("\n5. ref_descent convergence ...")
+    # 4. ref_descent convergence (thumb and index)
+    print("\n4. ref_descent convergence ...")
     for finger in ['thumb', 'index']:
         f_des = np.array([0.0, 0.02, 0.03])
         theta_ref_opt_deg = _build_theta_ref_deg(q_ref, K_joint_dict)
@@ -716,8 +630,8 @@ if __name__ == "__main__":
                             K_joint_dict, K_task_dict) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")
 
-    # 6. stiffness_inversion check (thumb and index)
-    print("\n6. stiffness_inversion check:")
+    # 5. stiffness_inversion check (thumb and index)
+    print("\n5. stiffness_inversion check:")
     for finger in ['thumb', 'index']:
         Kj_target   = {g: K.copy() * 1.2 for g, K in K_joint_dict.items()}
         Kt_target   = {p: K.copy() * 1.2 for p, K in K_task_dict.items()}
