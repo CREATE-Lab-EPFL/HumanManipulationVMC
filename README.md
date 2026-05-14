@@ -62,12 +62,9 @@ Contact force and object stiffness estimated from kinematics and virtual stiffne
 alone — no external force sensors. The deformation that absorbs impacts encodes
 force. Sensing sensitivity is maximised when C_A (virtual) ≈ C_O (object).
 
-| File | Platform | Description |
-|------|----------|-------------|
-| `finger_eta.py` | finger | Motor efficiency identification and force estimation validation |
-| `object_stiffness_hand.py` | hand | Object stiffness estimation by squeezing — C_O from (C_A + C_O) |
-| `plot_finger_eta.ipynb` | finger | Plot finger eta experiment |
-| `plot_object_stiffness_hand.ipynb` | hand | Plot object stiffness hand experiment |
+**Finger/** | `finger_eta.py` — motor efficiency identification and force estimation validation
+
+**Hand/** | `object_stiffness_hand.py` — object stiffness estimation by squeezing — C_O from (C_A + C_O)
 
 ---
 
@@ -161,9 +158,15 @@ sensing configurations.
 HumanManipulationVMC/
 │
 ├── PassiveCompliance/              # Experimental area 1
-│   └── HelperPianoMIDI/            #   MIDI keyboard → ROS2 topics (publisher + subscriber)
+│   ├── Finger/                     #   single finger experiments
+│   └── Hand/                       #   ADAPT Hand piano experiments
+│       └── HelperPianoMIDI/        #     MIDI keyboard → ROS2 bridge + UR5 config
 ├── TunableCompliance/              # Experimental area 2
+│   ├── Finger/                     #   stiffening/repulsive shaping (finger)
+│   └── Hand/                       #   emergent grasps (hand)
 ├── ProprioceptiveSensing/          # Experimental area 3
+│   ├── Finger/                     #   motor efficiency + force estimation
+│   └── Hand/                       #   object stiffness estimation
 ├── StiffnessForceTracking/         # Experimental area 4
 ├── PoseControl/                    # Experimental area 5
 ├── ADAPT-StiffControl/             # Final demo — compliance matching on the full hand
@@ -232,7 +235,7 @@ UR5 IP: `192.168.1.10`
 ```bash
 # Finger experiments
 python3 finger_go_home.py
-python3 PassiveCompliance/passive_stiffness_sweep.py
+python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
 
 # Hand experiments
 python3 hand_go_home.py
