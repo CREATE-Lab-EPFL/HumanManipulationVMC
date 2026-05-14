@@ -44,6 +44,7 @@ from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandVMCTaskSpace  import VMC as TaskVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from KinematicsHand.FK_Hand    import FK_motor2fingerPos
+from ModelIDHand.motor_config  import MOTOR_SLICES
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
 )
@@ -77,13 +78,9 @@ COLLECT_DATA = True
 # =============================================================================
 Q_HOME  = np.zeros(15)
 
-# Index MCP/PIP/DIP and ring MCP/PIP/DIP at 30 deg; all other joints at home.
-# Motor ordering (software): wrist×2, thumb×4, spread×1, index×3, middle×3, ring×3, pinky×3
-# index motors: 7,8,9 — ring motors: 13,14,15  (0-indexed: 7,8,9 and 13,14,15)
-# Verify against ModelIDHand/motor_config.py for your specific hand configuration.
 Q_PRESS = np.zeros(15)
-Q_PRESS[7:10]  = np.deg2rad(30.0)   # index  MCP, PIP, DIP
-Q_PRESS[13:16] = np.deg2rad(30.0)   # ring   MCP, PIP, DIP  (clamped to 15 by numpy)
+Q_PRESS[MOTOR_SLICES['index']] = np.deg2rad(30.0)   # index MCP, PIP
+Q_PRESS[MOTOR_SLICES['ring']]  = np.deg2rad(30.0)   # ring  MCP, PIP
 
 # =============================================================================
 # Cartesian targets from FK

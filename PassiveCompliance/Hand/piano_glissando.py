@@ -38,6 +38,7 @@ from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandVMCTaskSpace  import VMC as TaskVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from KinematicsHand.FK_Hand    import FK_motor2fingerPos
+from ModelIDHand.motor_config  import MOTOR_SLICES
 from piano_config import (
     UR5_POSE_GLISSANDO_START,
     GLISSANDO_DIRECTION,
@@ -67,11 +68,9 @@ COLLECT_DATA = True
 # =============================================================================
 Q_HOME  = np.zeros(15)
 
-# Motor ordering (software): wrist×2, thumb×4, spread×1, index×3, middle×3, ring×3, pinky×3
-# index motors: 7,8,9 — middle motors: 10,11,12
 Q_PRESS = np.zeros(15)
-Q_PRESS[7:10]  = np.deg2rad(30.0)   # index  MCP, PIP, DIP
-Q_PRESS[10:13] = np.deg2rad(30.0)   # middle MCP, PIP, DIP
+Q_PRESS[MOTOR_SLICES['index']]  = np.deg2rad(30.0)   # index  MCP, PIP
+Q_PRESS[MOTOR_SLICES['middle']] = np.deg2rad(30.0)   # middle MCP, PIP
 
 # =============================================================================
 # Cartesian targets from FK
