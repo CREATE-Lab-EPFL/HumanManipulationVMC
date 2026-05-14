@@ -5,11 +5,28 @@ alone — no external force sensors required. The deformation that absorbs impac
 is the same that encodes contact force. Sensing sensitivity is maximised when the
 virtual compliance C_A matches the object compliance C_O.
 
-## Files
+## Structure
 
-| File | Platform | Description |
-|------|----------|-------------|
-| `finger_eta.py` | finger | Motor efficiency identification and force estimation validation |
-| `object_stiffness_hand.py` | hand | Object stiffness estimation by squeezing — C_O from (C_A + C_O) |
-| `plot_finger_eta.ipynb` | finger | Plot finger eta experiment |
-| `plot_object_stiffness_hand.ipynb` | hand | Plot object stiffness hand experiment |
+```
+ProprioceptiveSensing/
+├── Finger/     — single 2-DOF finger testbed experiments
+└── Hand/       — ADAPT Hand experiments
+```
+
+---
+
+## Finger/
+
+| File | Description |
+|------|-------------|
+| `finger_eta.py` | Motor efficiency identification and force estimation validation |
+| `plot_finger_eta.ipynb` | Plot finger eta experiment |
+
+---
+
+## Hand/
+
+| File | Description |
+|------|-------------|
+| `object_stiffness_hand.py` | Object stiffness estimation by squeezing — C_O from (C_A + C_O) |
+| `plot_object_stiffness_hand.ipynb` | Plot object stiffness hand experiment |

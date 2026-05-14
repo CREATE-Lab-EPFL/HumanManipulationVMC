@@ -16,7 +16,7 @@ import time
 import threading
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, '..'))
+sys.path.insert(0, os.path.join(_HERE, '../..'))
 
 from VMCHand.HandController import HandController, CONTROL_FREQUENCY
 from VMCHand.HandVMCJointSpace import VMC as JointVMC

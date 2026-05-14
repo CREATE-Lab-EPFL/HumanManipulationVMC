@@ -23,22 +23,24 @@ Validates that VMC generates diverse, predictable stiffness profiles at the fing
 and palm through virtual springs alone. Compliance acts as a bidirectional filter:
 outward (absorbs noise/impacts), inward (provides adaptability).
 
-| File | Platform | Description |
-|------|----------|-------------|
-| `passive_stiffness_sweep.py` | finger | Stiffness sweep — F vs d for varying K (finger space, N·m/rad) |
-| `passive_range.py` | finger | Dense biased K sweep, one run per K |
-| `passive_stiffness_sweep_linear.py` | finger | Cart stiffness sweep — F vs d for varying K_cart (N/m), vertical direction |
-| `passive_range_linear.py` | finger | Dense biased K_cart sweep, vertical direction |
-| `directional_stiffness.py` | finger | Cart stiffness in multiple contact directions in the Y-Z plane |
-| `pose_sweep.py` | finger | Pose sweep — F vs d from multiple starting Z heights |
-| `piano_playing_hand.py` | hand | Various playing styles with k₁, k₂, k₃ per finger |
-| `HelperPianoMIDI/midi_publisher.py` | laptop | Physical keyboard → ROS2 MIDI topics |
-| `HelperPianoMIDI/midi_subscriber.py` | laptop | Subscribe and print MIDI events from ROS2 topics |
-| `plot_passive_stiffness_sweep.ipynb` | finger | Plot passive stiffness sweep experiment |
-| `plot_passive_stiffness_sweep_linear.ipynb` | finger | Plot passive stiffness sweep linear experiment |
-| `plot_directional_stiffness.ipynb` | finger | Plot directional stiffness experiment |
-| `plot_pose_sweep.ipynb` | finger | Plot pose sweep experiment |
-| `plot_piano_playing_hand.ipynb` | hand | Plot piano playing hand experiment |
+**Finger/** — single 2-DOF finger testbed
+
+| File | Description |
+|------|-------------|
+| `Finger/passive_stiffness_sweep.py` | Stiffness sweep — F vs d for varying K (finger space, N·m/rad) |
+| `Finger/passive_range.py` | Dense biased K sweep, one run per K |
+| `Finger/passive_stiffness_sweep_linear.py` | Cart stiffness sweep — F vs d for varying K_cart (N/m), vertical direction |
+| `Finger/passive_range_linear.py` | Dense biased K_cart sweep, vertical direction |
+| `Finger/directional_stiffness.py` | Cart stiffness in multiple contact directions in the Y-Z plane |
+| `Finger/pose_sweep.py` | Pose sweep — F vs d from multiple starting Z heights |
+
+**Hand/** — ADAPT Hand piano playing
+
+| File | Description |
+|------|-------------|
+| `Hand/piano_playing_hand.py` | Conditions 1 & 2: rhythmic index+ring pressing, uniform or heterogeneous K [N/m] |
+| `Hand/piano_glissando.py` | Condition 3: index+middle glissando — UR5 slides across keys while fingers stay pressed |
+| `Hand/HelperPianoMIDI/` | MIDI keyboard → ROS2 bridge (publisher, subscriber, UR5 config) |
 
 ---
 
@@ -48,14 +50,9 @@ Shows that VMC enables real-time stiffness modulation across the full soft-to-ri
 spectrum, adapting to contact events and object properties — without hardware changes.
 Includes single-finger characterisation and a full-hand emergence-of-grasp study.
 
-| File | Platform | Description |
-|------|----------|-------------|
-| `stiffening_contact.py` | finger | K_d increased online upon contact detection |
-| `repulsive_stiffness_shaping.py` | finger | Effective stiffness shaped above the mechanical baseline |
-| `emergent_grasps.py` | hand | Finger postures emerging from controller configuration (virtual elements, stiffening on/off) across objects |
-| `plot_stiffening_contact.ipynb` | finger | Plot stiffening contact experiment |
-| `plot_repulsive_stiffness_shaping.ipynb` | finger | Plot repulsive stiffness shaping experiment |
-| `plot_emergent_grasps.ipynb` | hand | Plot emergent grasps experiment |
+**Finger/** | `stiffening_contact.py`, `repulsive_stiffness_shaping.py`
+
+**Hand/** | `emergent_grasps.py` — finger postures emerging from controller configuration across objects
 
 ---
 

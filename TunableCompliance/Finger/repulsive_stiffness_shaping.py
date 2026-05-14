@@ -33,7 +33,7 @@ import time
 import csv
 import threading
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 from VMCFinger.FingerController import FingerController, CONTROL_FREQUENCY
 from VMCFinger.FingerVMCRepulsiveSpring import VMC
