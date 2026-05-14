@@ -32,6 +32,8 @@ outward (absorbs noise/impacts), inward (provides adaptability).
 | `directional_stiffness.py` | finger | Cart stiffness in multiple contact directions in the Y-Z plane |
 | `pose_sweep.py` | finger | Pose sweep — F vs d from multiple starting Z heights |
 | `piano_playing_hand.py` | hand | Various playing styles with k₁, k₂, k₃ per finger |
+| `HelperPianoMIDI/midi_publisher.py` | laptop | Physical keyboard → ROS2 MIDI topics |
+| `HelperPianoMIDI/midi_subscriber.py` | laptop | Subscribe and print MIDI events from ROS2 topics |
 | `plot_passive_stiffness_sweep.ipynb` | finger | Plot passive stiffness sweep experiment |
 | `plot_passive_stiffness_sweep_linear.ipynb` | finger | Plot passive stiffness sweep linear experiment |
 | `plot_directional_stiffness.ipynb` | finger | Plot directional stiffness experiment |
@@ -162,6 +164,7 @@ sensing configurations.
 HumanManipulationVMC/
 │
 ├── PassiveCompliance/              # Experimental area 1
+│   └── HelperPianoMIDI/            #   MIDI keyboard → ROS2 topics (publisher + subscriber)
 ├── TunableCompliance/              # Experimental area 2
 ├── ProprioceptiveSensing/          # Experimental area 3
 ├── StiffnessForceTracking/         # Experimental area 4
