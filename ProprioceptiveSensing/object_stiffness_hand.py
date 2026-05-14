@@ -37,20 +37,27 @@ from UR5_codes.UR5_readPose import UR5Receiver
 import rtde_control
 
 # =============================================================================
-# Hardcoded parameters
+# Custom parameters
 # =============================================================================
-K_ROT = 0.1    # [N·m/rad]
-B_ROT = 0.0001 # [N·m·s/rad]
+F_TIP_GENTLE = 1.0
+F_TIP_SWEEP  = [2.0, 3.0, 4.0, 5.0]
+ALPHA_FORCE  = 1e-4
 
-K_TIP_GENTLE = 10.0                     # [N/m]
-B_TIP        = 0.001                   # [N·s/m]
-K_TIP_SWEEP  = list(range(10, 90, 20))  # [N/m]
+# =============================================================================
+# Fixed parameters
+# =============================================================================
+K_PALM_TARGET = 50.0
+K_TIP_INIT    = 10.0
+B_TIP         = 0.001
 
-K_RETURN = 0.2   # [N·m/rad]
-B_FLEX_DAMP = B_ROT  # [N·m·s/rad] damping for finger flexion during experiment
+K_ROT = 0.1
+B_ROT = 0.0001
+
+K_RETURN    = 0.2
+B_FLEX_DAMP = B_ROT
 
 ROT_DAMPING_PER_K  = B_ROT / K_ROT if K_ROT else 0.0
-TIP_DAMPING_PER_K  = B_TIP / K_TIP_GENTLE if K_TIP_GENTLE else 0.0
+TIP_DAMPING_PER_K  = B_TIP / K_TIP_INIT if K_TIP_INIT else 0.0
 
 B_RETURN = K_RETURN * ROT_DAMPING_PER_K  # [N·m·s/rad]
 
@@ -68,18 +75,18 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))   # ~30 Hz
 # =============================================================================
 # PC1 target pose
 # =============================================================================
-PC1_WRIST  = np.deg2rad([0.0,  0.0])              # [pitch, yaw]
-PC1_THUMB  = np.deg2rad([ 70.0, 0.0, 70.0, 70.0])  # [CMC1, CMC2, MCP, IP]
+PC1_WRIST  = np.deg2rad([0.0,  0.0])
+PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])  # [CMC1, CMC2, MCP, IP]
 PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-PC1_INDEX  = np.deg2rad([70.0, 75.0, 75.0])        # [MCP, PIP, DIP]
-PC1_MIDDLE = np.deg2rad([70.0, 75.0, 75.0])
-PC1_RING   = np.deg2rad([70.0, 75.0, 75.0])
-PC1_PINKY  = np.deg2rad([70.0, 75.0, 75.0])
+PC1_INDEX  = np.deg2rad([80.0, 85.0, 85.0])  # [MCP, PIP, DIP]
+PC1_MIDDLE = np.deg2rad([80.0, 85.0, 85.0])
+PC1_RING   = np.deg2rad([80.0, 85.0, 85.0])
+PC1_PINKY  = np.deg2rad([80.0, 85.0, 85.0])
 
 HOME_WRIST  = np.zeros(2)
 HOME_THUMB  = np.zeros(4)
@@ -182,11 +189,11 @@ vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
     vmc_task.springs[_f].stiffness    = np.zeros(3)
-    vmc_task.dampers[_f].damping      = np.full(3, K_TIP_GENTLE * TIP_DAMPING_PER_K)
+    vmc_task.dampers[_f].damping      = np.full(3, K_TIP_INIT * TIP_DAMPING_PER_K)
     vmc_task.targets[_f]              = D_REF[_f].copy()
     vmc_task.attachment_points[_f]    = FINGER_TIP_OFFSETS[_f].copy()
 
-vmc_task.springs['palm'].stiffness = np.full(3, K_TIP_GENTLE)
+vmc_task.springs['palm'].stiffness = np.zeros(3)
 vmc_task.dampers['palm'].damping   = np.full(3, B_TIP)
 vmc_task.targets['palm']           = D_REF['palm'].copy()
 
@@ -217,7 +224,7 @@ def _output_path():
 
 
 def _csv_header():
-    cols = ['time_s', 'phase', 'k_tip_Npm', 'converged']
+    cols = ['time_s', 'phase', 'force_ref_N', 'k_tip_Npm', 'converged']
     for i in range(15):
         cols.append(f'q_motor_{i}_rad')
     for i in range(15):
@@ -278,8 +285,10 @@ def _tip_pos(finger, q):
     return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
 
 
-def _compute_row(q, q_dot, phase, k_tip, converged):
-    row = [f'{time.time() - _experiment_start:.4f}', phase, f'{k_tip:.1f}', int(converged)]
+def _compute_row(q, q_dot, phase, force_ref, k_tip_dict, k_palm, converged):
+    k_tip_mean = float(np.mean([k_tip_dict[f] for f in FINGERTIPS]))
+    row = [f'{time.time() - _experiment_start:.4f}', phase,
+           f'{force_ref:.3f}', f'{k_tip_mean:.1f}', int(converged)]
 
     row += [f'{v:.6f}' for v in q]
     row += [f'{v:.6f}' for v in q_dot]
@@ -294,8 +303,8 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
         ang = FK_motor2finger(q, _f)
         row += [f'{ang[i]:.6f}' for i in range(3)]
 
-    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
-    K_task_now['palm'] = k_tip * np.eye(3)
+    K_task_now = {f: k_tip_dict[f] * np.eye(3) for f in FINGERTIPS}
+    K_task_now['palm'] = k_palm * np.eye(3)
 
     for _f in FINGERTIPS:
         pos  = _tip_pos(_f, q)
@@ -355,7 +364,7 @@ STATE_SETTLE_ARM   = 1
 STATE_RAMP_TO_PC1  = 2
 STATE_GENTLE_CONV  = 3
 STATE_GENTLE_REC   = 4
-STATE_K_TIP_RAMP   = 5
+STATE_FORCE_RAMP   = 5
 STATE_SWEEP_CONV   = 6
 STATE_SWEEP_REC    = 7
 STATE_UNLOAD       = 8
@@ -372,16 +381,24 @@ _CONVERGE_TICKS   = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
 _log_tick         = 0
 _converged        = False
 _sweep_idx        = 0
-_current_k_tip    = K_TIP_GENTLE
-_use_task_vmc     = False   # engaged after the ramp to PC1
+_k_tip            = {f: K_TIP_INIT for f in FINGERTIPS}
+_k_palm           = 0.0
+_current_force_ref = F_TIP_GENTLE
+_use_task_vmc      = False   # engaged after the ramp to PC1
 
 _ramp_t0             = None
 _ramp_start_targets  = None
 _ramp_end_targets    = None
 
-_k_ramp_start    = None
-_k_ramp_end      = None
-_k_ramp_after    = None  # state to enter once the k_tip ramp completes
+_force_ramp_t0    = None
+_force_ramp_start = None
+_force_ramp_end   = None
+_force_ramp_after = None  # state to enter once the force ramp completes
+
+_palm_ramp_t0     = None
+_palm_ramp_start  = None
+_palm_ramp_end    = None
+_palm_ramp_active = False
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -396,10 +413,14 @@ def _move_arm_async(target_pose, speed, done_state):
     threading.Thread(target=_run, daemon=True).start()
 
 
-def _set_task_stiffness(k_tip):
+def _apply_tip_stiffness():
     for _f in FINGERTIPS:
-        vmc_task.springs[_f].stiffness = np.full(3, k_tip)
-    vmc_task.springs['palm'].stiffness = np.full(3, k_tip)
+        vmc_task.springs[_f].stiffness = np.full(3, _k_tip[_f])
+        vmc_task.dampers[_f].damping   = np.full(3, _k_tip[_f] * TIP_DAMPING_PER_K)
+
+
+def _set_palm_stiffness(k_palm):
+    vmc_task.springs['palm'].stiffness = np.full(3, k_palm)
 
 
 def _set_joint_stiffness_uniform(k_rot, b_rot):
@@ -455,21 +476,67 @@ def _step_ramp(now):
     return alpha >= 1.0
 
 
-def _begin_k_tip_ramp(k_start, k_end, after_state):
-    """Linear ramp of k_tip over RAMP_DURATION, reusing _ramp_t0."""
-    global _ramp_t0, _k_ramp_start, _k_ramp_end, _k_ramp_after
-    _ramp_t0      = time.time()
-    _k_ramp_start = k_start
-    _k_ramp_end   = k_end
-    _k_ramp_after = after_state
+def _begin_force_ramp(f_start, f_end, after_state):
+    """Linear ramp of force target over RAMP_DURATION."""
+    global _force_ramp_t0, _force_ramp_start, _force_ramp_end, _force_ramp_after
+    _force_ramp_t0    = time.time()
+    _force_ramp_start = f_start
+    _force_ramp_end   = f_end
+    _force_ramp_after = after_state
 
 
-def _step_k_tip_ramp(now):
-    """Returns (done, k_tip_now)."""
-    alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
-    k_now = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
-    _set_task_stiffness(k_now)
-    return alpha >= 1.0, k_now
+def _step_force_ramp(now):
+    """Returns (done, force_ref_now)."""
+    alpha = min(1.0, (now - _force_ramp_t0) / RAMP_DURATION)
+    f_now = (1 - alpha) * _force_ramp_start + alpha * _force_ramp_end
+    return alpha >= 1.0, f_now
+
+
+def _begin_palm_ramp(k_start, k_end):
+    global _palm_ramp_t0, _palm_ramp_start, _palm_ramp_end, _palm_ramp_active
+    _palm_ramp_t0     = time.time()
+    _palm_ramp_start  = k_start
+    _palm_ramp_end    = k_end
+    _palm_ramp_active = True
+
+
+def _step_palm_ramp(now):
+    """Returns (active, k_palm_now)."""
+    global _palm_ramp_active
+    if not _palm_ramp_active:
+        return False, _k_palm
+    alpha = min(1.0, (now - _palm_ramp_t0) / RAMP_DURATION)
+    k_now = (1 - alpha) * _palm_ramp_start + alpha * _palm_ramp_end
+    if alpha >= 1.0:
+        _palm_ramp_active = False
+    return _palm_ramp_active, k_now
+
+
+def _task_dict():
+    K_task = {f: _k_tip[f] * np.eye(3) for f in FINGERTIPS}
+    K_task['palm'] = _k_palm * np.eye(3)
+    return K_task
+
+
+def _update_tip_stiffness(force_ref, q):
+    """Small force-target updates for each fingertip (normal-only mode)."""
+    global _k_tip
+    for _f in FINGERTIPS:
+        K_task = _task_dict()
+        f_pred = stiff_model.tip_force(
+            _f, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task)
+        n_f = float(np.linalg.norm(f_pred))
+        if n_f < 1e-8:
+            continue
+        f_des = (force_ref / n_f) * f_pred
+        lr_task = {p: 0.0 for p in list(FINGERTIPS) + ['palm']}
+        lr_task[_f] = ALPHA_FORCE
+        _, K_task_new = stiff_model.stiffness_descent(
+            _f, q, THETA_REF_DEG, D_REF,
+            K_JOINT_DICT_MODEL, K_task,
+            f_pred, f_des, lr_joint=0.0, lr_task=lr_task)
+        _k_tip[_f] = float(np.trace(K_task_new[_f]) / 3.0)
+    _apply_tip_stiffness()
 
 
 # =============================================================================
@@ -479,7 +546,7 @@ def _step_k_tip_ramp(now):
 def control_callback():
     global state, _state_start, _arm_moving
     global _converge_ticks, _log_tick, _converged
-    global _sweep_idx, _current_k_tip, _use_task_vmc
+    global _sweep_idx, _current_force_ref, _use_task_vmc, _k_tip, _k_palm
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -493,6 +560,12 @@ def control_callback():
 
     now     = time.time()
     elapsed = now - _state_start
+
+    if _palm_ramp_active:
+        _, k_palm_now = _step_palm_ramp(now)
+        if k_palm_now != _k_palm:
+            _k_palm = k_palm_now
+            _set_palm_stiffness(_k_palm)
 
     if state == STATE_INIT_ARM:
         if not _arm_moving:
@@ -510,7 +583,9 @@ def control_callback():
     elif state == STATE_RAMP_TO_PC1:
         if _step_ramp(now):
             _set_joint_stiffness_experiment()
-            _set_task_stiffness(K_TIP_GENTLE)
+            _k_palm = 0.0
+            _set_palm_stiffness(_k_palm)
+            _apply_tip_stiffness()
             for _f in FINGERTIPS:
                 vmc_task.targets[_f] = D_REF[_f].copy()
             _use_task_vmc   = True
@@ -519,9 +594,10 @@ def control_callback():
             _state_start    = now
             state           = STATE_GENTLE_CONV
             controller.get_logger().info(
-                f'Ramp done. Engaging tip springs at k_tip = {K_TIP_GENTLE} N/m …')
+                f'Ramp done. Engaging tip springs for force target = {F_TIP_GENTLE:.1f} N …')
 
     elif state == STATE_GENTLE_CONV:
+        _update_tip_stiffness(_current_force_ref, q)
         if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
             _converge_ticks += 1
         else:
@@ -531,38 +607,42 @@ def control_callback():
                 _converged   = True
                 _state_start = now
                 state        = STATE_GENTLE_REC
+                _begin_palm_ramp(_k_palm, K_PALM_TARGET)
                 controller.get_logger().info(
                     f'Gentle grasp converged at {elapsed:.1f} s. '
                     f'Recording {RECORD_DURATION:.0f} s …')
 
     elif state == STATE_GENTLE_REC:
+        _update_tip_stiffness(_current_force_ref, q)
         _log_tick += 1
         if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
-                _compute_row(q, q_dot, 'gentle', K_TIP_GENTLE, True))
+                _compute_row(q, q_dot, 'gentle', _current_force_ref, _k_tip, _k_palm, True))
         if elapsed >= RECORD_DURATION:
             if COLLECT_DATA:
                 _csv_file.flush()
             _sweep_idx   = 0
             _state_start = now
-            _begin_k_tip_ramp(K_TIP_GENTLE, K_TIP_SWEEP[0], STATE_SWEEP_CONV)
-            state = STATE_K_TIP_RAMP
+            _begin_force_ramp(F_TIP_GENTLE, F_TIP_SWEEP[0], STATE_SWEEP_CONV)
+            state = STATE_FORCE_RAMP
             controller.get_logger().info(
-                f'Baseline recorded. Ramping k_tip {K_TIP_GENTLE:.1f} → '
-                f'{K_TIP_SWEEP[0]} N/m over {RAMP_DURATION:.1f} s '
-                f'(sweep step 1/{len(K_TIP_SWEEP)})…')
+                f'Baseline recorded. Ramping force {F_TIP_GENTLE:.1f} → '
+                f'{F_TIP_SWEEP[0]:.1f} N over {RAMP_DURATION:.1f} s '
+                f'(sweep step 1/{len(F_TIP_SWEEP)})…')
 
-    elif state == STATE_K_TIP_RAMP:
-        done, k_now = _step_k_tip_ramp(now)
-        _current_k_tip = k_now
+    elif state == STATE_FORCE_RAMP:
+        done, f_now = _step_force_ramp(now)
+        _current_force_ref = f_now
+        _update_tip_stiffness(_current_force_ref, q)
         if done:
             _converge_ticks = 0
             _converged      = False
             _log_tick       = 0
             _state_start    = now
-            state           = _k_ramp_after
+            state           = _force_ramp_after
 
     elif state == STATE_SWEEP_CONV:
+        _update_tip_stiffness(_current_force_ref, q)
         if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
             _converge_ticks += 1
         else:
@@ -573,35 +653,40 @@ def control_callback():
                 _state_start = now
                 state        = STATE_SWEEP_REC
                 controller.get_logger().info(
-                    f'k_tip = {_current_k_tip:.1f} N/m converged at {elapsed:.1f} s. '
+                    f'Force target = {_current_force_ref:.1f} N converged at {elapsed:.1f} s. '
                     f'Recording {RECORD_DURATION:.0f} s …')
 
     elif state == STATE_SWEEP_REC:
+        _update_tip_stiffness(_current_force_ref, q)
         _log_tick += 1
         if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
-                _compute_row(q, q_dot, 'sweep', _current_k_tip, True))
+                _compute_row(q, q_dot, 'sweep', _current_force_ref, _k_tip, _k_palm, True))
         if elapsed >= RECORD_DURATION:
             if COLLECT_DATA:
                 _csv_file.flush()
             _sweep_idx += 1
-            if _sweep_idx >= len(K_TIP_SWEEP):
+            if _sweep_idx >= len(F_TIP_SWEEP):
                 controller.get_logger().info(
                     'Sweep complete. Releasing contact before returning home …')
-                _set_task_stiffness(0.0)
+                for _f in FINGERTIPS:
+                    _k_tip[_f] = 0.0
+                _apply_tip_stiffness()
+                _k_palm = 0.0
+                _set_palm_stiffness(_k_palm)
                 _use_task_vmc = False
                 _state_start = now
                 state        = STATE_UNLOAD
             else:
-                k_prev = _current_k_tip
-                k_next = K_TIP_SWEEP[_sweep_idx]
+                f_prev = _current_force_ref
+                f_next = F_TIP_SWEEP[_sweep_idx]
                 _state_start = now
-                _begin_k_tip_ramp(k_prev, k_next, STATE_SWEEP_CONV)
-                state = STATE_K_TIP_RAMP
+                _begin_force_ramp(f_prev, f_next, STATE_SWEEP_CONV)
+                state = STATE_FORCE_RAMP
                 controller.get_logger().info(
-                    f'Ramping k_tip {k_prev:.1f} → {k_next} N/m over '
+                    f'Ramping force {f_prev:.1f} → {f_next:.1f} N over '
                     f'{RAMP_DURATION:.1f} s (sweep step '
-                    f'{_sweep_idx + 1}/{len(K_TIP_SWEEP)})…')
+                    f'{_sweep_idx + 1}/{len(F_TIP_SWEEP)})…')
 
     elif state == STATE_UNLOAD:
         if elapsed >= CONVERGE_HOLD:
@@ -642,8 +727,10 @@ controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
     f'Object stiffness hand — object: {OBJECT_NAME} | '
     f'k_rot = {K_ROT} N·m/rad | '
-    f'k_tip gentle = {K_TIP_GENTLE} N/m | '
-    f'sweep = {K_TIP_SWEEP} N/m | '
+    f'k_tip init = {K_TIP_INIT} N/m | '
+    f'force gentle = {F_TIP_GENTLE} N | '
+    f'force sweep = {F_TIP_SWEEP} N | '
+    f'k_palm = {K_PALM_TARGET} N/m | '
     f'k_return = {K_RETURN} N·m/rad')
 
 try:
