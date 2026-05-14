@@ -18,7 +18,7 @@ Protocol:
   7. Repeat steps 3-6 for N_SAMPLES total configurations.
 
 Outputs:
-  ProprioceptiveSensing/outputs/finger_eta/finger_eta_run_N.csv
+  ProprioceptiveSensing/Finger/outputs/finger_eta/finger_eta_run_N.csv
 
 η is fitted offline in plot_finger_eta.ipynb.
 """

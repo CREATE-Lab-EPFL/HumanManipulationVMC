@@ -21,7 +21,7 @@ Protocol (per run):
   6. Repeat for all (strength, run) combinations.
 
 Outputs:
-  TunableCompliance/outputs/repulsive_stiffness_shaping/strength_{s}/strength_{s}_run_N.csv
+  TunableCompliance/Finger/outputs/repulsive_stiffness_shaping/strength_{s}/strength_{s}_run_N.csv
 """
 
 import numpy as np

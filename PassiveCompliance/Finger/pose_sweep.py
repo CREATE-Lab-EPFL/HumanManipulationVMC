@@ -9,7 +9,7 @@ recording force and position throughout.
 Experiments whose output file already exists are skipped automatically,
 so re-running the script only collects missing conditions.
 
-Outputs: PassiveCompliance/outputs/pose_sweep/kd_{kd}/offset_Xmm/offset_Xmm_run_N.csv
+Outputs: PassiveCompliance/Finger/outputs/pose_sweep/kd_{kd}/offset_Xmm/offset_Xmm_run_N.csv
 """
 
 import numpy as np

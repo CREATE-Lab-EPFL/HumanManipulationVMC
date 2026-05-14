@@ -16,7 +16,7 @@ Protocol (per run):
     5. Repeat for all (angle, run) combinations.
 
 Outputs:
-    PassiveCompliance/outputs/directional_stiffness/angle_{deg}/angle_{deg}_run_{n}.csv
+    PassiveCompliance/Finger/outputs/directional_stiffness/angle_{deg}/angle_{deg}_run_{n}.csv
 """
 
 import numpy as np

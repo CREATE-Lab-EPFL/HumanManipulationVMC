@@ -13,7 +13,7 @@ Protocol (per run):
   5. UR5 returns to UR5_POSE — record all signals (Phase='ascent').
   6. Repeat for all (K, run) combinations.
 
-Outputs: PassiveCompliance/outputs/stiffness_sweep/K_X.XX/K_X.XX_run_N.csv
+Outputs: PassiveCompliance/Finger/outputs/stiffness_sweep/K_X.XX/K_X.XX_run_N.csv
 """
 
 import numpy as np

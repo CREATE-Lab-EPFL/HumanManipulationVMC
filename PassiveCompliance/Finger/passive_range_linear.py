@@ -15,7 +15,7 @@ Protocol (per K_cart):
   4. UR5 returns to UR5_POSE — record all signals (Phase='ascent').
   5. Repeat for all K_cart values and runs.
 
-Outputs: PassiveCompliance/outputs/stiffness_range_linear/K_XX.XX_run_N.csv
+Outputs: PassiveCompliance/Finger/outputs/stiffness_range_linear/K_XX.XX_run_N.csv
 """
 
 import numpy as np

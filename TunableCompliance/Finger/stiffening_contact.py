@@ -26,7 +26,7 @@ Protocol (per run):
   6. Repeat for all (alpha, run) combinations.
 
 Outputs:
-  TunableCompliance/outputs/stiffening_contact/alpha_X/alpha_X_run_N.csv
+  TunableCompliance/Finger/outputs/stiffening_contact/alpha_X/alpha_X_run_N.csv
 """
 
 import numpy as np
