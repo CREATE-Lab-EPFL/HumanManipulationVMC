@@ -1,21 +1,22 @@
 """
-Passive compliance shaping - linear cart stiffness range (finger, vertical cart).
+Passive compliance shaping - directional stiffness (finger).
 
-The finger presses against a surface at UR5_POSE while cart stiffness K_cart is
-sampled from 40 to 300 N/m using the same biased spacing strategy as
-passive_range.py (denser near K_MIN), vertical direction only (0 deg, z-axis),
-with N_RUNS repetitions per stiffness.
-UR5 descends UR5_DESCENT from UR5_POSE and returns, recording force and
-position throughout both descent and ascent.
+The finger presses against a surface while the cart spring direction n is swept
+over ANGLE_SWEEP angles in the Y-Z plane using vertical pressing:
+    - Vertical:  UR5 descends in Z (normal press) from UR5_POSE.
 
-Protocol (per K_cart):
-  1. Finger lifted to FINGER_STRAIGHT; wait SETTLE_TIME.
-  2. Set K_cart and target FINGER_TARGET; wait SETTLE_TIME.
-  3. UR5 descends UR5_DESCENT — record all signals (Phase='descent').
-  4. UR5 returns to UR5_POSE — record all signals (Phase='ascent').
-  5. Repeat for all K_cart values and runs.
+The UR5 starts already at the contact pose. No contact detection is performed.
 
-Outputs: PassiveCompliance/outputs/stiffness_range_linear/K_XX.XX_run_N.csv
+Protocol (per run):
+    1. Arm moves to start pose UR5_POSE;
+     finger lifts to FINGER_STRAIGHT; wait SETTLE_TIME.
+  2. Set cart stiffness at angle n; finger to FINGER_TARGET; wait SETTLE_TIME.
+  3. UR5 presses UR5_DESCENT from start pose — record (Phase='descent').
+  4. UR5 returns to start pose — record (Phase='ascent').
+    5. Repeat for all (angle, run) combinations.
+
+Outputs:
+    PassiveCompliance/outputs/directional_stiffness/angle_{deg}/angle_{deg}_run_{n}.csv
 """
 
 import numpy as np
@@ -27,7 +28,7 @@ import time
 import csv
 import threading
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 from VMCFinger.FingerController import FingerController, CONTROL_FREQUENCY
 from VMCFinger.FingerVMCDirCart import VMC
@@ -46,28 +47,26 @@ import rtde_control
 import rtde_receive
 
 # ── Experiment parameters ─────────────────────────────────────────────────────
-K_MIN = 5.0
-K_MAX = 280.0
-K_SAMPLES = 10
-K_DISTRIBUTION_POWER = 2.0
-K_RANGE = list(dict.fromkeys([
-    round(float(k), 2)
-    for k in (
-        K_MIN + (K_MAX - K_MIN) * (np.linspace(0.0, 1.0, K_SAMPLES) ** K_DISTRIBUTION_POWER)
-    )
-]))
-CART_DAMPING = 3.0
-CART_OFFSET = 0.10
-EXPERIMENT_JOINT_STIFFNESS = 0.0
+BENDING_STIFFNESS           = 0.5    # [N·m/rad] local bending stiffness baseline
+EXPERIMENT_JOINT_STIFFNESS = 0.0     # [N·m/rad] joint-level spring during press (cart-only)
+CART_STIFFNESS             = 100.0   # [N/m]     cart spring stiffness
+CART_DAMPING               = 1.0     # [N·s/m]   cart damper
+CART_OFFSET                = 0.10    # [m]       cart application point offset along n
+
+ANGLE_SWEEP  = [0, -30, -60]              # [deg] cart angles from Z in the Y-Z plane
 
 # Set to True once data is collected — runs the protocol without saving files.
 COLLECTED_DATA = True
 
 # ── Timing ────────────────────────────────────────────────────────────────────
-SETTLE_TIME = 3.0
+SETTLE_TIME = 3.0   # [s] settle wait (used twice per run: finger lift + contact bend)
 
 # ── Experiment queue ──────────────────────────────────────────────────────────
-experiment_queue  = [(k, run) for k in K_RANGE for run in range(N_RUNS)]
+experiment_queue = [
+    (angle, run)
+    for angle in ANGLE_SWEEP
+    for run in range(N_RUNS)
+]
 total_experiments = len(experiment_queue)
 
 # ── ROS2 / finger init ────────────────────────────────────────────────────────
@@ -86,8 +85,8 @@ controller.create_subscription(
 controller.force_shear_N = 0.0
 
 vmc = VMC(
-    stiffness      = np.array([0.5] * 3),
-    damping        = np.array([BENDING_DAMPING] * 3),
+    stiffness      = np.array([BENDING_STIFFNESS] * 3),
+    damping        = np.array([BENDING_DAMPING]   * 3),
     cart_stiffness = 0.0,
     cart_damping   = 0.0,
     target         = FINGER_STRAIGHT,
@@ -102,18 +101,18 @@ arm.endTeachMode()
 controller.get_logger().info('UR5 connected')
 
 # ── State machine ─────────────────────────────────────────────────────────────
-STATE_INIT_ARM = 0
-STATE_LIFT     = 1
-STATE_SETTLE   = 2
-STATE_DESCEND  = 3
-STATE_ASCEND   = 4
-STATE_NEXT     = 5
-STATE_DONE     = 6
+STATE_LIFT      = 0   # finger straight + arm to start pose
+STATE_SETTLE_A  = 1   # wait SETTLE_TIME with finger straight
+STATE_SETTLE_B  = 2   # wait SETTLE_TIME with finger at target (contact settle)
+STATE_DESCEND   = 3
+STATE_ASCEND    = 4
+STATE_NEXT      = 5
+STATE_DONE      = 6
 
-state             = STATE_INIT_ARM
-state_start_time  = time.time()
-current_exp_idx   = 0
-arm_moving        = False
+state            = STATE_LIFT
+state_start_time = time.time()
+current_exp_idx  = 0
+arm_moving       = False
 
 experiment_start_time = None
 csv_file              = None
@@ -123,26 +122,35 @@ csv_filename          = None
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def n_vertical():
-    return np.array([[0.0], [0.0], [1.0]])
+def n_from_angle(angle_deg):
+    """Cart normal vector at angle_deg from Z in the Y-Z plane."""
+    a = np.radians(angle_deg)
+    return np.array([[0], [np.sin(a)], [np.cos(a)]])
 
+def start_pose():
+    return UR5_POSE
 
-def set_range_stiffness(k_cart):
-    n = n_vertical()
-    vmc.spring = LinearSpring(np.array([EXPERIMENT_JOINT_STIFFNESS] * 3))
-    vmc.cart_spring = ConstrainedLinearSpring(k_cart, n)
-    vmc.cart_damper = ConstrainedLinearDamper(CART_DAMPING, n)
+def set_bending_stiffness():
+    vmc.spring      = LinearSpring(np.array([BENDING_STIFFNESS] * 3))
+    vmc.cart_spring = ConstrainedLinearSpring(0.0)
+    vmc.cart_damper = ConstrainedLinearDamper(0.0)
+
+def set_experiment_stiffness(angle_deg):
+    n = n_from_angle(angle_deg)
+    vmc.spring      = LinearSpring(np.array([EXPERIMENT_JOINT_STIFFNESS] * 3))
+    vmc.cart_spring = ConstrainedLinearSpring(CART_STIFFNESS, n)
+    vmc.cart_damper = ConstrainedLinearDamper(CART_DAMPING,   n)
     vmc.target_cart = vmc._target_cart_base + vmc.cart_offset * n.flatten()
 
-
-def output_path(k, run):
-    folder = os.path.join(os.path.dirname(__file__), 'outputs', 'stiffness_range_linear')
+def output_path(angle_deg, run):
+    folder = os.path.join(
+        os.path.dirname(__file__), 'outputs', 'directional_stiffness',
+        f'angle_{angle_deg}')
     os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, f'K_{k:.2f}_run_{run + 1}.csv')
+    return os.path.join(folder, f'angle_{angle_deg}_run_{run + 1}.csv')
 
-
-def open_csv(k, run):
-    fname = output_path(k, run)
+def open_csv(angle_deg, run):
+    fname = output_path(angle_deg, run)
     f = open(fname, 'w', newline='')
     w = csv.writer(f)
     w.writerow([
@@ -152,23 +160,23 @@ def open_csv(k, run):
         'Motor1_pos_deg', 'Motor2_pos_deg',
         'Motor1_vel_degs', 'Motor2_vel_degs',
         'Motor1_torque_Nm', 'Motor2_torque_Nm',
-        'UR5_Z_m', 'UR5_displacement_m',
-        'CartStiffness_Npm',
-        'Run',
+        'UR5_displacement_m',
+        'Angle_deg',
     ])
     return f, w, fname
 
+def displacement(tcp_pose):
+    """Vertical displacement from start pose."""
+    return UR5_POSE[2] - tcp_pose[2]
 
 def move_arm_async(target_pose, speed, done_state):
     global state, arm_moving, state_start_time
-
     def _run():
         global state, arm_moving, state_start_time
         arm.moveL(target_pose.tolist(), speed, UR5_INIT_ACCELERATION)
         state_start_time = time.time()
         state = done_state
         arm_moving = False
-
     arm_moving = True
     threading.Thread(target=_run, daemon=True).start()
 
@@ -190,64 +198,65 @@ def control_callback():
     tau_total = tau_vmc + tau_comp
     controller.publish_torques(tau_total)
 
+    # ── Recording (descent and ascent) ────────────────────────────────────────
     if not COLLECTED_DATA and state in (STATE_DESCEND, STATE_ASCEND) and experiment_start_time is not None:
-        phase   = 'descent' if state == STATE_DESCEND else 'ascent'
-        elapsed = time.time() - experiment_start_time
-        ur5_z   = recv.getActualTCPPose()[2]
-        disp    = UR5_POSE[2] - ur5_z
-        k_cur, run_cur = experiment_queue[current_exp_idx]
+        angle_deg, _ = experiment_queue[current_exp_idx]
+        phase    = 'descent' if state == STATE_DESCEND else 'ascent'
+        elapsed  = time.time() - experiment_start_time
+        tcp_pose = recv.getActualTCPPose()
+        disp     = displacement(tcp_pose)
         csv_writer.writerow([
             f'{elapsed:.4f}',
             phase,
-            f'{controller.force_N:.4f}',
-            f'{controller.force_shear_N:.4f}',
-            f'{q_deg[0]:.4f}',     f'{q_deg[1]:.4f}',
-            f'{q_dot_deg[0]:.4f}', f'{q_dot_deg[1]:.4f}',
-            f'{tau_total[0]:.6f}', f'{tau_total[1]:.6f}',
-            f'{ur5_z:.6f}',        f'{disp:.6f}',
-            f'{k_cur:.2f}',
-            run_cur + 1,
+            f'{controller.force_N:.4f}',       f'{controller.force_shear_N:.4f}',
+            f'{q_deg[0]:.4f}',                 f'{q_deg[1]:.4f}',
+            f'{q_dot_deg[0]:.4f}',             f'{q_dot_deg[1]:.4f}',
+            f'{tau_total[0]:.6f}',             f'{tau_total[1]:.6f}',
+            f'{disp:.6f}',
+            angle_deg,
         ])
 
-    if state == STATE_INIT_ARM:
-        if not arm_moving:
-            controller.get_logger().info('Moving UR5 to UR5_POSE ...')
-            move_arm_async(UR5_POSE, UR5_INIT_SPEED, STATE_LIFT)
+    # ── State transitions ─────────────────────────────────────────────────────
 
-    elif state == STATE_LIFT:
-        vmc.spring = LinearSpring(np.array([0.5] * 3))
-        vmc.cart_spring = ConstrainedLinearSpring(0.0, n_vertical())
-        vmc.cart_damper = ConstrainedLinearDamper(0.0, n_vertical())
+    if state == STATE_LIFT:
+        set_bending_stiffness()
         vmc.target = FINGER_STRAIGHT
+        if not arm_moving:
+            controller.get_logger().info('Moving arm to vertical start pose ...')
+            move_arm_async(start_pose(), UR5_INIT_SPEED, STATE_SETTLE_A)
+
+    elif state == STATE_SETTLE_A:
+        # Arm at start pose, finger settling to FINGER_STRAIGHT
         if time.time() - state_start_time >= SETTLE_TIME:
-            k_cur, run = experiment_queue[current_exp_idx]
-            set_range_stiffness(k_cur)
+            angle_deg, run = experiment_queue[current_exp_idx]
+            set_experiment_stiffness(angle_deg)
             vmc.target = FINGER_TARGET
             controller.get_logger().info(
                 f'=== Experiment {current_exp_idx + 1}/{total_experiments}: '
-                f'K_cart={k_cur:.1f} N/m, run {run + 1}/{N_RUNS} — settling into contact ...')
-            state = STATE_SETTLE
+                f'vertical, angle={angle_deg}°, run {run + 1}/{N_RUNS} — settling into contact ...')
+            state = STATE_SETTLE_B
             state_start_time = time.time()
 
-    elif state == STATE_SETTLE:
+    elif state == STATE_SETTLE_B:
+        # Finger bending into contact, wait to settle
         if time.time() - state_start_time >= SETTLE_TIME:
-            k_cur, run = experiment_queue[current_exp_idx]
+            angle_deg, run = experiment_queue[current_exp_idx]
             if not COLLECTED_DATA:
-                csv_file, csv_writer, csv_filename = open_csv(k_cur, run)
+                csv_file, csv_writer, csv_filename = open_csv(angle_deg, run)
                 controller.get_logger().info(f'Saving to: {csv_filename}')
             experiment_start_time = time.time()
-            descent_target = UR5_POSE.copy()
-            descent_target[2] -= UR5_DESCENT
-            controller.get_logger().info('Descending ...')
-            move_arm_async(descent_target, UR5_DESCENT_SPEED, STATE_ASCEND)
+            sp = start_pose().copy()
+            sp[2] -= UR5_DESCENT
+            controller.get_logger().info('Pressing ...')
+            move_arm_async(sp, UR5_DESCENT_SPEED, STATE_ASCEND)
             state = STATE_DESCEND
 
     elif state == STATE_DESCEND:
-        pass
+        pass  # recording handled above; arm thread transitions to STATE_ASCEND
 
     elif state == STATE_ASCEND:
         if not arm_moving:
-            move_arm_async(UR5_POSE, UR5_DESCENT_SPEED, STATE_NEXT)
+            move_arm_async(start_pose(), UR5_DESCENT_SPEED, STATE_NEXT)
 
     elif state == STATE_NEXT:
         if csv_file and not csv_file.closed:
@@ -269,9 +278,8 @@ def control_callback():
 
 controller.create_timer(1.0 / CONTROL_FREQUENCY, control_callback)
 controller.get_logger().info(
-    f'Linear cart stiffness range (vertical): K from {K_MIN:.0f} to {K_MAX:.0f} '
-    f'with {K_SAMPLES} biased samples (power={K_DISTRIBUTION_POWER}), '
-    f'{N_RUNS} runs/K = {total_experiments} experiments')
+    f'Directional stiffness (vertical only): {len(ANGLE_SWEEP)} angles × '
+    f'{N_RUNS} runs = {total_experiments} experiments')
 
 try:
     rclpy.spin(controller)

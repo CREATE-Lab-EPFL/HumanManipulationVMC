@@ -1,19 +1,19 @@
 """
-Passive compliance shaping - stiffness sweep (finger).
+Passive compliance shaping - dense stiffness range (finger).
 
-The finger presses against a surface at UR5_POSE while K_d is swept through a
-range of values. UR5 descends UR5_DESCENT from UR5_POSE and returns, recording
-force and position throughout both descent and ascent.
+The finger presses against a surface at UR5_POSE while K_d is sampled
+between K_MIN and K_MAX with denser points near K_MIN. One press-and-return per K value.
+UR5 descends UR5_DESCENT from UR5_POSE and returns, recording force and
+position throughout both descent and ascent.
 
-Protocol (per run):
-  1. UR5 moves to UR5_POSE; finger lifted to FINGER_STRAIGHT.
-  2. Wait SETTLE_TIME for finger to lift.
-  3. Set sweep K and target FINGER_TARGET; wait SETTLE_TIME to settle into contact.
-  4. UR5 descends UR5_DESCENT — record all signals (Phase='descent').
-  5. UR5 returns to UR5_POSE — record all signals (Phase='ascent').
-  6. Repeat for all (K, run) combinations.
+Protocol (per K):
+  1. Finger lifted to FINGER_STRAIGHT; wait SETTLE_TIME.
+  2. Set K and target FINGER_TARGET; wait SETTLE_TIME to settle into contact.
+  3. UR5 descends UR5_DESCENT — record all signals (Phase='descent').
+  4. UR5 returns to UR5_POSE — record all signals (Phase='ascent').
+  5. Repeat for all K values.
 
-Outputs: PassiveCompliance/outputs/stiffness_sweep/K_X.XX/K_X.XX_run_N.csv
+Outputs: PassiveCompliance/outputs/stiffness_range/K_X.XX_run_N.csv
 """
 
 import numpy as np
@@ -25,7 +25,7 @@ import time
 import csv
 import threading
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 from VMCFinger.FingerController import FingerController, CONTROL_FREQUENCY
 from VMCFinger.FingerVMCFingerSpace import VMC
@@ -43,7 +43,16 @@ import rtde_control
 import rtde_receive
 
 # ── Experiment parameters ─────────────────────────────────────────────────────
-K_SWEEP = [0.1, 0.2, 0.6]   # [N·m/rad] stiffness values to sweep
+K_MIN  = 0.02   # [N·m/rad]
+K_MAX  = 0.60   # [N·m/rad]
+K_SAMPLES = 10
+K_DISTRIBUTION_POWER = 2.0   # >1 gives denser samples near K_MIN
+K_RANGE = list(dict.fromkeys([
+    round(float(k), 2)
+    for k in (
+        K_MIN + (K_MAX - K_MIN) * (np.linspace(0.0, 1.0, K_SAMPLES) ** K_DISTRIBUTION_POWER)
+    )
+]))
 DAMPING = 0.003                    # [N·m·s/rad] VMC damping
 
 # Set to True once data is collected — runs the protocol without saving files.
@@ -53,7 +62,7 @@ COLLECTED_DATA = True
 SETTLE_TIME = 3.0   # [s] wait after setting K and finger target before descent
 
 # ── Experiment queue ──────────────────────────────────────────────────────────
-experiment_queue  = [(k, run) for k in K_SWEEP for run in range(N_RUNS)]
+experiment_queue  = [(k, run) for k in K_RANGE for run in range(N_RUNS)]
 total_experiments = len(experiment_queue)
 
 # ── ROS2 / finger init ────────────────────────────────────────────────────────
@@ -66,9 +75,8 @@ controller.create_subscription(
     lambda msg: setattr(controller, 'force_N', msg.data * 0.00980665), 10)
 controller.force_N = 0.0
 
-k_init, _ = experiment_queue[0]
 vmc = VMC(
-    stiffness = np.array([k_init] * 3),
+    stiffness = np.array([K_RANGE[0]] * 3),
     damping   = np.array([DAMPING] * 3),
     target    = FINGER_STRAIGHT,
 )
@@ -106,8 +114,7 @@ def set_sweep_stiffness(k):
     vmc.spring = LinearSpring(np.array([k] * 3))
 
 def output_path(k, run):
-    folder = os.path.join(
-        os.path.dirname(__file__), 'outputs', 'stiffness_sweep', f'K_{k:.2f}')
+    folder = os.path.join(os.path.dirname(__file__), 'outputs', 'stiffness_range')
     os.makedirs(folder, exist_ok=True)
     return os.path.join(folder, f'K_{k:.2f}_run_{run + 1}.csv')
 
@@ -124,6 +131,7 @@ def open_csv(k, run):
         'Motor1_torque_Nm', 'Motor2_torque_Nm',
         'UR5_Z_m', 'UR5_displacement_m',
         'Stiffness_Nmrad',
+        'Run',
     ])
     return f, w, fname
 
@@ -158,11 +166,11 @@ def control_callback():
 
     # ── Recording (descent and ascent) ────────────────────────────────────────
     if not COLLECTED_DATA and state in (STATE_DESCEND, STATE_ASCEND) and experiment_start_time is not None:
-        phase    = 'descent' if state == STATE_DESCEND else 'ascent'
-        elapsed  = time.time() - experiment_start_time
-        ur5_z    = recv.getActualTCPPose()[2]
-        disp     = UR5_POSE[2] - ur5_z
-        k_cur, _ = experiment_queue[current_exp_idx]
+        phase   = 'descent' if state == STATE_DESCEND else 'ascent'
+        elapsed = time.time() - experiment_start_time
+        ur5_z   = recv.getActualTCPPose()[2]
+        disp    = UR5_POSE[2] - ur5_z
+        k_cur, run_cur = experiment_queue[current_exp_idx]
         csv_writer.writerow([
             f'{elapsed:.4f}',
             phase,
@@ -172,6 +180,7 @@ def control_callback():
             f'{tau_total[0]:.6f}', f'{tau_total[1]:.6f}',
             f'{ur5_z:.6f}',        f'{disp:.6f}',
             f'{k_cur:.4f}',
+            run_cur + 1,
         ])
 
     # ── State transitions ─────────────────────────────────────────────────────
@@ -182,7 +191,6 @@ def control_callback():
             move_arm_async(UR5_POSE, UR5_INIT_SPEED, STATE_LIFT)
 
     elif state == STATE_LIFT:
-        # Finger lifts to FINGER_STRAIGHT — wait for it to reach straight position
         vmc.target = FINGER_STRAIGHT
         if time.time() - state_start_time >= SETTLE_TIME:
             k_cur, run = experiment_queue[current_exp_idx]
@@ -203,7 +211,7 @@ def control_callback():
             experiment_start_time = time.time()
             descent_target    = UR5_POSE.copy()
             descent_target[2] -= UR5_DESCENT
-            controller.get_logger().info(f'Descending ...')
+            controller.get_logger().info('Descending ...')
             move_arm_async(descent_target, UR5_DESCENT_SPEED, STATE_ASCEND)
             state = STATE_DESCEND
 
@@ -212,9 +220,7 @@ def control_callback():
 
     elif state == STATE_ASCEND:
         if not arm_moving:
-            # Arm reached bottom — start ascending
             move_arm_async(UR5_POSE, UR5_DESCENT_SPEED, STATE_NEXT)
-        # Recording handled above while arm is ascending
 
     elif state == STATE_NEXT:
         if csv_file and not csv_file.closed:
@@ -236,8 +242,8 @@ def control_callback():
 
 controller.create_timer(1.0 / CONTROL_FREQUENCY, control_callback)
 controller.get_logger().info(
-    f'Stiffness sweep: {len(K_SWEEP)} K values × {N_RUNS} runs = '
-    f'{total_experiments} experiments')
+    f'Stiffness range: K in [{K_MIN}, {K_MAX}] with {K_SAMPLES} biased samples '
+    f'(power={K_DISTRIBUTION_POWER}), {N_RUNS} runs/K = {total_experiments} experiments')
 
 try:
     rclpy.spin(controller)
