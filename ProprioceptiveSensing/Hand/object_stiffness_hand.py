@@ -457,7 +457,6 @@ def _begin_k_tip_ramp(k_start, k_end, after_state):
 
 
 def _step_k_tip_ramp(now):
-    """Returns (done, k_tip_now)."""
     alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
     k_now = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
     _set_task_stiffness(k_now)

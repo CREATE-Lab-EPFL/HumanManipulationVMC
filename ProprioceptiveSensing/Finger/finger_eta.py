@@ -19,8 +19,6 @@ Protocol:
 
 Outputs:
   ProprioceptiveSensing/Finger/outputs/finger_eta/finger_eta_run_N.csv
-
-η is fitted offline in plot_finger_eta.ipynb.
 """
 
 import numpy as np
@@ -95,12 +93,12 @@ arm.endTeachMode()
 controller.get_logger().info('UR5 connected')
 
 # ── State machine ─────────────────────────────────────────────────────────────
-STATE_INIT_ARM   = 0   # move UR5 to UR5_POSE
-STATE_SETTLE     = 1   # wait at pose, then set first K and lower finger
-STATE_LOWERING   = 2   # finger moving to FINGER_TARGET, waiting to settle
-STATE_RUNNING    = 3   # recording for RECORD_INTERVAL
-STATE_LIFTING    = 4   # finger lifting; then change K or finish
-STATE_DONE       = 5
+STATE_INIT_ARM = 0
+STATE_SETTLE   = 1
+STATE_LOWERING = 2
+STATE_RUNNING  = 3
+STATE_LIFTING  = 4
+STATE_DONE     = 5
 
 state             = STATE_INIT_ARM
 state_start_time  = time.time()
@@ -119,7 +117,6 @@ csv_filename = None
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def random_stiffness():
-    """Draw independent uniform random stiffness for MCP, PIP, DIP."""
     return np.random.uniform(K_MIN_SWEEP, K_MAX_SWEEP, 3)
 
 
@@ -188,7 +185,6 @@ def control_callback():
 
     now = time.time()
 
-    # ── Recording (STATE_RUNNING only) ─────────────────────────────────────────
     if not COLLECTED_DATA and state == STATE_RUNNING and record_start_time is not None:
         elapsed = now - experiment_start
         csv_writer.writerow([
@@ -203,8 +199,6 @@ def control_callback():
             f'{current_stiffness[1]:.4f}',
             f'{current_stiffness[2]:.4f}',
         ])
-
-    # ── State transitions ─────────────────────────────────────────────────────
 
     if state == STATE_INIT_ARM:
         if not arm_moving:

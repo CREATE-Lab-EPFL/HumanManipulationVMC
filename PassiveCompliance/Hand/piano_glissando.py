@@ -183,7 +183,6 @@ try:
         controller.get_logger().info(f'Glissando run {run}/{N_RUNS} — settling ...')
         _phase = 'settle'
 
-        # Move fingers to rest, wait, then press down before slide.
         vmc_task.targets['index']  = REST_POS['index'].copy()
         vmc_task.targets['middle'] = REST_POS['middle'].copy()
         time.sleep(SETTLE_TIME)
@@ -202,12 +201,10 @@ try:
         with _lock:
             _log_buffer.clear()
 
-        # Slide forward.
         controller.get_logger().info(f'  sliding forward ...')
         _phase = 'slide_forward'
         arm.moveL(list(GLISSANDO_END), GLISSANDO_SPEED, UR5_INIT_ACCEL)
 
-        # Return.
         controller.get_logger().info(f'  returning ...')
         _phase = 'return'
         arm.moveL(list(UR5_POSE_GLISSANDO_START), GLISSANDO_SPEED, UR5_INIT_ACCEL)
