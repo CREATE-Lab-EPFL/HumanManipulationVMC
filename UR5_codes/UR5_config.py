@@ -39,6 +39,3 @@ UR5_DESCENT_SPEED = 0.002       # [m/s] — quasistatic descent speed (both dire
 
 # Experiment repetitions (shared across all finger experiments)
 N_RUNS = 5                       # repetitions per condition#
-
-# Hand experiment pose for the UR5 (squeezing experiment)
-UR5_POSE_SQUEEZING = np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656])

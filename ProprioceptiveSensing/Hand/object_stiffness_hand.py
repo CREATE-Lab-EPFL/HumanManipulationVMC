@@ -29,10 +29,8 @@ from KinematicsHand.FK_Hand import (
 )
 from ModelIDHand.hand_params import FINGER_TIP_OFFSETS
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
-from UR5_codes.UR5_config import (
-    UR5_IP, UR5_POSE_SQUEEZING,
-    UR5_INIT_SPEED, UR5_INIT_ACCELERATION,
-)
+from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
+from hand_config import UR5_POSE_SQUEEZING
 from UR5_codes.UR5_readPose import UR5Receiver
 import rtde_control
 

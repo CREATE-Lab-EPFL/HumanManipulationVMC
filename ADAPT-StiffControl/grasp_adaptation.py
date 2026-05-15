@@ -49,10 +49,9 @@ from KinematicsHand.FK_Hand import (
 )
 from ModelIDHand.hand_params import FINGER_TIP_OFFSETS
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
-from UR5_codes.UR5_config import (
-    UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION,
-)
+from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from UR5_codes.UR5_readPose import UR5Receiver
+from hand_config import UR5_POSE_GRASP_OBJ
 import rtde_control
 
 # =============================================================================
@@ -89,19 +88,14 @@ HOLD_TIME        = 3.0    # [s]   hold at lifted pose
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 # =============================================================================
-# UR5 object poses — PLACEHOLDER: tune to actual object positions
 # =============================================================================
-# [x, y, z, rx, ry, rz] — tool pose at grasp contact (palm centred on object).
-UR5_GRASP_POSE = {
-    'object_1': np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656]),
-    'object_2': np.array([-0.1405, 0.5500, 0.2594, -0.1861, -0.027, -2.7656]),
-}
-
+# UR5 object poses (from hand_config.py)
+# =============================================================================
 # Pre-compute derived poses.
 _lift_offset = np.array([0.0, 0.0, LIFT_HEIGHT,    0.0, 0.0, 0.0])
 _appr_offset = np.array([0.0, 0.0, APPROACH_HEIGHT, 0.0, 0.0, 0.0])
-UR5_LIFT_POSE  = {k: v + _lift_offset for k, v in UR5_GRASP_POSE.items()}
-UR5_ABOVE_POSE = {k: v + _appr_offset for k, v in UR5_GRASP_POSE.items()}
+UR5_LIFT_POSE  = {k: v + _lift_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
+UR5_ABOVE_POSE = {k: v + _appr_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
 
 # =============================================================================
 # PC1 target pose
@@ -138,7 +132,7 @@ assert 0 <= _sel < len(OBJECTS), 'Invalid selection'
 OBJECT_NAME = OBJECTS[_sel]
 print(f'Selected: {OBJECT_NAME}\n')
 
-GRASP_POSE = UR5_GRASP_POSE[OBJECT_NAME]
+GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
 LIFT_POSE  = UR5_LIFT_POSE[OBJECT_NAME]
 ABOVE_POSE = UR5_ABOVE_POSE[OBJECT_NAME]
 
