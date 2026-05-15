@@ -72,7 +72,7 @@ N_CYCLES         = 10               # cycles recorded per stiffness value
 SETTLE_TIME      = 3.0              # [s]   wait before starting cycles
 REF_RAMP_DURATION = 0.1             # [s]   linear ramp duration for REST↔PRESS reference
 
-COLLECT_DATA = True
+COLLECT_DATA = False
 
 # =============================================================================
 # Joint-space targets
