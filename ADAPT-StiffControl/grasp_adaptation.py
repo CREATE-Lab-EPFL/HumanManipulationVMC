@@ -639,11 +639,11 @@ def control_callback():
                 state = STATE_LIFT
 
     elif state == STATE_LIFT:
+        _log_tick += 1
         if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'lift', _current_k,
                              _delta_mean, _k_applied, True))
-        _log_tick += 1
 
     elif state == STATE_HOLD:
         _log_tick += 1
