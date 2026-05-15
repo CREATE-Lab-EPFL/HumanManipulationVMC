@@ -34,3 +34,11 @@ GLISSANDO_SPEED = 0.05      # [m/s]
 UR5_IP           = "192.168.1.10"
 UR5_INIT_SPEED   = 0.05     # [m/s]
 UR5_INIT_ACCEL   = 0.05     # [m/s²]
+
+# ── Press pose ────────────────────────────────────────────────────────────────
+# MCP + PIP flexion angle [deg] used to define the fingertip press target via FK.
+PRESS_ANGLE_DEG = 30.0
+
+# Fingers active in each experiment (used to build Q_PRESS and VMC targets).
+PIANO_FINGERS_PLAYING   = ['index', 'ring']
+PIANO_FINGERS_GLISSANDO = ['index', 'middle']
