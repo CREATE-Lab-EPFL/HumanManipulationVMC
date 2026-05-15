@@ -334,7 +334,7 @@ def _compute_row(q, q_dot, phase, k_dict, converged, ur5_disp):
         row += [f'{ang[i]:.6f}' for i in range(3)]
 
     K_task_now = {f: k_dict[f] * np.eye(3) for f in FINGERTIPS}
-    K_task_now['palm'] = K_task_now['thumb']  # palm mirrors current thumb stiffness
+    K_task_now['palm'] = k_dict['thumb'] * np.eye(3)
 
     for _f in FINGERTIPS:
         pos  = _tip_pos(_f, q)
@@ -591,22 +591,20 @@ def control_callback():
                 f'{TRANSPORT_SPEED:.2f} m/s …')
 
     elif state == STATE_TRANSPORT:
-        # Step stiffness ramp if the adaptive trigger fired.
         if _k_ramping:
             _step_k_ramp(now)
 
-        # Adaptive: fire trigger on first crossing of STIFFENING_DIST.
+        ur5_disp = _ur5_displacement()
+
         if CONDITION == 'adaptive' and not _triggered:
-            disp = _ur5_displacement()
-            if disp >= STIFFENING_DIST:
+            if ur5_disp >= STIFFENING_DIST:
                 _triggered = True
                 controller.get_logger().info(
-                    f'Stiffening trigger at {disp:.3f} m displacement — '
+                    f'Stiffening trigger at {ur5_disp:.3f} m displacement — '
                     f'ramping {K_SOFT_INIT} → {K_RIGID} N/m over {RAMP_DURATION:.1f} s …')
                 _begin_k_ramp(_current_k_dict, K_DICT_RIGID)
 
         _log_tick += 1
-        ur5_disp = _ur5_displacement()
         if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'transport', _current_k_dict, True, ur5_disp))
