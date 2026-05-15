@@ -449,7 +449,6 @@ def _step_ramp(now):
 
 
 def _begin_k_tip_ramp(k_start, k_end, after_state):
-    """Linear ramp of k_tip over RAMP_DURATION, reusing _ramp_t0."""
     global _ramp_t0, _k_ramp_start, _k_ramp_end, _k_ramp_after
     _ramp_t0      = time.time()
     _k_ramp_start = k_start
