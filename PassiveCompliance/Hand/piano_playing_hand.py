@@ -67,9 +67,10 @@ B_CART    = 0.5                     # [N·s/m] task-space damping (both fingers)
 K_ROT     = 0.1                     # [N·m/rad] background joint stiffness
 B_ROT     = 0.001                   # [N·m·s/rad] background joint damping
 
-PRESS_FREQUENCY = 1.0               # [Hz]  one full press-lift cycle per second
-N_CYCLES        = 10                # cycles recorded per stiffness value
-SETTLE_TIME     = 3.0               # [s]   wait before starting cycles
+PRESS_FREQUENCY  = 1.0              # [Hz]  one full press-lift cycle per second
+N_CYCLES         = 10               # cycles recorded per stiffness value
+SETTLE_TIME      = 3.0              # [s]   wait before starting cycles
+REF_RAMP_DURATION = 0.1             # [s]   linear ramp duration for REST↔PRESS reference
 
 COLLECT_DATA = True
 
@@ -139,9 +140,30 @@ _lock       = threading.Lock()
 _running    = True
 _log_buffer = []
 
+_ramp_lock    = threading.Lock()
+_ramp_active  = False
+_ramp_t0      = None
+_ramp_start   = {}
+_ramp_end     = {}
+
+def _step_target_ramp():
+    global _ramp_active
+    if not _ramp_active:
+        return
+    with _ramp_lock:
+        if not _ramp_active:
+            return
+        alpha = min(1.0, (time.time() - _ramp_t0) / REF_RAMP_DURATION)
+        for f in ['index', 'ring']:
+            vmc_task.targets[f] = (1 - alpha) * _ramp_start[f] + alpha * _ramp_end[f]
+        if alpha >= 1.0:
+            _ramp_active = False
+
+
 def _control_loop():
     step = 0
     while _running:
+        _step_target_ramp()
         q     = controller.get_joint_positions()
         q_dot = controller.get_joint_velocities()
         tau   = grav_fric_lim.hand_torques(q, q_dot)
@@ -166,6 +188,16 @@ def _set_targets(phase):
     pos = PRESS_POS if phase == 'press' else REST_POS
     vmc_task.targets['index'] = pos['index'].copy()
     vmc_task.targets['ring']  = pos['ring'].copy()
+
+
+def _begin_target_ramp(phase):
+    global _ramp_active, _ramp_t0, _ramp_start, _ramp_end
+    pos = PRESS_POS if phase == 'press' else REST_POS
+    with _ramp_lock:
+        _ramp_start = {f: vmc_task.targets[f].copy() for f in ['index', 'ring']}
+        _ramp_end   = {f: pos[f].copy()              for f in ['index', 'ring']}
+        _ramp_t0    = time.time()
+        _ramp_active = True
 
 def _flush(writer):
     with _lock:
@@ -199,9 +231,9 @@ def run_condition(label, stiffness_pairs):
             with _lock:
                 _log_buffer.clear()
 
-            _set_targets('press')
+            _begin_target_ramp('press')
             time.sleep(HALF)
-            _set_targets('rest')
+            _begin_target_ramp('rest')
             time.sleep(HALF)
 
             if writer:
