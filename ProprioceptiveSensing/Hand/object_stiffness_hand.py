@@ -67,29 +67,6 @@ RECORD_DURATION  = 5.0   # [s]
 
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
-# =============================================================================
-# PC1 target pose
-# =============================================================================
-PC1_WRIST  = np.deg2rad([0.0,  0.0])              # [pitch, yaw]
-PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])  # [CMC1, CMC2, MCP, IP]
-PC1_SPREAD = {
-    'index':  np.deg2rad(-2.0),
-    'middle': 0.0,
-    'ring':   np.deg2rad(2.0),
-    'pinky':  np.deg2rad(2.0),
-}
-PC1_INDEX  = np.deg2rad([80.0, 85.0, 85.0])  # [MCP, PIP, DIP]
-PC1_MIDDLE = np.deg2rad([80.0, 85.0, 85.0])
-PC1_RING   = np.deg2rad([80.0, 85.0, 85.0])
-PC1_PINKY  = np.deg2rad([80.0, 85.0, 85.0])
-
-HOME_WRIST  = np.zeros(2)
-HOME_THUMB  = np.zeros(4)
-HOME_SPREAD = {f: np.zeros(1) for f in ['index', 'middle', 'ring', 'pinky']}
-HOME_FINGER = np.zeros(3)
-
-OBJECTS    = ['object_1', 'object_2', 'object_3']
-FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 
 # =============================================================================
 # Derived quantities
