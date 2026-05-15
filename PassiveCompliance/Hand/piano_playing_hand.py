@@ -47,6 +47,7 @@ from KinematicsHand.FK_Hand    import FK_motor2fingerPos
 from ModelIDHand.motor_config  import MOTOR_SLICES
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
+    PRESS_ANGLE_DEG, PIANO_FINGERS_PLAYING,
 )
 
 import rtde_control
@@ -80,22 +81,16 @@ COLLECT_DATA = False
 Q_HOME  = np.zeros(15)
 
 Q_PRESS = np.zeros(15)
-Q_PRESS[MOTOR_SLICES['index']] = np.deg2rad(30.0)   # index MCP, PIP
-Q_PRESS[MOTOR_SLICES['ring']]  = np.deg2rad(30.0)   # ring  MCP, PIP
+for _f in PIANO_FINGERS_PLAYING:
+    Q_PRESS[MOTOR_SLICES[_f]] = np.deg2rad(PRESS_ANGLE_DEG)
 
 # =============================================================================
 # Cartesian targets from FK
 # =============================================================================
 _R = np.zeros(3)   # fingertip attachment at DIP link origin
 
-REST_POS = {
-    'index': np.array(FK_motor2fingerPos(Q_HOME,  'index', 'DIP', _R)),
-    'ring':  np.array(FK_motor2fingerPos(Q_HOME,  'ring',  'DIP', _R)),
-}
-PRESS_POS = {
-    'index': np.array(FK_motor2fingerPos(Q_PRESS, 'index', 'DIP', _R)),
-    'ring':  np.array(FK_motor2fingerPos(Q_PRESS, 'ring',  'DIP', _R)),
-}
+REST_POS  = {f: np.array(FK_motor2fingerPos(Q_HOME,  f, 'DIP', _R)) for f in PIANO_FINGERS_PLAYING}
+PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', _R)) for f in PIANO_FINGERS_PLAYING}
 
 # =============================================================================
 # Logging helpers
@@ -127,11 +122,9 @@ vmc_joint.set_damping(B_ROT)
 vmc_task = TaskVMC()
 vmc_task.set_stiffness(0.0)
 vmc_task.set_damping(0.0)
-for _f in ['index', 'ring']:
+for _f in PIANO_FINGERS_PLAYING:
     vmc_task.dampers[_f].damping = np.full(3, B_CART)
-
-vmc_task.targets['index'] = REST_POS['index'].copy()
-vmc_task.targets['ring']  = REST_POS['ring'].copy()
+    vmc_task.targets[_f] = REST_POS[_f].copy()
 
 # =============================================================================
 # Control loop (330 Hz, background thread)
@@ -154,7 +147,7 @@ def _step_target_ramp():
         if not _ramp_active:
             return
         alpha = min(1.0, (time.time() - _ramp_t0) / REF_RAMP_DURATION)
-        for f in ['index', 'ring']:
+        for f in PIANO_FINGERS_PLAYING:
             vmc_task.targets[f] = (1 - alpha) * _ramp_start[f] + alpha * _ramp_end[f]
         if alpha >= 1.0:
             _ramp_active = False
@@ -180,22 +173,22 @@ def _control_loop():
 # =============================================================================
 # Helpers
 # =============================================================================
-def _set_stiffness(k_index, k_ring):
-    vmc_task.springs['index'].stiffness = np.full(3, k_index)
-    vmc_task.springs['ring'].stiffness  = np.full(3, k_ring)
+def _set_stiffness(k_vals):
+    for _f, k in zip(PIANO_FINGERS_PLAYING, k_vals):
+        vmc_task.springs[_f].stiffness = np.full(3, k)
 
 def _set_targets(phase):
     pos = PRESS_POS if phase == 'press' else REST_POS
-    vmc_task.targets['index'] = pos['index'].copy()
-    vmc_task.targets['ring']  = pos['ring'].copy()
+    for _f in PIANO_FINGERS_PLAYING:
+        vmc_task.targets[_f] = pos[_f].copy()
 
 
 def _begin_target_ramp(phase):
     global _ramp_active, _ramp_t0, _ramp_start, _ramp_end
     pos = PRESS_POS if phase == 'press' else REST_POS
     with _ramp_lock:
-        _ramp_start = {f: vmc_task.targets[f].copy() for f in ['index', 'ring']}
-        _ramp_end   = {f: pos[f].copy()              for f in ['index', 'ring']}
+        _ramp_start = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
+        _ramp_end   = {f: pos[f].copy()              for f in PIANO_FINGERS_PLAYING}
         _ramp_t0    = time.time()
         _ramp_active = True
 
@@ -210,13 +203,13 @@ def _flush(writer):
 # Protocol
 # =============================================================================
 def run_condition(label, stiffness_pairs):
-    """stiffness_pairs: list of (k_index, k_ring, k_label) tuples."""
+    """stiffness_pairs: list of (k_vals_list, k_label) tuples."""
     HALF = 0.5 / PRESS_FREQUENCY
-    for k_idx, k_rng, k_lbl in stiffness_pairs:
-        _set_stiffness(k_idx, k_rng)
+    for k_vals, k_lbl in stiffness_pairs:
+        _set_stiffness(k_vals)
         _set_targets('rest')
-        controller.get_logger().info(
-            f'[{label}] K_index={k_idx}  K_ring={k_rng}  — settling ...')
+        k_info = '  '.join(f'K_{f}={k}' for f, k in zip(PIANO_FINGERS_PLAYING, k_vals))
+        controller.get_logger().info(f'[{label}] {k_info}  — settling ...')
         time.sleep(SETTLE_TIME)
 
         for cycle in range(1, N_CYCLES + 1):
@@ -253,11 +246,11 @@ spin_thread.start()
 
 try:
     if CONDITION == 'uniform':
-        run_condition('uniform', [(k, k, f'{k:.0f}') for k in K_SWEEP])
+        run_condition('uniform', [([k, k], f'{k:.0f}') for k in K_SWEEP])
 
     elif CONDITION == 'heterogeneous':
         run_condition('heterogeneous',
-                      [(K_STIFF, K_SOFT, f'stiff{K_STIFF:.0f}_soft{K_SOFT:.0f}')])
+                      [([K_STIFF, K_SOFT], f'stiff{K_STIFF:.0f}_soft{K_SOFT:.0f}')])
     else:
         raise ValueError(f'Unknown CONDITION: {CONDITION!r}')
 

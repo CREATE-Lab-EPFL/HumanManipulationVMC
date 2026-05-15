@@ -45,6 +45,7 @@ from piano_config import (
     GLISSANDO_DISTANCE,
     GLISSANDO_SPEED,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
+    PRESS_ANGLE_DEG, PIANO_FINGERS_GLISSANDO,
 )
 
 import rtde_control
@@ -64,27 +65,21 @@ SETTLE_TIME = 3.0   # [s]
 COLLECT_DATA = False
 
 # =============================================================================
-# Joint-space press pose (index + middle at 30 deg each)
+# Joint-space press pose
 # =============================================================================
 Q_HOME  = np.zeros(15)
 
 Q_PRESS = np.zeros(15)
-Q_PRESS[MOTOR_SLICES['index']]  = np.deg2rad(30.0)   # index  MCP, PIP
-Q_PRESS[MOTOR_SLICES['middle']] = np.deg2rad(30.0)   # middle MCP, PIP
+for _f in PIANO_FINGERS_GLISSANDO:
+    Q_PRESS[MOTOR_SLICES[_f]] = np.deg2rad(PRESS_ANGLE_DEG)
 
 # =============================================================================
 # Cartesian targets from FK
 # =============================================================================
 _R = np.zeros(3)
 
-REST_POS = {
-    'index':  np.array(FK_motor2fingerPos(Q_HOME,  'index',  'DIP', _R)),
-    'middle': np.array(FK_motor2fingerPos(Q_HOME,  'middle', 'DIP', _R)),
-}
-PRESS_POS = {
-    'index':  np.array(FK_motor2fingerPos(Q_PRESS, 'index',  'DIP', _R)),
-    'middle': np.array(FK_motor2fingerPos(Q_PRESS, 'middle', 'DIP', _R)),
-}
+REST_POS  = {f: np.array(FK_motor2fingerPos(Q_HOME,  f, 'DIP', _R)) for f in PIANO_FINGERS_GLISSANDO}
+PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', _R)) for f in PIANO_FINGERS_GLISSANDO}
 
 # =============================================================================
 # Glissando UR5 waypoints
@@ -127,12 +122,10 @@ vmc_joint.set_damping(B_ROT)
 vmc_task = TaskVMC()
 vmc_task.set_stiffness(0.0)
 vmc_task.set_damping(0.0)
-for _f in ['index', 'middle']:
+for _f in PIANO_FINGERS_GLISSANDO:
     vmc_task.springs[_f].stiffness = np.full(3, K_CART)
     vmc_task.dampers[_f].damping   = np.full(3, B_CART)
-
-vmc_task.targets['index']  = PRESS_POS['index'].copy()
-vmc_task.targets['middle'] = PRESS_POS['middle'].copy()
+    vmc_task.targets[_f] = PRESS_POS[_f].copy()
 
 # =============================================================================
 # Control loop
@@ -183,12 +176,12 @@ try:
         controller.get_logger().info(f'Glissando run {run}/{N_RUNS} — settling ...')
         _phase = 'settle'
 
-        vmc_task.targets['index']  = REST_POS['index'].copy()
-        vmc_task.targets['middle'] = REST_POS['middle'].copy()
+        for _f in PIANO_FINGERS_GLISSANDO:
+            vmc_task.targets[_f] = REST_POS[_f].copy()
         time.sleep(SETTLE_TIME)
 
-        vmc_task.targets['index']  = PRESS_POS['index'].copy()
-        vmc_task.targets['middle'] = PRESS_POS['middle'].copy()
+        for _f in PIANO_FINGERS_GLISSANDO:
+            vmc_task.targets[_f] = PRESS_POS[_f].copy()
         time.sleep(1.0)   # let fingers reach press position before slide
 
         if COLLECT_DATA:

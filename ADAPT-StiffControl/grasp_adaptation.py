@@ -51,7 +51,12 @@ from ModelIDHand.hand_params import FINGER_TIP_OFFSETS
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from UR5_codes.UR5_readPose import UR5Receiver
-from hand_config import UR5_POSE_GRASP_OBJ
+from hand_config import (
+    UR5_POSE_GRASP_OBJ,
+    PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
+    HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
+    FINGERTIPS, OBJECTS,
+)
 import rtde_control
 
 # =============================================================================
@@ -97,29 +102,6 @@ _appr_offset = np.array([0.0, 0.0, APPROACH_HEIGHT, 0.0, 0.0, 0.0])
 UR5_LIFT_POSE  = {k: v + _lift_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
 UR5_ABOVE_POSE = {k: v + _appr_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
 
-# =============================================================================
-# PC1 target pose
-# =============================================================================
-PC1_WRIST  = np.deg2rad([0.0,  0.0])
-PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
-PC1_SPREAD = {
-    'index':  np.deg2rad(-2.0),
-    'middle': 0.0,
-    'ring':   np.deg2rad(2.0),
-    'pinky':  np.deg2rad(2.0),
-}
-PC1_INDEX  = np.deg2rad([80.0, 85.0, 85.0])
-PC1_MIDDLE = np.deg2rad([80.0, 85.0, 85.0])
-PC1_RING   = np.deg2rad([80.0, 85.0, 85.0])
-PC1_PINKY  = np.deg2rad([80.0, 85.0, 85.0])
-
-HOME_WRIST  = np.zeros(2)
-HOME_THUMB  = np.zeros(4)
-HOME_SPREAD = {f: np.zeros(1) for f in ['index', 'middle', 'ring', 'pinky']}
-HOME_FINGER = np.zeros(3)
-
-FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
-OBJECTS    = ['object_1', 'object_2']
 
 # =============================================================================
 # Object selection
