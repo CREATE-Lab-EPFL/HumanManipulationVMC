@@ -41,20 +41,18 @@ import rtde_control
 # =============================================================================
 K_TIP_GENTLE = 10.0            # [N/m]  gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]  stiffness levels for the sweep
+COLLECT_DATA = False
 
 # =============================================================================
 # Fixed parameters
 # =============================================================================
-COLLECT_DATA = False
-
 K_ROT       = 0.1     # [N·m/rad]
 B_ROT       = 0.0001  # [N·m·s/rad]
 B_TIP       = 0.001   # [N·s/m]
 K_RETURN    = 0.2     # [N·m/rad]
 B_FLEX_DAMP = B_ROT
 
-ROT_DAMPING_PER_K = B_ROT / K_ROT       if K_ROT       else 0.0
-TIP_DAMPING_PER_K = B_TIP / K_TIP_GENTLE if K_TIP_GENTLE else 0.0
+ROT_DAMPING_PER_K = B_ROT / K_ROT if K_ROT else 0.0
 B_RETURN          = K_RETURN * ROT_DAMPING_PER_K
 
 SETTLE_TIME      = 3.0   # [s]
@@ -157,8 +155,6 @@ print(f'Selected: {OBJECT_NAME}\n')
 rclpy.init()
 controller = HandController()
 
-# All joints uniformly active during ramps (HOME → PC1 and back); the experiment
-# config (active wrist + spread + thumb CMC1/CMC2 only) is applied after ramp completes.
 vmc_joint = JointVMC()
 
 vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
@@ -178,7 +174,6 @@ vmc_joint.index_target      = HOME_FINGER.copy()
 vmc_joint.middle_target     = HOME_FINGER.copy()
 vmc_joint.ring_pinky_target = HOME_FINGER.copy()
 
-# Tip springs engaged only after the ramp to PC1 completes.
 vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
@@ -194,7 +189,6 @@ vmc_task.targets['palm']           = D_REF['palm'].copy()
 grav_lim = GravFricLim()
 recv     = UR5Receiver()
 
-# Slow init — do it once before the timer starts.
 print('Initialising stiffness model (HandHessians)…')
 _t0 = time.time()
 stiff_model = tip_stiffness_MixedSpace(mode='normal')
@@ -374,15 +368,15 @@ _log_tick         = 0
 _converged        = False
 _sweep_idx        = 0
 _current_k_tip    = K_TIP_GENTLE
-_use_task_vmc     = False   # engaged after the ramp to PC1
+_use_task_vmc     = False
 
-_ramp_t0             = None
-_ramp_start_targets  = None
-_ramp_end_targets    = None
+_ramp_t0            = None
+_ramp_start_targets = None
+_ramp_end_targets   = None
 
-_k_ramp_start    = None
-_k_ramp_end      = None
-_k_ramp_after    = None  # state to enter once the k_tip ramp completes
+_k_ramp_start = None
+_k_ramp_end   = None
+_k_ramp_after = None
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -416,7 +410,6 @@ def _set_joint_stiffness_uniform(k_rot, b_rot):
 
 
 def _set_joint_stiffness_experiment():
-    """Active joints: wrist + spread + thumb CMC1/CMC2. Finger flexion is left to the tip springs."""
     vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
     vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
     vmc_joint.damping['wrist']   = np.full(2, B_ROT)
@@ -443,7 +436,6 @@ def _begin_ramp(end_targets):
 
 
 def _step_ramp(now):
-    """Returns True when the ramp completes."""
     alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
     s, e = _ramp_start_targets, _ramp_end_targets
     vmc_joint.wrist             = (1 - alpha) * s['wrist']             + alpha * e['wrist']

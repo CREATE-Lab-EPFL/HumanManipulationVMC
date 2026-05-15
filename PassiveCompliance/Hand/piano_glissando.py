@@ -61,7 +61,7 @@ B_ROT    = 0.001    # [N·m·s/rad] background joint damping
 N_RUNS      = 5
 SETTLE_TIME = 3.0   # [s]
 
-COLLECT_DATA = True
+COLLECT_DATA = False
 
 # =============================================================================
 # Joint-space press pose (index + middle at 30 deg each)
