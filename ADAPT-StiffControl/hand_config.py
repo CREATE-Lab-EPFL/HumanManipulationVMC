@@ -37,10 +37,13 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard_obj', 'soft_obj']
 
 # ── Grasp adaptation rule (grasp_adaptation.py) ───────────────────────────────
-# k_applied = clip(K_SCALE * δ_mean, K_MIN, K_MAX), with δ_mean in metres.
-# Calibrate K_SCALE so that δ from a soft and a hard object spans [K_MIN, K_MAX].
-K_TIP_GENTLE = 10.0     # [N/m]   sensing stiffness during δ measurement
-K_SCALE      = 3000.0   # [N/m²]  slope of the δ → k_applied map
+# Two-point compliance estimation: settle at K_TIP_GENTLE, then push at
+# K_TIP_PROBE.  Per finger:  C_O = ||Δpos|| / ||Δforce||.  Average across
+# fingers, then  k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX).
+# K_GAIN = 1.0 → match the object's stiffness exactly.
+K_TIP_GENTLE = 10.0     # [N/m]   first sensing stiffness
+K_TIP_PROBE  = 50.0     # [N/m]   second sensing stiffness (must differ from gentle)
+K_GAIN       = 1.0      # [-]     proportionality of k_applied to 1/C_O
 K_MIN        = 5.0      # [N/m]   lower bound on adapted stiffness
 K_MAX        = 150.0    # [N/m]   upper bound on adapted stiffness
 

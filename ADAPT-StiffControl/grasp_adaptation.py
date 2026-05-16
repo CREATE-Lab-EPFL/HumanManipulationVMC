@@ -1,28 +1,28 @@
 """
 ADAPT Hand — grasp adaptation via online compliance sensing.
 
-The hand descends to grasp one of two known objects, closes at a gentle
-stiffness to sense the object's compliance from fingertip displacement,
-then adapts the grasp stiffness according to:
+The hand grasps one of the known objects, then estimates its compliance via
+two-point finite difference (same algorithm as ProprioceptiveSensing/Hand):
+settle at K_TIP_GENTLE, push at K_TIP_PROBE, measure how much position
+changed per Newton of analytic VMC force. The adapted controller stiffness
+is then matched to the object's stiffness:
 
-    k_applied = clip( K_SCALE × δ_mean, K_MIN, K_MAX )
+    C_O_f      = ||pos_probe[f] - pos_gentle[f]|| / ||F_probe[f] - F_gentle[f]||
+    C_O_mean   = mean over fingers
+    k_applied  = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
 
-where δ_mean is the mean fingertip displacement magnitude (all five fingers,
-steady-state average). Stiff objects block the fingers further from the
-PC1 target → larger δ → higher adapted stiffness. After adaptation the
-hand lifts the object, holds, then places it back and returns home.
+K_GAIN = 1 ⇒ controller stiffness equals object stiffness (compliance match).
 
 Protocol per object:
-  1. UR5 moves to ABOVE_POSE (approach from above).
-  2. UR5 descends to GRASP_POSE.
-  3. Hand closes to PC1 at K_TIP_GENTLE (sensing phase).
-  4. Wait SENSE_DURATION; accumulate δ_mean.
-  5. Compute k_applied; ramp stiffness from K_TIP_GENTLE → k_applied.
-  6. Wait for convergence at k_applied.
-  7. UR5 lifts to LIFT_POSE.
-  8. Hold HOLD_TIME.
-  9. UR5 returns to GRASP_POSE (place back).
-  10. Open hand; return home.
+  1. UR5 moves to ABOVE_POSE, descends to GRASP_POSE.
+  2. Hand closes to PC1 at K_TIP_GENTLE (first sensing point).
+  3. Wait for convergence, then record pos_gentle, F_gentle for SENSE_DURATION.
+  4. Ramp stiffness K_TIP_GENTLE → K_TIP_PROBE (second sensing point).
+  5. Wait for convergence, then record pos_probe, F_probe for SENSE_DURATION.
+  6. Compute C_O per finger, average, and derive k_applied.
+  7. Ramp stiffness K_TIP_PROBE → k_applied; wait for convergence.
+  8. UR5 lifts, holds HOLD_TIME, places the object back.
+  9. Open hand; return home.
 
 Outputs: ADAPT-StiffControl/outputs/grasp_adaptation/grasp_<object>_N.csv
 """
@@ -56,7 +56,7 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
-    K_TIP_GENTLE, K_SCALE, K_MIN, K_MAX,
+    K_TIP_GENTLE, K_TIP_PROBE, K_GAIN, K_MIN, K_MAX,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     APPROACH_HEIGHT, LIFT_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
@@ -262,6 +262,14 @@ def _tip_pos(finger, q):
     if finger == 'thumb':
         return np.array(FK_motor2thumbPos(q, 'IP', r))
     return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
+
+
+def _tip_force(finger, q, k_tip):
+    """Analytic VMC tip force at uniform per-finger task stiffness k_tip."""
+    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
+    K_task_now['palm'] = k_tip * np.eye(3)
+    return np.asarray(stiff_model.tip_force(
+        finger, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now))
 
 
 def _compute_row(q, q_dot, phase, k_tip, delta_mean, k_applied, converged):
