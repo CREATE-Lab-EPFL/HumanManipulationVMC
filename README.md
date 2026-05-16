@@ -108,15 +108,17 @@ joint convergence is recorded for each.
 
 ### ADAPT Hand — Grasp Adaptation — `ADAPT-StiffControl/`
 
-End-to-end closed-loop stiffness adaptation on the full hand: the hand senses
-the grasped object's compliance from fingertip displacement at a gentle stiffness,
-then ramps the tip stiffness to a value adapted to that displacement before
-lifting, holding, and placing the object back. Final integrative demonstration
-of the paper.
+End-to-end closed-loop stiffness adaptation on the full hand. The hand
+estimates object compliance with the same two-point algorithm used in
+`ProprioceptiveSensing/Hand` (settle at `K_TIP_GENTLE`, push at `K_TIP_PROBE`,
+finite difference of position and analytic VMC force), then matches its own
+fingertip stiffness to the object's via `k_applied = clip(K_GAIN / C_O_mean,
+K_MIN, K_MAX)` before lifting, holding, and placing the object back. Final
+integrative demonstration of the paper.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `grasp_adaptation.py` | hand | Sense δ_mean at gentle K, ramp to k_applied = clip(K_SCALE·δ_mean, K_MIN, K_MAX), lift / hold / place (`hard_obj` and `soft_obj`) |
+| `grasp_adaptation.py` | hand | Two-point compliance sensing → k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX), lift / hold / place (`hard_obj` and `soft_obj`) |
 | `plot_grasp_adaptation.ipynb` | hand | Plot grasp adaptation experiment |
 
 ---
