@@ -64,6 +64,9 @@ from hand_config import (
 )
 import rtde_control
 
+# =============================================================================
+# Collected data
+# =============================================================================
 COLLECTED_DATA = False
 
 B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
