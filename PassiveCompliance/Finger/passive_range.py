@@ -56,7 +56,7 @@ K_RANGE = list(dict.fromkeys([
 DAMPING = 0.003                    # [N·m·s/rad] VMC damping
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] wait after setting K and finger target before descent

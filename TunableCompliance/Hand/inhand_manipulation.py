@@ -52,7 +52,7 @@ import rtde_control
 K_UNIFORM    = 30.0    # [N/m]  uniform tip stiffness for baseline grasp
 K_HIGH       = 150.0   # [N/m]  stiff-side stiffness
 K_LOW        = 5.0     # [N/m]  compliant-side stiffness
-COLLECT_DATA = False
+COLLECTED_DATA = False
 
 # =============================================================================
 # Fixed parameters
@@ -239,14 +239,14 @@ def _csv_header():
 _csv_path   = None
 _csv_file   = None
 _csv_writer = None
-if COLLECT_DATA:
+if not COLLECTED_DATA:
     _csv_path   = _output_path()
     _csv_file   = open(_csv_path, 'w', newline='')
     _csv_writer = csv.writer(_csv_file)
     _csv_writer.writerow(_csv_header())
     controller.get_logger().info(f'Saving to: {_csv_path}')
 else:
-    controller.get_logger().info('Data collection disabled (COLLECT_DATA = False).')
+    controller.get_logger().info('Data collection disabled (COLLECTED_DATA = True).')
 
 # =============================================================================
 # Computation helpers
@@ -521,11 +521,11 @@ def control_callback():
 
     elif state == STATE_UNIFORM_REC:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'uniform', _current_k_dict, True))
         if elapsed >= RECORD_DURATION:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             _state_start = now
             _begin_k_ramp(K_DICT_UNIFORM, K_DICT_ASYM_A, STATE_ASYM_A_CONV)
@@ -559,11 +559,11 @@ def control_callback():
 
     elif state == STATE_ASYM_A_REC:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'asym_a', _current_k_dict, True))
         if elapsed >= RECORD_DURATION:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             _state_start = now
             _begin_k_ramp(K_DICT_ASYM_A, K_DICT_ASYM_B, STATE_ASYM_B_CONV)
@@ -597,11 +597,11 @@ def control_callback():
 
     elif state == STATE_ASYM_B_REC:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'asym_b', _current_k_dict, True))
         if elapsed >= RECORD_DURATION:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             controller.get_logger().info(
                 'All phases recorded. Releasing contact before returning home …')

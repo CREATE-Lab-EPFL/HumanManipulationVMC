@@ -73,7 +73,7 @@ N_CYCLES         = 10               # cycles recorded per stiffness value
 SETTLE_TIME      = 3.0              # [s]   wait before starting cycles
 REF_RAMP_DURATION = 0.1             # [s]   linear ramp duration for REST↔PRESS reference
 
-COLLECT_DATA = False
+COLLECTED_DATA = False
 
 # =============================================================================
 # Joint-space targets
@@ -164,7 +164,7 @@ def _control_loop():
         tau  += vmc_task.hand_torques(q, q_dot)
         controller.publish_torques(tau)
 
-        if COLLECT_DATA and step % LOG_EVERY == 0:
+        if not COLLECTED_DATA and step % LOG_EVERY == 0:
             with _lock:
                 _log_buffer.append(list(q) + list(q_dot) + list(tau))
         step += 1
@@ -209,7 +209,7 @@ def run_condition(label, stiffness_pairs):
 
         for cycle in range(1, N_CYCLES + 1):
             controller.get_logger().info(f'  cycle {cycle}/{N_CYCLES}')
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 f      = open(_output_path(label, k_lbl, cycle), 'w', newline='')
                 writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
                 writer.writeheader()

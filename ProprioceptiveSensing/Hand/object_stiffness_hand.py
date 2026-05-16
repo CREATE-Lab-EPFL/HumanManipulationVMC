@@ -44,7 +44,7 @@ import rtde_control
 # =============================================================================
 K_TIP_GENTLE = 10.0            # [N/m]  gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]  stiffness levels for the sweep
-COLLECT_DATA = False
+COLLECTED_DATA = False
 
 # =============================================================================
 # Fixed parameters
@@ -233,14 +233,14 @@ def _csv_header():
 _csv_path = None
 _csv_file = None
 _csv_writer = None
-if COLLECT_DATA:
+if not COLLECTED_DATA:
     _csv_path   = _output_path()
     _csv_file   = open(_csv_path, 'w', newline='')
     _csv_writer = csv.writer(_csv_file)
     _csv_writer.writerow(_csv_header())
     controller.get_logger().info(f'Saving to: {_csv_path}')
 else:
-    controller.get_logger().info('Data collection disabled (COLLECT_DATA = False).')
+    controller.get_logger().info('Data collection disabled (COLLECTED_DATA = True).')
 
 # =============================================================================
 # Computation helpers
@@ -508,11 +508,11 @@ def control_callback():
 
     elif state == STATE_GENTLE_REC:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'gentle', K_TIP_GENTLE, True))
         if elapsed >= RECORD_DURATION:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             _sweep_idx   = 0
             _state_start = now
@@ -549,11 +549,11 @@ def control_callback():
 
     elif state == STATE_SWEEP_REC:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'sweep', _current_k_tip, True))
         if elapsed >= RECORD_DURATION:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             _sweep_idx += 1
             if _sweep_idx >= len(K_TIP_SWEEP):

@@ -44,7 +44,7 @@ from StiffnessForceTracking.experiment_config import (
 import rtde_control
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 BENDING_STIFFNESS = 0.5  # [N·m/rad] local bending stiffness baseline
 
 # =============================================================================

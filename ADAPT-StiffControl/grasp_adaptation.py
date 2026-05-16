@@ -66,7 +66,7 @@ K_TIP_GENTLE = 10.0    # [N/m]  sensing stiffness
 K_SCALE      = 50.0    # [N/m·m⁻¹] k_applied = K_SCALE × δ_mean
 K_MIN        = 5.0     # [N/m]  lower bound on adapted stiffness
 K_MAX        = 150.0   # [N/m]  upper bound on adapted stiffness
-COLLECT_DATA = False
+COLLECTED_DATA = False
 
 # =============================================================================
 # Fixed parameters
@@ -264,14 +264,14 @@ def _csv_header():
 _csv_path   = None
 _csv_file   = None
 _csv_writer = None
-if COLLECT_DATA:
+if not COLLECTED_DATA:
     _csv_path   = _output_path()
     _csv_file   = open(_csv_path, 'w', newline='')
     _csv_writer = csv.writer(_csv_file)
     _csv_writer.writerow(_csv_header())
     controller.get_logger().info(f'Saving to: {_csv_path}')
 else:
-    controller.get_logger().info('Data collection disabled (COLLECT_DATA = False).')
+    controller.get_logger().info('Data collection disabled (COLLECTED_DATA = True).')
 
 # =============================================================================
 # Computation helpers
@@ -565,12 +565,12 @@ def control_callback():
             ]))
             _disp_accum += sample
             _disp_count += 1
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_writer.writerow(
                     _compute_row(q, q_dot, 'sense', K_TIP_GENTLE,
                                  sample, K_TIP_GENTLE, True))
         if elapsed >= SENSE_DURATION:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             _delta_mean = _disp_accum / max(1, _disp_count)
             _k_applied  = float(np.clip(K_SCALE * _delta_mean, K_MIN, K_MAX))
@@ -599,7 +599,7 @@ def control_callback():
         else:
             _converge_ticks = 0
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'adapt', _current_k,
                              _delta_mean, _k_applied, False))
@@ -615,19 +615,19 @@ def control_callback():
 
     elif state == STATE_LIFT:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'lift', _current_k,
                              _delta_mean, _k_applied, True))
 
     elif state == STATE_HOLD:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'hold', _current_k,
                              _delta_mean, _k_applied, True))
         if elapsed >= HOLD_TIME:
-            if COLLECT_DATA:
+            if not COLLECTED_DATA:
                 _csv_file.flush()
             controller.get_logger().info('Placing back …')
             _log_tick = 0
@@ -636,7 +636,7 @@ def control_callback():
 
     elif state == STATE_PLACE:
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'place', _current_k,
                              _delta_mean, _k_applied, True))

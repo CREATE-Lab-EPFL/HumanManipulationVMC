@@ -61,7 +61,7 @@ CART_OFFSET = 0.10
 EXPERIMENT_JOINT_STIFFNESS = 0.0
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0

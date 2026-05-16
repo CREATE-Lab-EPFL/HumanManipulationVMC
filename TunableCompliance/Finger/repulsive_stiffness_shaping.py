@@ -61,7 +61,7 @@ ACTIVATION_DEPTH = UR5_DESCENT / 2   # [m] UR5 displacement at which Gaussian ac
 STRENGTH_SWEEP = [0, 300, 600]         # [N/m] cart_strength values to sweep
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] settle wait (used twice per run: finger lift + contact bend)

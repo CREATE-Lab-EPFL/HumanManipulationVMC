@@ -53,7 +53,7 @@ K_MIN_SWEEP  = 0.05    # [N·m/rad] lower bound of random stiffness range
 K_MAX_SWEEP  = 1.00    # [N·m/rad] upper bound of random stiffness range
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME       = 3.0   # [s] wait after UR5 reaches pose

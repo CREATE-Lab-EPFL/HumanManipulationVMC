@@ -23,7 +23,7 @@ from KinematicsHand.FK_Hand import (
 from UR5_codes.UR5_readPose import UR5Receiver
 from hand_config import POSES, HOME_POSE, STIFFNESS, DAMPING
 
-COLLECT_DATA = False
+COLLECTED_DATA = False
 
 CONVERGE_VEL_THR = 0.02   # [rad/s]
 CONVERGE_HOLD    = 1.0    # [s]
@@ -184,11 +184,11 @@ state       = STATE_RAMP_TO_POSE
 pose_start  = time.time()
 state_start = pose_start
 
-if COLLECT_DATA:
+if not COLLECTED_DATA:
     csv_file, csv_writer, csv_path = setup_csv(1, POSES[0]["label"])
     print(f"[position_tracker] Saving to: {csv_path}", flush=True)
 else:
-    print("[position_tracker] Data collection disabled (COLLECT_DATA = False).", flush=True)
+    print("[position_tracker] Data collection disabled (COLLECTED_DATA = True).", flush=True)
 print(f"[position_tracker] Pose 1/{len(POSES)} — ramping to "
       f"'{POSES[0]['label']}' over {RAMP_DURATION:.1f} s", flush=True)
 
@@ -230,7 +230,7 @@ def control_callback():
         converged = (_converge_ticks >= _CONVERGE_TICKS) or (settle_elapsed >= CONVERGE_TIMEOUT)
 
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             csv_writer.writerow(
                 [f"{elapsed:.4f}", current_pose_idx + 1, int(_converged)]
                 + [f"{v:.6f}" for v in _actual_joints(q_motor)]
@@ -250,7 +250,7 @@ def control_callback():
         log_elapsed = now - log_start
 
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             csv_writer.writerow(
                 [f"{elapsed:.4f}", current_pose_idx + 1, 1]
                 + [f"{v:.6f}" for v in _actual_joints(q_motor)]
@@ -285,7 +285,7 @@ def control_callback():
                 _log_tick       = 0
                 _converge_ticks = 0
                 _converged      = False
-                if COLLECT_DATA:
+                if not COLLECTED_DATA:
                     csv_file, csv_writer, csv_path = setup_csv(
                         current_pose_idx + 1, POSES[current_pose_idx]["label"])
                     controller.get_logger().info(f"Saving to: {csv_path}")

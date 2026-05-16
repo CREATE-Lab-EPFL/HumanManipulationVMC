@@ -50,7 +50,7 @@ import rtde_control
 K_SOFT        = 5.0    # [N/m]  very compliant tip spring
 K_STIFF       = 150.0  # [N/m]  very stiff tip spring
 SOFT_DURATION = 2.0    # [s]    (adaptive) time at K_SOFT before switching
-COLLECT_DATA  = False
+COLLECTED_DATA  = False
 
 # =============================================================================
 # Fixed parameters
@@ -174,14 +174,14 @@ _FIELDNAMES = (
 _csv_path   = None
 _csv_file   = None
 _csv_writer = None
-if COLLECT_DATA:
+if not COLLECTED_DATA:
     _csv_path   = _output_path()
     _csv_file   = open(_csv_path, 'w', newline='')
     _csv_writer = csv.writer(_csv_file)
     _csv_writer.writerow(_FIELDNAMES)
     controller.get_logger().info(f'Saving to: {_csv_path}')
 else:
-    controller.get_logger().info('Data collection disabled (COLLECT_DATA = False).')
+    controller.get_logger().info('Data collection disabled (COLLECTED_DATA = True).')
 
 # =============================================================================
 # State machine
@@ -279,7 +279,7 @@ def control_callback():
                     f'Stiffened — k_tip = {K_STIFF:.0f} N/m')
 
         _log_tick += 1
-        if COLLECT_DATA and _log_tick % LOG_EVERY == 0:
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             phase = 'open' if not _hand_closed else (
                 'soft' if (CONDITION == 'adaptive' and not _stiffened) else 'closed')
             row = ([f'{now - _experiment_start:.4f}', phase, f'{_current_k_tip:.1f}'] +

@@ -65,7 +65,7 @@ K_MAX = 0.60    # [N·m/rad] stiffness at zero contact force
 ALPHA_SWEEP = [0, 0.3, 2.0]
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] settle wait (used twice per run: finger lift + contact bend)

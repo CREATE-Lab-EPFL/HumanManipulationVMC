@@ -43,7 +43,7 @@ PROFILES      = ['soft', 'hard']
 K_D0          = np.eye(3) * 0.05   # baseline stiffness added to the feed-forward term
 
 # Set to True once data is collected — runs protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 
 def load_profile(path, phase):

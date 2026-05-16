@@ -51,7 +51,7 @@ CART_OFFSET = 0.10                        # [m] cart application point offset
 EXPERIMENT_JOINT_STIFFNESS = 0.0          # [N·m/rad] keep cart-only behavior
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] wait after setting K and finger target before descent

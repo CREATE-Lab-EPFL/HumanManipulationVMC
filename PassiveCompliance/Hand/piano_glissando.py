@@ -62,7 +62,7 @@ B_ROT    = 0.001    # [N·m·s/rad] background joint damping
 N_RUNS      = 5
 SETTLE_TIME = 3.0   # [s]
 
-COLLECT_DATA = False
+COLLECTED_DATA = False
 
 # =============================================================================
 # Joint-space press pose
@@ -145,7 +145,7 @@ def _control_loop():
         tau  += vmc_task.hand_torques(q, q_dot)
         controller.publish_torques(tau)
 
-        if COLLECT_DATA and step % LOG_EVERY == 0:
+        if not COLLECTED_DATA and step % LOG_EVERY == 0:
             with _lock:
                 _log_buffer.append(list(q) + list(q_dot) + list(tau) + [_phase])
         step += 1
@@ -184,7 +184,7 @@ try:
             vmc_task.targets[_f] = PRESS_POS[_f].copy()
         time.sleep(1.0)   # let fingers reach press position before slide
 
-        if COLLECT_DATA:
+        if not COLLECTED_DATA:
             f      = open(_output_path(run), 'w', newline='')
             writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
             writer.writeheader()
