@@ -224,7 +224,7 @@ def _close_hand():
 
 
 def _start_transport():
-    global state, _arm_moving, _move_start
+    global _arm_moving, _move_start
     def _run():
         global state, _arm_moving
         arm.moveL(TRANSPORT_END.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
@@ -240,7 +240,7 @@ def _start_transport():
 _experiment_start = time.time()
 
 def control_callback():
-    global state, _arm_moving, _hand_closed, _stiffened, _close_time, _log_tick
+    global _hand_closed, _stiffened, _close_time, _log_tick
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()

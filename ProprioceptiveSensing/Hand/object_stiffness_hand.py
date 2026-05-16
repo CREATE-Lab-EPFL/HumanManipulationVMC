@@ -360,7 +360,7 @@ _k_ramp_after = None
 
 
 def _move_arm_async(target_pose, speed, done_state):
-    global state, _arm_moving, _state_start
+    global _arm_moving
     def _run():
         global state, _arm_moving, _state_start
         arm.moveL(target_pose.tolist(), speed, UR5_INIT_ACCELERATION)
@@ -448,7 +448,7 @@ def _step_k_tip_ramp(now):
 # =============================================================================
 
 def control_callback():
-    global state, _state_start, _arm_moving
+    global state, _state_start
     global _converge_ticks, _log_tick, _converged
     global _sweep_idx, _current_k_tip, _use_task_vmc
 
