@@ -47,21 +47,16 @@ from piano_config import (
     GLISSANDO_SPEED,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_ANGLE_DEG, PIANO_FINGERS_GLISSANDO,
+    K_CART, K_ROT, B_ROT, N_RUNS,
+    B_CART_GLISSANDO       as B_CART,
+    GLISSANDO_SETTLE_TIME  as SETTLE_TIME,
 )
 
 import rtde_control
 
 # =============================================================================
-# Experiment parameters
+# Collected data
 # =============================================================================
-K_CART   = 50.0     # [N/m]    fingertip stiffness during glissando
-B_CART   = 1.0      # [N·s/m]  fingertip damping
-K_ROT    = 0.1      # [N·m/rad] background joint stiffness
-B_ROT    = 0.001    # [N·m·s/rad] background joint damping
-
-N_RUNS      = 5
-SETTLE_TIME = 3.0   # [s]
-
 COLLECTED_DATA = False
 
 # =============================================================================
