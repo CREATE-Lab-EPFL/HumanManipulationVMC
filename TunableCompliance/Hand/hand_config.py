@@ -55,12 +55,12 @@ K_LOW     = 5.0     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.2     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
-INHAND_SETTLE_TIME      = 3.0   # [s]
-INHAND_RAMP_DURATION    = 5.0   # [s]   joint-target / K ramp duration
-INHAND_CONVERGE_VEL_THR = 0.02  # [rad/s]
-INHAND_CONVERGE_HOLD    = 1.0   # [s]
-INHAND_CONVERGE_TIMEOUT = 12.0  # [s]
-INHAND_RECORD_DURATION  = 5.0   # [s]
+SETTLE_TIME      = 3.0   # [s]
+RAMP_DURATION    = 5.0   # [s]   joint-target / K ramp duration
+CONVERGE_VEL_THR = 0.02  # [rad/s]
+CONVERGE_HOLD    = 1.0   # [s]
+CONVERGE_TIMEOUT = 12.0  # [s]
+RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
 K_SOFT        = 5.0    # [N/m]  very compliant tip spring

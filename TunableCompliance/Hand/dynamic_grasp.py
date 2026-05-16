@@ -41,29 +41,16 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, CONDITIONS,
+    K_SOFT, K_STIFF, SOFT_DURATION,
+    K_ROT, B_ROT, B_TIP, B_FLEX_DAMP,
+    APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
 )
 import rtde_control
 
 # =============================================================================
-# Custom parameters
+# Collected data
 # =============================================================================
-K_SOFT        = 5.0    # [N/m]  very compliant tip spring
-K_STIFF       = 150.0  # [N/m]  very stiff tip spring
-SOFT_DURATION = 2.0    # [s]    (adaptive) time at K_SOFT before switching
-COLLECTED_DATA  = False
-
-# =============================================================================
-# Fixed parameters
-# =============================================================================
-K_ROT       = 0.1     # [N·m/rad]  background joint stiffness
-B_ROT       = 0.0001  # [N·m·s/rad]
-B_TIP       = 0.001   # [N·s/m]    tip damping
-B_FLEX_DAMP = B_ROT
-
-# UR5 motion parameters
-APPROACH_SPEED  = 0.05   # [m/s]
-TOTAL_DISTANCE  = 0.40   # [m]   total X displacement
-CLOSE_DISTANCE  = 0.15   # [m]   X at which hand closes to PC1
+COLLECTED_DATA = False
 
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
