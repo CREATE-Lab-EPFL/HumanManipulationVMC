@@ -41,3 +41,33 @@ SIDE_B_SOFT = ['thumb', 'index', 'middle']
 
 # dynamic_grasp.py — available compliance conditions.
 CONDITIONS  = ['soft', 'stiff', 'adaptive']
+
+# ── Shared joint regulation (both experiments) ────────────────────────────────
+K_ROT       = 0.1       # [N·m/rad]    background joint stiffness
+B_ROT       = 0.0001    # [N·m·s/rad]  background joint damping
+B_TIP       = 0.001     # [N·s/m]      task-space damping
+B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
+
+# ── inhand_manipulation.py — stiffness levels ────────────────────────────────
+K_UNIFORM = 30.0    # [N/m]  baseline uniform tip stiffness
+K_HIGH    = 150.0   # [N/m]  stiff-side stiffness
+K_LOW     = 5.0     # [N/m]  compliant-side stiffness
+K_RETURN  = 0.2     # [N·m/rad]  joint stiffness for ramp back to HOME
+
+# ── inhand_manipulation.py — timing ──────────────────────────────────────────
+INHAND_SETTLE_TIME      = 3.0   # [s]
+INHAND_RAMP_DURATION    = 5.0   # [s]   joint-target / K ramp duration
+INHAND_CONVERGE_VEL_THR = 0.02  # [rad/s]
+INHAND_CONVERGE_HOLD    = 1.0   # [s]
+INHAND_CONVERGE_TIMEOUT = 12.0  # [s]
+INHAND_RECORD_DURATION  = 5.0   # [s]
+
+# ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
+K_SOFT        = 5.0    # [N/m]  very compliant tip spring
+K_STIFF       = 150.0  # [N/m]  very stiff tip spring
+SOFT_DURATION = 2.0    # [s]    (adaptive) time at K_SOFT before switching
+
+# ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
+APPROACH_SPEED  = 0.05   # [m/s]
+TOTAL_DISTANCE  = 0.40   # [m]   total X displacement
+CLOSE_DISTANCE  = 0.15   # [m]   X at which the hand closes to PC1

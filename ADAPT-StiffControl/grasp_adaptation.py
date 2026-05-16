@@ -56,40 +56,17 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
+    K_TIP_GENTLE, K_SCALE, K_MIN, K_MAX,
+    K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
+    APPROACH_HEIGHT, LIFT_HEIGHT,
+    SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
+    CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME,
 )
 import rtde_control
 
-# =============================================================================
-# Custom parameters
-# =============================================================================
-K_TIP_GENTLE = 10.0    # [N/m]  sensing stiffness
-K_SCALE      = 50.0    # [N/m·m⁻¹] k_applied = K_SCALE × δ_mean
-K_MIN        = 5.0     # [N/m]  lower bound on adapted stiffness
-K_MAX        = 150.0   # [N/m]  upper bound on adapted stiffness
 COLLECTED_DATA = False
 
-# =============================================================================
-# Fixed parameters
-# =============================================================================
-K_ROT       = 0.1     # [N·m/rad]
-B_ROT       = 0.0001  # [N·m·s/rad]
-B_TIP       = 0.001   # [N·s/m]
-K_RETURN    = 0.2     # [N·m/rad]
-B_FLEX_DAMP = B_ROT
-
-ROT_DAMPING_PER_K = B_ROT / K_ROT if K_ROT else 0.0
-B_RETURN          = K_RETURN * ROT_DAMPING_PER_K
-
-APPROACH_HEIGHT  = 0.10   # [m]   Z offset above grasp pose for safe approach
-LIFT_HEIGHT      = 0.08   # [m]   Z lift after adaptation
-SETTLE_TIME      = 2.0    # [s]   wait after UR5 reaches pose
-RAMP_DURATION    = 5.0    # [s]
-CONVERGE_VEL_THR = 0.02   # [rad/s]
-CONVERGE_HOLD    = 1.0    # [s]
-CONVERGE_TIMEOUT = 12.0   # [s]
-SENSE_DURATION   = 5.0    # [s]   sensing window (δ averaged over this)
-HOLD_TIME        = 3.0    # [s]   hold at lifted pose
-
+B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 # =============================================================================
