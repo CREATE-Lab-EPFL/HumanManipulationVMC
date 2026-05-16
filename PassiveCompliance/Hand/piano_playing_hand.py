@@ -49,6 +49,11 @@ from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_ANGLE_DEG, PIANO_FINGERS_PLAYING,
+    K_SWEEP, K_STIFF, K_SOFT,
+    K_ROT, B_ROT,
+    B_CART_PLAYING       as B_CART,
+    PLAYING_SETTLE_TIME  as SETTLE_TIME,
+    PRESS_FREQUENCY, N_CYCLES, REF_RAMP_DURATION,
 )
 
 import rtde_control
@@ -59,21 +64,8 @@ import rtde_control
 CONDITION = 'uniform'       # 'uniform' | 'heterogeneous'
 
 # =============================================================================
-# Experiment parameters
+# Collected data
 # =============================================================================
-K_SWEEP   = [10.0, 20.0, 100.0]    # [N/m] cart stiffness sweep (condition 1)
-K_STIFF   = 100.0                   # [N/m] stiff finger  (condition 2 — index)
-K_SOFT    = 10.0                    # [N/m] soft finger   (condition 2 — ring)
-
-B_CART    = 0.5                     # [N·s/m] task-space damping (both fingers)
-K_ROT     = 0.1                     # [N·m/rad] background joint stiffness
-B_ROT     = 0.001                   # [N·m·s/rad] background joint damping
-
-PRESS_FREQUENCY  = 1.0              # [Hz]  one full press-lift cycle per second
-N_CYCLES         = 10               # cycles recorded per stiffness value
-SETTLE_TIME      = 3.0              # [s]   wait before starting cycles
-REF_RAMP_DURATION = 0.1             # [s]   linear ramp duration for REST↔PRESS reference
-
 COLLECTED_DATA = False
 
 # =============================================================================
