@@ -372,7 +372,7 @@ _current_k_dict = {f: K_UNIFORM for f in FINGERTIPS}
 
 
 def _move_arm_async(target_pose, speed, done_state):
-    global state, _arm_moving, _state_start
+    global _arm_moving
     def _run():
         global state, _arm_moving, _state_start
         arm.moveL(target_pose.tolist(), speed, UR5_INIT_ACCELERATION)
@@ -448,7 +448,6 @@ def _begin_k_ramp(start_dict, end_dict, after_state):
 
 
 def _step_k_ramp(now):
-    global _current_k_dict
     alpha = min(1.0, (now - _k_ramp_t0) / RAMP_DURATION)
     for _f in FINGERTIPS:
         _current_k_dict[_f] = (1 - alpha) * _k_ramp_start[_f] + alpha * _k_ramp_end[_f]
@@ -460,7 +459,7 @@ def _step_k_ramp(now):
 # =============================================================================
 
 def control_callback():
-    global state, _state_start, _arm_moving
+    global state, _state_start
     global _converge_ticks, _log_tick, _converged
     global _use_task_vmc
 

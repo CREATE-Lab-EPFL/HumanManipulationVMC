@@ -202,7 +202,7 @@ def run_condition(label, stiffness_pairs):
     HALF = 0.5 / PRESS_FREQUENCY
     for k_vals, k_lbl in stiffness_pairs:
         _set_stiffness(k_vals)
-        _set_targets('rest')
+        _begin_target_ramp('rest')
         k_info = '  '.join(f'K_{f}={k}' for f, k in zip(PIANO_FINGERS_PLAYING, k_vals))
         controller.get_logger().info(f'[{label}] {k_info}  — settling ...')
         time.sleep(SETTLE_TIME)

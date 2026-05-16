@@ -194,11 +194,11 @@ try:
         with _lock:
             _log_buffer.clear()
 
-        controller.get_logger().info(f'  sliding forward ...')
+        controller.get_logger().info('  sliding forward ...')
         _phase = 'slide_forward'
         arm.moveL(list(GLISSANDO_END), GLISSANDO_SPEED, UR5_INIT_ACCEL)
 
-        controller.get_logger().info(f'  returning ...')
+        controller.get_logger().info('  returning ...')
         _phase = 'return'
         arm.moveL(list(UR5_POSE_GLISSANDO_START), GLISSANDO_SPEED, UR5_INIT_ACCEL)
 
