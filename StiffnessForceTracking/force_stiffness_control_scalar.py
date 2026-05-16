@@ -111,7 +111,7 @@ vmc.target = theta_ref_current
 controller.get_logger().info(f"Force Stiffness Control — Scalar baseline — {N_RUNS} runs planned")
 controller.get_logger().info(f"Reference: {FORCE_LEVELS} N, {STEP_HOLD} s/level, {TRACK_DURATION:.0f} s total")
 controller.get_logger().info(f"lr={LR_FORCE_STIFF}  K_fixed (diagonal)={np.diag(K_fixed)}")
-controller.get_logger().info(f"Update rule: theta_ref(i+1) = theta_ref(i) - lr*(f_meas - f_des)*1_3")
+controller.get_logger().info("Update rule: theta_ref(i+1) = theta_ref(i) - lr*(f_meas - f_des)*1_3")
 
 for topic, attr in [('/force', 'force_total'), ('/force_normal', 'force_normal'), ('/force_shear', 'force_shear')]:
     controller.create_subscription(

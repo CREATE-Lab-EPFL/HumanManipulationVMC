@@ -203,7 +203,7 @@ def control_callback():
             experiment_start_time = time.time()
             descent_target    = UR5_POSE.copy()
             descent_target[2] -= UR5_DESCENT
-            controller.get_logger().info(f'Descending ...')
+            controller.get_logger().info('Descending ...')
             move_arm_async(descent_target, UR5_DESCENT_SPEED, STATE_ASCEND)
             state = STATE_DESCEND
 
