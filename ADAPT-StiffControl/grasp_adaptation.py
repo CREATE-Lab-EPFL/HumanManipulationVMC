@@ -202,7 +202,7 @@ def _output_path():
 
 
 def _csv_header():
-    cols = ['time_s', 'phase', 'k_tip_Npm', 'delta_mean_m', 'k_applied_Npm', 'converged']
+    cols = ['time_s', 'phase', 'k_tip_Npm', 'C_O_m_per_N', 'k_applied_Npm', 'converged']
     for i in range(15):
         cols.append(f'q_motor_{i}_rad')
     for i in range(15):
@@ -272,9 +272,9 @@ def _tip_force(finger, q, k_tip):
         finger, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now))
 
 
-def _compute_row(q, q_dot, phase, k_tip, delta_mean, k_applied, converged):
+def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
     row = [f'{time.time() - _experiment_start:.4f}', phase,
-           f'{k_tip:.2f}', f'{delta_mean:.6f}', f'{k_applied:.2f}', int(converged)]
+           f'{k_tip:.2f}', f'{C_O:.6e}', f'{k_applied:.2f}', int(converged)]
 
     row += [f'{v:.6f}' for v in q]
     row += [f'{v:.6f}' for v in q_dot]
@@ -351,17 +351,20 @@ STATE_APPROACH    = 0
 STATE_DESCEND     = 1
 STATE_SETTLE_ARM  = 2
 STATE_RAMP_CLOSE  = 3
-STATE_SENSE_CONV  = 4
-STATE_SENSE_REC   = 5
-STATE_ADAPT_RAMP  = 6
-STATE_ADAPT_CONV  = 7
-STATE_LIFT        = 8
-STATE_HOLD        = 9
-STATE_PLACE       = 10
-STATE_UNLOAD      = 11
-STATE_RAMP_HOME   = 12
-STATE_RETURN      = 13
-STATE_DONE        = 14
+STATE_SENSE_CONV  = 4    # convergence at K_TIP_GENTLE
+STATE_SENSE_REC   = 5    # record pos_gentle, F_gentle
+STATE_PROBE_RAMP  = 6    # ramp K_TIP_GENTLE → K_TIP_PROBE
+STATE_PROBE_CONV  = 7    # convergence at K_TIP_PROBE
+STATE_PROBE_REC   = 8    # record pos_probe, F_probe; compute k_applied
+STATE_ADAPT_RAMP  = 9    # ramp K_TIP_PROBE → k_applied
+STATE_ADAPT_CONV  = 10
+STATE_LIFT        = 11
+STATE_HOLD        = 12
+STATE_PLACE       = 13
+STATE_UNLOAD      = 14
+STATE_RAMP_HOME   = 15
+STATE_RETURN      = 16
+STATE_DONE        = 17
 
 state             = STATE_APPROACH
 _state_start      = time.time()
@@ -383,9 +386,15 @@ _k_ramp_end   = None
 
 _current_k    = K_TIP_GENTLE
 _k_applied    = K_TIP_GENTLE
-_delta_mean   = 0.0
-_disp_accum   = 0.0
-_disp_count   = 0
+_C_O_mean     = 0.0
+
+# Per-finger steady-state accumulators for the two-point compliance estimate.
+_pos_gentle_sum   = {f: np.zeros(3) for f in FINGERTIPS}
+_force_gentle_sum = {f: np.zeros(3) for f in FINGERTIPS}
+_pos_probe_sum    = {f: np.zeros(3) for f in FINGERTIPS}
+_force_probe_sum  = {f: np.zeros(3) for f in FINGERTIPS}
+_sense_count      = 0
+_probe_count      = 0
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -478,8 +487,8 @@ def _step_k_ramp(now):
 def control_callback():
     global state, _state_start
     global _converge_ticks, _log_tick, _converged
-    global _use_task_vmc, _k_applied, _delta_mean
-    global _disp_accum, _disp_count
+    global _use_task_vmc, _k_applied, _C_O_mean
+    global _sense_count, _probe_count
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -534,39 +543,108 @@ def control_callback():
             _converge_ticks = 0
         if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
             if not _converged:
-                _converged    = True
-                _log_tick     = 0
-                _disp_accum   = 0.0
-                _disp_count   = 0
-                _state_start  = now
-                state         = STATE_SENSE_REC
+                _converged   = True
+                _log_tick    = 0
+                _sense_count = 0
+                for _f in FINGERTIPS:
+                    _pos_gentle_sum[_f]   = np.zeros(3)
+                    _force_gentle_sum[_f] = np.zeros(3)
+                _state_start = now
+                state        = STATE_SENSE_REC
                 controller.get_logger().info(
                     f'Sensing converged at {elapsed:.1f} s. '
-                    f'Recording {SENSE_DURATION:.1f} s …')
+                    f'Recording gentle-point ({K_TIP_GENTLE} N/m) for '
+                    f'{SENSE_DURATION:.1f} s …')
 
     elif state == STATE_SENSE_REC:
         _log_tick += 1
-        # Accumulate mean displacement across all five fingertips.
         if _log_tick % LOG_EVERY == 0:
-            sample = float(np.mean([
-                np.linalg.norm(_tip_pos(_f, q) - D_REF[_f]) for _f in FINGERTIPS
-            ]))
-            _disp_accum += sample
-            _disp_count += 1
+            for _f in FINGERTIPS:
+                _pos_gentle_sum[_f]   += _tip_pos(_f, q)
+                _force_gentle_sum[_f] += _tip_force(_f, q, K_TIP_GENTLE)
+            _sense_count += 1
             if not COLLECTED_DATA:
                 _csv_writer.writerow(
                     _compute_row(q, q_dot, 'sense', K_TIP_GENTLE,
-                                 sample, K_TIP_GENTLE, True))
+                                 0.0, K_TIP_GENTLE, True))
         if elapsed >= SENSE_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
-            _delta_mean = _disp_accum / max(1, _disp_count)
-            _k_applied  = float(np.clip(K_SCALE * _delta_mean, K_MIN, K_MAX))
             controller.get_logger().info(
-                f'δ_mean = {_delta_mean * 1e3:.2f} mm → '
+                f'Gentle point recorded ({_sense_count} samples). '
+                f'Ramping K {K_TIP_GENTLE} → {K_TIP_PROBE} N/m …')
+            _begin_k_ramp(K_TIP_GENTLE, K_TIP_PROBE)
+            _converge_ticks = 0
+            _converged      = False
+            _log_tick       = 0
+            _state_start    = now
+            state           = STATE_PROBE_RAMP
+
+    elif state == STATE_PROBE_RAMP:
+        if _step_k_ramp(now):
+            _converge_ticks = 0
+            _converged      = False
+            _log_tick       = 0
+            _state_start    = now
+            state           = STATE_PROBE_CONV
+
+    elif state == STATE_PROBE_CONV:
+        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
+            _converge_ticks += 1
+        else:
+            _converge_ticks = 0
+        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
+            if not _converged:
+                _converged   = True
+                _log_tick    = 0
+                _probe_count = 0
+                for _f in FINGERTIPS:
+                    _pos_probe_sum[_f]   = np.zeros(3)
+                    _force_probe_sum[_f] = np.zeros(3)
+                _state_start = now
+                state        = STATE_PROBE_REC
+                controller.get_logger().info(
+                    f'Probe converged at {elapsed:.1f} s. '
+                    f'Recording probe-point ({K_TIP_PROBE} N/m) for '
+                    f'{SENSE_DURATION:.1f} s …')
+
+    elif state == STATE_PROBE_REC:
+        _log_tick += 1
+        if _log_tick % LOG_EVERY == 0:
+            for _f in FINGERTIPS:
+                _pos_probe_sum[_f]   += _tip_pos(_f, q)
+                _force_probe_sum[_f] += _tip_force(_f, q, K_TIP_PROBE)
+            _probe_count += 1
+            if not COLLECTED_DATA:
+                _csv_writer.writerow(
+                    _compute_row(q, q_dot, 'probe', K_TIP_PROBE,
+                                 0.0, K_TIP_PROBE, True))
+        if elapsed >= SENSE_DURATION:
+            if not COLLECTED_DATA:
+                _csv_file.flush()
+
+            n_g = max(1, _sense_count)
+            n_p = max(1, _probe_count)
+            C_O_list = []
+            for _f in FINGERTIPS:
+                d_pos = _pos_probe_sum[_f] / n_p - _pos_gentle_sum[_f] / n_g
+                d_F   = _force_probe_sum[_f] / n_p - _force_gentle_sum[_f] / n_g
+                nF    = float(np.linalg.norm(d_F))
+                if nF > 1e-9:
+                    C_O_list.append(float(np.linalg.norm(d_pos) / nF))
+            if C_O_list:
+                _C_O_mean = float(np.mean(C_O_list))
+                k_raw     = K_GAIN / _C_O_mean if _C_O_mean > 1e-12 else K_MAX
+            else:
+                _C_O_mean = 0.0
+                k_raw     = K_MIN
+            _k_applied = float(np.clip(k_raw, K_MIN, K_MAX))
+            controller.get_logger().info(
+                f'C_O_mean = {_C_O_mean * 1e3:.3f} mm/N '
+                f'(K_O ≈ {1.0 / _C_O_mean if _C_O_mean > 1e-12 else float("inf"):.1f} N/m) → '
                 f'k_applied = {_k_applied:.1f} N/m '
-                f'(K_SCALE × δ / clip [{K_MIN}, {K_MAX}])')
-            _begin_k_ramp(K_TIP_GENTLE, _k_applied)
+                f'(K_GAIN / C_O / clip [{K_MIN}, {K_MAX}])')
+            _begin_k_ramp(K_TIP_PROBE, _k_applied)
             _converge_ticks = 0
             _converged      = False
             _log_tick       = 0
@@ -590,7 +668,7 @@ def control_callback():
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'adapt', _current_k,
-                             _delta_mean, _k_applied, False))
+                             _C_O_mean, _k_applied, False))
         if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
             if not _converged:
                 _converged   = True
@@ -606,14 +684,14 @@ def control_callback():
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'lift', _current_k,
-                             _delta_mean, _k_applied, True))
+                             _C_O_mean, _k_applied, True))
 
     elif state == STATE_HOLD:
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'hold', _current_k,
-                             _delta_mean, _k_applied, True))
+                             _C_O_mean, _k_applied, True))
         if elapsed >= HOLD_TIME:
             if not COLLECTED_DATA:
                 _csv_file.flush()
@@ -627,7 +705,7 @@ def control_callback():
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
                 _compute_row(q, q_dot, 'place', _current_k,
-                             _delta_mean, _k_applied, True))
+                             _C_O_mean, _k_applied, True))
 
     elif state == STATE_UNLOAD:
         controller.get_logger().info('Releasing grasp …')
@@ -661,7 +739,7 @@ controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
     f'Grasp adaptation | object: {OBJECT_NAME} | '
     f'K_TIP_GENTLE = {K_TIP_GENTLE} N/m | '
-    f'K_SCALE = {K_SCALE} | '
+    f'K_TIP_PROBE = {K_TIP_PROBE} N/m | K_GAIN = {K_GAIN} | '
     f'k_applied ∈ [{K_MIN}, {K_MAX}] N/m')
 
 try:
