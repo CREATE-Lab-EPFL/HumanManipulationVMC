@@ -21,15 +21,16 @@ from KinematicsHand.FK_Hand import (
     FK_motor2wrist, FK_motor2thumb, FK_motor2finger, FK_motor2spread,
 )
 from UR5_codes.UR5_readPose import UR5Receiver
-from hand_config import POSES, HOME_POSE, STIFFNESS, DAMPING
+from hand_config import (
+    POSES, HOME_POSE, STIFFNESS, DAMPING,
+    CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT,
+    LOG_DURATION, RAMP_DURATION,
+)
 
+# =============================================================================
+# Collected data
+# =============================================================================
 COLLECTED_DATA = False
-
-CONVERGE_VEL_THR = 0.02   # [rad/s]
-CONVERGE_HOLD    = 1.0    # [s]
-CONVERGE_TIMEOUT = 10.0   # [s]
-LOG_DURATION     = 8.0    # [s]
-RAMP_DURATION    = 5.0    # [s]
 
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))   # ~30 Hz
 
