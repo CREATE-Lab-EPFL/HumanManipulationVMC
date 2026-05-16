@@ -45,6 +45,7 @@ from VMCHand.HandVMCTaskSpace  import VMC as TaskVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from KinematicsHand.FK_Hand    import FK_motor2fingerPos
 from ModelIDHand.motor_config  import MOTOR_SLICES
+from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_ANGLE_DEG, PIANO_FINGERS_PLAYING,
@@ -114,6 +115,7 @@ def _output_path(condition, k_label, cycle):
 rclpy.init()
 controller    = HandController()
 grav_fric_lim = GravFricLim()
+recv          = UR5Receiver()
 
 vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
@@ -159,14 +161,15 @@ def _control_loop():
         _step_target_ramp()
         q     = controller.get_joint_positions()
         q_dot = controller.get_joint_velocities()
-        tau   = grav_fric_lim.hand_torques(q, q_dot)
-        tau  += vmc_joint.hand_torques(q, q_dot)
-        tau  += vmc_task.hand_torques(q, q_dot)
-        controller.publish_torques(tau)
+        tau_vmc  = vmc_joint.hand_torques(q, q_dot)
+        tau_vmc += vmc_task.hand_torques(q, q_dot)
+        tau_comp = grav_fric_lim.compute_compensation_torques(
+            q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
+        controller.publish_torques(tau_vmc + tau_comp)
 
         if not COLLECTED_DATA and step % LOG_EVERY == 0:
             with _lock:
-                _log_buffer.append(list(q) + list(q_dot) + list(tau))
+                _log_buffer.append(list(q) + list(q_dot) + list(tau_vmc + tau_comp))
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
 
@@ -253,5 +256,6 @@ finally:
     _running = False
     ctrl_thread.join(timeout=1.0)
     arm.disconnect()
+    recv.disconnect()
     controller.destroy_node()
     rclpy.shutdown()

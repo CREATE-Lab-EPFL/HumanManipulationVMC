@@ -39,6 +39,7 @@ from VMCHand.HandVMCTaskSpace  import VMC as TaskVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from KinematicsHand.FK_Hand    import FK_motor2fingerPos
 from ModelIDHand.motor_config  import MOTOR_SLICES
+from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_GLISSANDO_START,
     GLISSANDO_DIRECTION,
@@ -49,7 +50,6 @@ from piano_config import (
 )
 
 import rtde_control
-import rtde_receive
 
 # =============================================================================
 # Experiment parameters
@@ -89,9 +89,6 @@ _dir6     = np.concatenate([_dir_unit, [0.0, 0.0, 0.0]])
 
 GLISSANDO_END = UR5_POSE_GLISSANDO_START + _dir6 * GLISSANDO_DISTANCE
 
-# Slide duration [s]
-GLISSANDO_DURATION = GLISSANDO_DISTANCE / GLISSANDO_SPEED
-
 # =============================================================================
 # Logging
 # =============================================================================
@@ -114,6 +111,7 @@ def _output_path(run):
 rclpy.init()
 controller    = HandController()
 grav_fric_lim = GravFricLim()
+recv          = UR5Receiver()
 
 vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
@@ -140,14 +138,15 @@ def _control_loop():
     while _running:
         q     = controller.get_joint_positions()
         q_dot = controller.get_joint_velocities()
-        tau   = grav_fric_lim.hand_torques(q, q_dot)
-        tau  += vmc_joint.hand_torques(q, q_dot)
-        tau  += vmc_task.hand_torques(q, q_dot)
-        controller.publish_torques(tau)
+        tau_vmc  = vmc_joint.hand_torques(q, q_dot)
+        tau_vmc += vmc_task.hand_torques(q, q_dot)
+        tau_comp = grav_fric_lim.compute_compensation_torques(
+            q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
+        controller.publish_torques(tau_vmc + tau_comp)
 
         if not COLLECTED_DATA and step % LOG_EVERY == 0:
             with _lock:
-                _log_buffer.append(list(q) + list(q_dot) + list(tau) + [_phase])
+                _log_buffer.append(list(q) + list(q_dot) + list(tau_vmc + tau_comp) + [_phase])
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
 
@@ -161,8 +160,7 @@ def _flush(writer):
 # =============================================================================
 # Protocol
 # =============================================================================
-arm  = rtde_control.RTDEControlInterface(UR5_IP)
-recv = rtde_receive.RTDEReceiveInterface(UR5_IP)
+arm = rtde_control.RTDEControlInterface(UR5_IP)
 
 arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
@@ -212,5 +210,6 @@ finally:
     _running = False
     ctrl_thread.join(timeout=1.0)
     arm.disconnect()
+    recv.disconnect()
     controller.destroy_node()
     rclpy.shutdown()
