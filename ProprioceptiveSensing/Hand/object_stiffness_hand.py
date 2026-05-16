@@ -35,36 +35,20 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
+    K_TIP_GENTLE, K_TIP_SWEEP,
+    K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
+    SETTLE_TIME, RAMP_DURATION,
+    CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT, RECORD_DURATION,
 )
 from UR5_codes.UR5_readPose import UR5Receiver
 import rtde_control
 
 # =============================================================================
-# Custom parameters
+# Collected data
 # =============================================================================
-K_TIP_GENTLE = 10.0            # [N/m]  gentle-grasp stiffness (baseline)
-K_TIP_SWEEP  = [50, 100, 150]  # [N/m]  stiffness levels for the sweep
 COLLECTED_DATA = False
 
-# =============================================================================
-# Fixed parameters
-# =============================================================================
-K_ROT       = 0.1     # [N·m/rad]
-B_ROT       = 0.0001  # [N·m·s/rad]
-B_TIP       = 0.001   # [N·s/m]
-K_RETURN    = 0.2     # [N·m/rad]
-B_FLEX_DAMP = B_ROT
-
-ROT_DAMPING_PER_K = B_ROT / K_ROT if K_ROT else 0.0
-B_RETURN          = K_RETURN * ROT_DAMPING_PER_K
-
-SETTLE_TIME      = 3.0   # [s]
-RAMP_DURATION    = 5.0   # [s]
-CONVERGE_VEL_THR = 0.02  # [rad/s]
-CONVERGE_HOLD    = 1.0   # [s]
-CONVERGE_TIMEOUT = 12.0  # [s]
-RECORD_DURATION  = 5.0   # [s]
-
+B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 
