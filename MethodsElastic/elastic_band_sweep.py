@@ -42,7 +42,7 @@ import rtde_receive
 # Experiment parameters
 # =============================================================================
 SETTLE_TIME    = 3.0    # [s]
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 SHIFT_TPU      = 0.015  # [m] — start above UR5_POSE wrt PassiveCompliance
 SPRING         = 'hard' # 'soft' or 'hard'
 

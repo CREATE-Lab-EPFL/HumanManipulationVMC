@@ -56,7 +56,7 @@ DAMPING    = 0.003   # [N·m·s/rad]
 SETTLE_TIME = 3.0    # [s]
 
 # Set to True once data is collected — runs protocol without saving files.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 # ── Experiment queue ──────────────────────────────────────────────────────────
 K_VALUES = [K_SOFT, K_HARD]

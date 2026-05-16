@@ -56,7 +56,7 @@ CART_OFFSET                = 0.10    # [m]       cart application point offset a
 ANGLE_SWEEP  = [0, -30, -60]              # [deg] cart angles from Z in the Y-Z plane
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] settle wait (used twice per run: finger lift + contact bend)

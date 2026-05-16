@@ -47,7 +47,7 @@ K_SWEEP = [0.1, 0.2, 0.6]   # [N·m/rad] stiffness values to sweep
 DAMPING = 0.003                    # [N·m·s/rad] VMC damping
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] wait after setting K and finger target before descent

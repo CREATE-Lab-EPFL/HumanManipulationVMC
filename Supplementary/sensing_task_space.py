@@ -73,7 +73,7 @@ RNG_SEED = 42
 CONFIGS = ['task_space', 'combined_space']
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 def _diag3(value: float) -> np.ndarray:
     return np.diag([value, value, value])

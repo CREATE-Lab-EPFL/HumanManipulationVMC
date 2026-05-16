@@ -88,7 +88,7 @@ D_NORM      = 0.010          # [m] normalisation displacement
 ORDER_SWEEP = [0, 1, 2]         # polynomial orders
 
 # Set to True once data is collected — runs the protocol without saving files.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s] settle wait (lift + contact settle)
