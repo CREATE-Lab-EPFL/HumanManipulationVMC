@@ -8,6 +8,13 @@ import numpy as np
 STIFFNESS = 0.6    # [N·m/rad]
 DAMPING   = 0.001  # [N·m·s/rad]
 
+# ── Timing ────────────────────────────────────────────────────────────────────
+CONVERGE_VEL_THR = 0.02   # [rad/s]
+CONVERGE_HOLD    = 1.0    # [s]
+CONVERGE_TIMEOUT = 10.0   # [s]
+LOG_DURATION     = 8.0    # [s]
+RAMP_DURATION    = 5.0    # [s]
+
 # ── Target poses (Santello et al. 1998) ───────────────────────────────────────
 POSES = [
     {   # PC1: power grasp (~50% variance) — global flexion, thumb opposition
