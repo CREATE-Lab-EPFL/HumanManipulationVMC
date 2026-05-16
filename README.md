@@ -48,11 +48,12 @@ outward (absorbs noise/impacts), inward (provides adaptability).
 
 Shows that VMC enables real-time stiffness modulation across the full soft-to-rigid
 spectrum, adapting to contact events and object properties — without hardware changes.
-Includes single-finger characterisation and a full-hand emergence-of-grasp study.
+Includes single-finger characterisation and full-hand in-hand manipulation and
+dynamic-grasp studies.
 
 **Finger/** | `stiffening_contact.py`, `repulsive_stiffness_shaping.py`
 
-**Hand/** | `emergent_grasps.py` — finger postures emerging from controller configuration across objects
+**Hand/** | `inhand_manipulation.py` — in-hand reorientation via asymmetric tip stiffness · `dynamic_grasp.py` — bottle transport under soft / stiff / adaptive (soft→stiff) tip stiffness
 
 ---
 
@@ -105,16 +106,18 @@ joint convergence is recorded for each.
 
 ---
 
-### ADAPT Hand — Compliance Matching Demo — `ADAPT-StiffControl/`
+### ADAPT Hand — Grasp Adaptation — `ADAPT-StiffControl/`
 
-End-to-end closed-loop stiffness control on the full hand: virtual stiffness is
-adapted online to match the compliance of the grasped object. This is the final
-integrative demonstration of the paper.
+End-to-end closed-loop stiffness adaptation on the full hand: the hand senses
+the grasped object's compliance from fingertip displacement at a gentle stiffness,
+then ramps the tip stiffness to a value adapted to that displacement before
+lifting, holding, and placing the object back. Final integrative demonstration
+of the paper.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `compliance_matching_demo.py` | hand | Online K_d adaptation to match object compliance: stiffening on contact, softening on crumpling |
-| `plot_compliance_matching_demo.ipynb` | hand | Plot compliance matching demo experiment |
+| `grasp_adaptation.py` | hand | Sense δ_mean at gentle K, ramp to k_applied = clip(K_SCALE·δ_mean, K_MIN, K_MAX), lift / hold / place (`hard_obj` and `soft_obj`) |
+| `plot_grasp_adaptation.ipynb` | hand | Plot grasp adaptation experiment |
 
 ---
 
@@ -239,7 +242,7 @@ python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
 
 # Hand experiments
 python3 hand_go_home.py
-python3 ADAPT-StiffControl/compliance_matching_demo.py
+python3 ADAPT-StiffControl/grasp_adaptation.py
 ```
 
 All scripts must be run from the **repository root** so that module imports resolve correctly.

@@ -38,8 +38,7 @@ PassiveCompliance/
 |------|-------------|
 | `piano_playing_hand.py` | Conditions 1 & 2: rhythmic index+ring pressing with uniform or heterogeneous cart stiffness |
 | `piano_glissando.py` | Condition 3: index+middle glissando slide — UR5 sweeps across keys while fingers stay pressed |
-| `plot_piano_playing_hand.ipynb` | Plot piano playing hand experiments (conditions 1 & 2) |
-| `plot_piano_glissando.ipynb` | Plot glissando experiment (condition 3) |
+| `plot_piano.ipynb` | Plot piano playing and glissando experiments |
 | `HelperPianoMIDI/midi_publisher.py` | Physical keyboard → ROS2 MIDI topics |
 | `HelperPianoMIDI/midi_subscriber.py` | Subscribe and print MIDI events |
 | `HelperPianoMIDI/piano_config.py` | UR5 poses and shared constants for piano experiments |

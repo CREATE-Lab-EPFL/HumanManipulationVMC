@@ -45,7 +45,7 @@ HALF_DESCENT = 0.01                     # [m] = UR5_DESCENT / 2
 POSE_OFFSETS = [+0.005, 0.0, -0.005]   # [m] Z offsets relative to UR5_POSE
 
 # Set to True once all data is collected — runs the protocol without saving files.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME = 3.0   # [s]
