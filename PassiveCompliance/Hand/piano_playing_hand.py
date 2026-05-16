@@ -177,11 +177,6 @@ def _set_stiffness(k_vals):
     for _f, k in zip(PIANO_FINGERS_PLAYING, k_vals):
         vmc_task.springs[_f].stiffness = np.full(3, k)
 
-def _set_targets(phase):
-    pos = PRESS_POS if phase == 'press' else REST_POS
-    for _f in PIANO_FINGERS_PLAYING:
-        vmc_task.targets[_f] = pos[_f].copy()
-
 
 def _begin_target_ramp(phase):
     global _ramp_active, _ramp_t0, _ramp_start, _ramp_end

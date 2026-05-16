@@ -3,7 +3,8 @@
 Shows that VMC enables real-time stiffness modulation across the full soft-to-rigid
 spectrum, adapting to task phases (approach, hold, release), object properties,
 and contact events — all without hardware changes and while preserving passivity.
-Includes single-finger characterisation and a full-hand emergence-of-grasp study.
+Includes single-finger characterisation and full-hand in-hand manipulation and
+dynamic-grasp studies.
 
 ## Structure
 
@@ -30,5 +31,7 @@ TunableCompliance/
 
 | File | Description |
 |------|-------------|
-| `emergent_grasps.py` | Finger postures emerging from controller configuration (virtual elements, stiffening on/off) across objects |
-| `plot_emergent_grasps.ipynb` | Plot emergent grasps experiment |
+| `inhand_manipulation.py` | In-hand object reorientation via asymmetric tip stiffness across hand sides (UNIFORM / ASYM_A / ASYM_B) |
+| `dynamic_grasp.py` | Dynamic grasping of a bottle while UR5 transports it; three conditions: `soft`, `stiff`, `adaptive` (soft → stiff after a delay) |
+| `plot_emergent_grasps.ipynb` | Plot in-hand manipulation and dynamic grasp experiments |
+| `hand_config.py` | UR5 poses, PC1 / home joint targets, asymmetric-side groupings, condition list |
