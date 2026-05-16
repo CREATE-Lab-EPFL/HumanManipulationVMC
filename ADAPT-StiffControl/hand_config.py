@@ -8,8 +8,8 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'object_1': np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656]),
-    'object_2': np.array([-0.1405, 0.5500, 0.2594, -0.1861, -0.027, -2.7656]),
+    'hard_obj': np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656]),
+    'soft_obj': np.array([-0.1405, 0.5500, 0.2594, -0.1861, -0.027, -2.7656]),
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
@@ -34,4 +34,4 @@ HOME_FINGER = np.zeros(3)
 
 # ── Experiment lists ───────────────────────────────────────────────────────────
 FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
-OBJECTS    = ['object_1', 'object_2']
+OBJECTS    = ['hard_obj', 'soft_obj']

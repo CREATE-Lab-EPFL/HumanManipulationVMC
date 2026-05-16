@@ -12,7 +12,7 @@ See [`HAND_VMC_DOCUMENTATION.md`](HAND_VMC_DOCUMENTATION.md) for the full API re
 Main ROS2 control node.
 - Subscribes: `/joint_positions` (deg), `/joint_velocities` (deg/s)
 - Publishes: `/goal_torque` (N·m)
-- Converts between hardware motor ordering and software ordering (see `motor_config.py`).
+- Converts between hardware motor ordering and software ordering (see `ModelIDHand/motor_config.py`).
 
 ### `HandGravFricLim.py`
 
