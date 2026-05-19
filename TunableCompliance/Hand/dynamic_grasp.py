@@ -42,7 +42,7 @@ from hand_config import (
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, CONDITIONS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
-    K_ROT, B_ROT, B_TIP, B_FLEX_DAMP,
+    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
 )
 import rtde_control
@@ -200,9 +200,8 @@ def _close_hand():
     vmc_joint.index_target      = PC1_INDEX.copy()
     vmc_joint.middle_target     = PC1_MIDDLE.copy()
     vmc_joint.ring_pinky_target = PC1_RING.copy()
-    # Zero flexion joint stiffness — task spring takes over.
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.zeros(3)
+        vmc_joint.stiffness[_f] = np.full(3, K_ROT_FLEX)
         vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
     _set_task_stiffness(K_INIT)
 
