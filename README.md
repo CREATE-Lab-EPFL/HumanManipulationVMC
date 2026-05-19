@@ -25,7 +25,9 @@ outward (absorbs noise and impacts), inward (provides adaptability).
 
 The scripts sweep virtual stiffness settings while an external motion applies a
 controlled displacement. Logged tip force and displacement yield force-displacement
-curves across contact directions and starting poses.
+curves across contact directions and starting poses. The analysis relates virtual
+spring settings to apparent compliance in task space and highlights how direction
+and pose change the measured response.
 
 **Finger/** - single finger testbed
 
@@ -55,7 +57,17 @@ spectrum, adapting to contact events and object properties — without hardware 
 Includes single-finger characterisation and full-hand in-hand manipulation and
 dynamic-grasp studies.
 
+Finger controllers detect contact from deformation and force estimates, then
+switch stiffness schedules in real time. The repulsive shaping variant adds a
+nonlinear task-space element to increase apparent stiffness above baseline while
+preserving passivity.
+
 **Finger/** | `stiffening_contact.py`, `repulsive_stiffness_shaping.py` - contact-triggered stiffness updates and repulsive shaping in task space
+
+Hand experiments use asymmetric fingertip stiffness patterns to bias object
+motion and a schedule-based controller to transition between soft and stiff
+phases during transport. Logged joint state and task events support comparison
+between uniform and asymmetric conditions.
 
 **Hand/** | `inhand_manipulation.py` - in-hand reorientation via asymmetric tip stiffness; `dynamic_grasp.py` - dynamic grasping during UR5 transport under soft, stiff, and adaptive schedules
 
@@ -68,7 +80,14 @@ alone — no external force sensors. The deformation that absorbs impacts encode
 force. Sensing sensitivity is maximised when virtual compliance approximately
 matches object compliance.
 
+The sensing pipeline infers contact force from virtual spring deformation and
+kinematics. Finger experiments identify motor efficiency to map commanded torque
+to contact force, then validate the estimate against external measurements.
+
 **Finger/** | `finger_eta.py` - motor efficiency identification and force estimation validation
+
+Hand experiments squeeze objects with two compliance settings and use an additive
+compliance model to solve for object stiffness without external sensors.
 
 **Hand/** | `object_stiffness_hand.py` - object stiffness estimation by squeezing with paired compliance settings
 
@@ -80,6 +99,11 @@ Model-based closed-loop control over the full force-displacement space.
 Independent optimization pathways:
 - **Reference modulation** - gradient descent on d_ref to move the operating point while keeping stiffness independent
 - **Stiffness modulation** - gradient descent on K_d to change the slope of the force-displacement response
+
+Controllers compute gradients from the stiffness model and Jacobians, then update
+their parameters to track a desired force profile. Closed-loop variants use the
+load cell as the feedback signal; open-loop variants replace the feedback with
+model-predicted tip force for comparison.
 
 | File | Platform | Description |
 |------|----------|-------------|
@@ -100,8 +124,10 @@ Independent optimization pathways:
 ### Pose Control - `PoseControl/`
 
 Position tracking validation for the ADAPT Hand using joint-space VMC.
-The hand is commanded through a pair of target poses inspired by hand synergies
+The hand is commanded through target poses inspired by hand synergies
 (power grasp and precision pinch), and joint convergence is recorded for each.
+The controller applies per-joint spring-damper behavior and logs tracking error
+and convergence over time.
 
 | File | Platform | Description |
 |------|----------|-------------|
@@ -116,8 +142,8 @@ End-to-end closed-loop stiffness adaptation on the full hand. The hand
 estimates object compliance with the same paired-sample approach used in
 `ProprioceptiveSensing/Hand` (settle, probe, compare FK position and analytic
 VMC tip force), then maps compliance to applied fingertip stiffness with
-saturation before lifting, holding, and placing the object back. Final
-integrative demonstration of the paper.
+saturation before lifting, holding, and placing the object back. The experiment
+connects sensing, stiffness mapping, and manipulation in a single pipeline.
 
 | File | Platform | Description |
 |------|----------|-------------|
@@ -132,7 +158,9 @@ Validates the VMC stiffness composition theorem experimentally. TPU joints are
 attached as ground-truth torsional springs at all finger joints. Motors can be
 disconnected or engaged depending on the script. The UR5 presses the fingertip
 while the load cell records contact force, which is compared against model
-predictions to confirm the stiffness mapping.
+predictions to confirm the stiffness mapping. Mimic controllers either apply a
+fixed virtual stiffness or update it online via feed-forward inversion and
+reference descent.
 
 | File | Platform | Description |
 |------|----------|-------------|
@@ -148,6 +176,10 @@ predictions to confirm the stiffness mapping.
 Additional single-finger experiments providing further characterisation of the
 VMC framework: non-linear stiffness profiles, softening on contact, and task-space
 sensing configurations.
+
+These scripts probe alternative virtual spring laws and sensing geometries to
+show how stiffness shaping and task-space projections influence the measured
+force response.
 
 | File | Platform | Description |
 |------|----------|-------------|
@@ -208,8 +240,9 @@ HumanManipulationVMC/
 
 ### Reduce USB serial latency
 
-Set the usb-serial latency_timer to a low value for the connected device. See
-your OS documentation for the exact sysfs path and recommended value.
+```bash
+sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
+```
 
 ### Start the ROS2 Dynamixel node
 
@@ -220,15 +253,18 @@ ros2 run dynamixel_interface dynamixel_node
 
 For the **hand**:
 ```bash
-ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=<baudrate> -p motor_ids:=[<motor_ids>]
+ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
 ```
-
-Use the motor IDs and baudrate defined in your hand configuration.
 
 ### Configure UR5 network (optional)
 
-Configure the host interface to the UR5 subnet and bring it up. The UR5 IP and
-host settings are defined in `UR5_codes/UR5_config.py`.
+```bash
+sudo ip addr flush dev eno1
+sudo ip addr add 192.168.1.11/24 dev eno1
+sudo ip link set eno1 up
+```
+
+UR5 IP: `192.168.1.10`
 
 ---
 
@@ -238,12 +274,12 @@ host settings are defined in `UR5_codes/UR5_config.py`.
 
 ```bash
 # Finger experiments
-python finger_go_home.py
-python PassiveCompliance/Finger/passive_stiffness_sweep.py
+python3 finger_go_home.py
+python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
 
 # Hand experiments
-python hand_go_home.py
-python ADAPT-StiffControl/grasp_adaptation.py
+python3 hand_go_home.py
+python3 ADAPT-StiffControl/grasp_adaptation.py
 ```
 
 All scripts must be run from the **repository root** so that module imports resolve correctly.

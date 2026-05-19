@@ -14,6 +14,12 @@ point (force) and the response slope (stiffness):
 Both controllers compute gradients from the stiffness model and use measured
 tip force from the load cell as the tracking signal.
 
+Controller structure:
+- A stiffness model maps joint-space stiffness and reference displacement to
+    predicted tip force.
+- The gradient of the force error drives updates to either K_d or d_ref.
+- Scalar baselines use the same update structure but without the model terms.
+
 Each method is paired with a scalar (model-free) baseline using the same learning
 rate structure for direct comparison. All timing and learning-rate parameters are
 defined in `experiment_config.py`.
@@ -39,6 +45,9 @@ Both variants use the same gradient descent as their closed-loop counterparts, b
 the feedback signal driving the gradient is the model-predicted tip force
 (`tip_force(q, q_ref, K)`) rather than the load cell. The load cell is still
 connected and its readings are logged, but they play no role in control.
+
+These variants isolate model-driven behavior by removing measurement feedback
+from the update step while keeping identical logging and timing.
 
 | File | Platform | Description |
 |------|----------|-------------|

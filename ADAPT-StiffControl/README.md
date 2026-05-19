@@ -20,6 +20,20 @@ All experiments in this folder use the **ADAPT Hand**.
   for softer objects.
 - Apply the matched stiffness through lift, hold, and place.
 
+## Control flow
+
+- A state machine sequences approach, contact, probe, lift, hold, and place.
+- Tip pose comes from forward kinematics, while tip force comes from the VMC
+  stiffness model evaluated at the current state.
+- The compliance estimate updates the stiffness schedule used by the hand
+  controller before the manipulation phase.
+
+## Logged signals
+
+- Joint positions and velocities.
+- Tip pose and model-based tip force.
+- Applied stiffness command and state transitions.
+
 ## Files
 
 | File | Platform | Description |

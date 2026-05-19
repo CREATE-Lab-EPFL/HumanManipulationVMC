@@ -23,6 +23,13 @@ stiffness settings are swept and the script logs tip displacement, estimated
 force, and joint state to build force-displacement curves. Variants change the
 contact direction or starting pose.
 
+Key technical elements:
+- Joint-space and task-space virtual springs are used to shape the apparent
+	stiffness at the fingertip.
+- Directional constraints isolate normal and tangential responses.
+- The output is a family of force-displacement curves for comparison across
+	directions and poses.
+
 | File | Description |
 |------|-------------|
 | `passive_stiffness_sweep.py` | Sweep virtual joint stiffness and record force versus displacement |
@@ -45,6 +52,11 @@ Both scripts require `midi_publisher.py` running in a separate terminal (see `He
 The hand maintains a press pose under joint-space VMC while the UR5 drives key
 motion. Experiments compare uniform versus mixed fingertip stiffness and log
 joint state together with MIDI events to relate compliance to key interaction.
+
+Key technical elements:
+- Joint-space VMC stabilizes a press pose while allowing compliance at the tips.
+- UR5 motion provides repeatable key interaction trajectories.
+- MIDI events provide timing tags for contact and release phases.
 
 | File | Description |
 |------|-------------|

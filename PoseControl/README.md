@@ -1,9 +1,14 @@
 # PoseControl
 
 Position tracking validation for the ADAPT Hand using joint-space VMC.
-The hand is commanded through a pair of target poses inspired by hand synergies
-(Santello et al.), expressed as joint-space references, and joint convergence is
-recorded for each.
+The hand is commanded through a small set of target poses inspired by hand
+synergies (Santello et al.), expressed as joint-space references, and joint
+convergence is recorded for each.
+
+Controller details:
+- Joint-space virtual springs and dampers drive tracking of the target pose.
+- Tracking error, convergence behavior, and steady-state offsets are logged for
+	analysis.
 
 All experiments in this folder use the **ADAPT Hand**.
 

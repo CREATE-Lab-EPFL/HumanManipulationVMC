@@ -24,6 +24,13 @@ variant adds a nonlinear repulsive element in task space to raise apparent
 stiffness beyond the baseline while maintaining passivity. Scripts log
 displacement, force estimates, and controller state for comparison.
 
+Key technical elements:
+- Contact detection uses changes in deformation and force estimate trends.
+- Stiffness schedules switch between softer and stiffer phases based on state.
+- Repulsive shaping adds a nonlinear virtual element that activates beyond a
+	displacement threshold to increase apparent stiffness without violating
+	passive behavior.
+
 | File | Description |
 |------|-------------|
 | `stiffening_contact.py` | Increase virtual stiffness after contact is detected |
@@ -39,6 +46,13 @@ Hand experiments use a simple state machine that assigns different fingertip
 stiffness patterns across hand sides to bias object motion. Dynamic grasping
 updates stiffness schedules during UR5 transport based on contact and task
 phase. Scripts log joint state and task events for analysis.
+
+Key technical elements:
+- Asymmetric fingertip stiffness creates differential contact forces to drive
+	in-hand reorientation.
+- A schedule-based controller adjusts stiffness during approach, transport, and
+	release phases.
+- Analysis compares trajectory outcomes and grasp stability across conditions.
 
 | File | Description |
 |------|-------------|
