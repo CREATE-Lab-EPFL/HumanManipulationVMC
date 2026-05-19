@@ -171,11 +171,7 @@ controller.get_logger().info('UR5 connected')
 def _output_path():
     folder = os.path.join(_HERE, 'outputs', 'inhand_manipulation')
     os.makedirs(folder, exist_ok=True)
-    existing = [f for f in os.listdir(folder)
-                if f.startswith('inhand_run_') and f.endswith('.csv')]
-    n = max((int(f.replace('inhand_run_', '').replace('.csv', ''))
-             for f in existing), default=0) + 1
-    return os.path.join(folder, f'inhand_run_{n}.csv')
+    return os.path.join(folder, 'inhand_run.csv')
 
 
 def _csv_header():

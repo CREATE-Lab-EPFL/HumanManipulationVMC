@@ -65,7 +65,8 @@ RECORD_DURATION  = 5.0   # [s]
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
 K_SOFT        = 5.0    # [N/m]  very compliant tip spring
 K_STIFF       = 150.0  # [N/m]  very stiff tip spring
-SOFT_DURATION = 2.0    # [s]    (adaptive) time at K_SOFT before switching
+SOFT_DURATION    = 2.0    # [s]    (adaptive) time at K_SOFT before ramp starts
+K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
 APPROACH_SPEED  = 0.05   # [m/s]

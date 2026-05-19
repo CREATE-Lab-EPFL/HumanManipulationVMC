@@ -194,11 +194,7 @@ controller.get_logger().info('UR5 connected')
 def _output_path():
     folder = os.path.join(_HERE, 'outputs', 'grasp_adaptation')
     os.makedirs(folder, exist_ok=True)
-    existing = [f for f in os.listdir(folder)
-                if f.startswith(f'grasp_{OBJECT_NAME}_') and f.endswith('.csv')]
-    n = max((int(f.replace(f'grasp_{OBJECT_NAME}_', '').replace('.csv', ''))
-             for f in existing), default=0) + 1
-    return os.path.join(folder, f'grasp_{OBJECT_NAME}_{n}.csv')
+    return os.path.join(folder, f'grasp_{OBJECT_NAME}.csv')
 
 
 def _csv_header():

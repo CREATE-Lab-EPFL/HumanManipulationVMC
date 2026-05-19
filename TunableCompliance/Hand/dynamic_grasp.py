@@ -41,7 +41,7 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, CONDITIONS,
-    K_SOFT, K_STIFF, SOFT_DURATION,
+    K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, B_ROT, B_TIP, B_FLEX_DAMP,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
 )
@@ -144,11 +144,7 @@ controller.get_logger().info('UR5 connected')
 def _output_path():
     folder = os.path.join(_HERE, 'outputs', 'dynamic_grasp')
     os.makedirs(folder, exist_ok=True)
-    existing = [f for f in os.listdir(folder)
-                if f.startswith(f'dynamic_grasp_{CONDITION}_') and f.endswith('.csv')]
-    n = max((int(f.replace(f'dynamic_grasp_{CONDITION}_', '').replace('.csv', ''))
-             for f in existing), default=0) + 1
-    return os.path.join(folder, f'dynamic_grasp_{CONDITION}_{n}.csv')
+    return os.path.join(folder, f'dynamic_grasp_{CONDITION}.csv')
 
 
 _FIELDNAMES = (
@@ -179,8 +175,9 @@ STATE_DONE   = 1
 state           = STATE_MOVING
 _arm_moving     = False
 _hand_closed    = False
-_stiffened      = False   # adaptive: True once K switches to K_STIFF
+_stiffened      = False   # adaptive: True once K ramp completes
 _close_time     = None    # wall-clock time when hand closed
+_k_ramp_t0      = None    # wall-clock time when K ramp started
 _move_start     = None    # wall-clock time when UR5 started moving
 _log_tick       = 0
 _current_k_tip  = 0.0    # task spring stiffness currently applied
@@ -227,7 +224,7 @@ def _start_transport():
 _experiment_start = time.time()
 
 def control_callback():
-    global _hand_closed, _stiffened, _close_time, _log_tick
+    global _hand_closed, _stiffened, _close_time, _k_ramp_t0, _log_tick
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -257,18 +254,27 @@ def control_callback():
             controller.get_logger().info(
                 f'Hand closed — k_tip = {K_INIT:.0f} N/m')
 
-        # Adaptive: stiffen after SOFT_DURATION.
+        # Adaptive: ramp K from K_SOFT to K_STIFF after SOFT_DURATION.
         if CONDITION == 'adaptive' and _hand_closed and not _stiffened:
-            if now - _close_time >= SOFT_DURATION:
-                _set_task_stiffness(K_STIFF)
-                _stiffened = True
-                controller.get_logger().info(
-                    f'Stiffened — k_tip = {K_STIFF:.0f} N/m')
+            if _k_ramp_t0 is None:
+                if now - _close_time >= SOFT_DURATION:
+                    _k_ramp_t0 = now
+                    controller.get_logger().info('Adaptive: ramping stiffness …')
+            else:
+                alpha = min(1.0, (now - _k_ramp_t0) / K_RAMP_DURATION)
+                _set_task_stiffness(K_SOFT + alpha * (K_STIFF - K_SOFT))
+                if alpha >= 1.0:
+                    _stiffened = True
+                    controller.get_logger().info(f'Stiffened — k_tip = {K_STIFF:.0f} N/m')
 
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
-            phase = 'open' if not _hand_closed else (
-                'soft' if (CONDITION == 'adaptive' and not _stiffened) else 'closed')
+            if not _hand_closed:
+                phase = 'open'
+            elif CONDITION == 'adaptive' and not _stiffened:
+                phase = 'soft' if _k_ramp_t0 is None else 'ramping'
+            else:
+                phase = 'closed'
             row = ([f'{now - _experiment_start:.4f}', phase, f'{_current_k_tip:.1f}'] +
                    [f'{v:.6f}' for v in q] +
                    [f'{v:.6f}' for v in q_dot] +
