@@ -17,13 +17,13 @@ pip install mido python-rtmidi
 
 ## Usage
 
-**Terminal 1 — publish:**
+**Terminal 1 — must be running before any piano experiment script:**
 ```bash
 python3 midi_publisher.py                      # auto-selects first available port
 python3 midi_publisher.py --port "Arturia"     # filter by partial port name
 ```
 
-**Terminal 2 — monitor:**
+**Terminal 2 — optional live monitor:**
 ```bash
 python3 midi_subscriber.py
 ```

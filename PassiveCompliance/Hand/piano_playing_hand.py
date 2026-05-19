@@ -1,30 +1,20 @@
 """
 Passive compliance shaping — piano playing with the ADAPT Hand.
 
-Two conditions, selected by CONDITION at the top of this file:
+Hand holds a fixed press pose (index+ring, stiffness K); UR5 performs N_CYCLES
+rhythmic press-lift strokes per stiffness value.  MIDI note-on velocity is the
+contact-force proxy.
 
-  1. 'uniform'       — index and ring press with the same cart stiffness K [N/m],
-                       swept across three values: 10, 20, 100 N/m.
-                       Characterises finger-key contact dynamics as a function of
-                       compliance (linear spring between fingertip and key).
+Conditions (CONDITION):
+  'uniform'       — index and ring at the same K (K_SWEEP = 10, 20, 100 N/m).
+  'heterogeneous' — index at K_STIFF, ring at K_SOFT.
 
-  2. 'heterogeneous' — index is stiff (100 N/m), ring is compliant (10 N/m).
-                       Shows how heterogeneous dynamical properties across fingers
-                       affect the resulting force profiles for the same motion.
+Prerequisite — run in a separate terminal:
+    python3 HelperPianoMIDI/midi_publisher.py
 
-Protocol (per condition / stiffness value):
-  1. UR5 moves to UR5_POSE_PIANO; hand settles at home pose.
-  2. Wait SETTLE_TIME.
-  3. Set stiffness; start rhythmic press/lift at PRESS_FREQUENCY.
-  4. Record N_CYCLES full press-lift cycles per stiffness value.
-
-Controller:
-  - JointVMC  (K_ROT, B_ROT) — all 15 joints held at home angles (background spring).
-  - TaskVMC   (K_CART, B_CART) — index and ring fingertip Cartesian springs, targets
-    switch between REST position (FK at home) and PRESS position (FK at 30-deg pose).
-
-Stiffness values [N/m] match passive_stiffness_sweep_linear.py: 10, 20, 100.
-Outputs: PassiveCompliance/Hand/outputs/piano_playing_hand/<condition>/K_<K>/cycle_N.csv
+Outputs:
+  outputs/piano_playing_hand/<condition>/K_<K>/state_N.csv
+  outputs/piano_playing_hand/<condition>/K_<K>/midi_N.csv
 """
 
 import numpy as np
@@ -34,6 +24,8 @@ import os
 import csv
 import time
 import threading
+
+from std_msgs.msg import String
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, '../..'))
@@ -48,12 +40,13 @@ from ModelIDHand.motor_config  import MOTOR_SLICES
 from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
-    PRESS_ANGLE_DEG, PIANO_FINGERS_PLAYING,
+    PRESS_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
+    PIANO_FINGERS_PLAYING,
     K_SWEEP, K_STIFF, K_SOFT,
     K_ROT, B_ROT,
     B_CART_PLAYING       as B_CART,
     PLAYING_SETTLE_TIME  as SETTLE_TIME,
-    PRESS_FREQUENCY, N_CYCLES, REF_RAMP_DURATION,
+    N_CYCLES,
 )
 
 import rtde_control
@@ -69,37 +62,45 @@ CONDITION = 'uniform'       # 'uniform' | 'heterogeneous'
 COLLECTED_DATA = False
 
 # =============================================================================
-# Joint-space targets
+# Hand pose — fingers bent to PRESS_ANGLE_DEG; this is the fixed VMC target
 # =============================================================================
-Q_HOME  = np.zeros(15)
-
 Q_PRESS = np.zeros(15)
 for _f in PIANO_FINGERS_PLAYING:
     Q_PRESS[MOTOR_SLICES[_f]] = np.deg2rad(PRESS_ANGLE_DEG)
 
-# =============================================================================
-# Cartesian targets from FK
-# =============================================================================
-_R = np.zeros(3)   # fingertip attachment at DIP link origin
+_R = np.zeros(3)
+PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', _R))
+             for f in PIANO_FINGERS_PLAYING}
 
-REST_POS  = {f: np.array(FK_motor2fingerPos(Q_HOME,  f, 'DIP', _R)) for f in PIANO_FINGERS_PLAYING}
-PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', _R)) for f in PIANO_FINGERS_PLAYING}
+# UR5 press position: descend PRESS_DEPTH from the hover pose along base-frame Z
+UR5_POSE_PRESS = UR5_POSE_PIANO.copy()
+UR5_POSE_PRESS[2] -= PRESS_DEPTH
 
 # =============================================================================
-# Logging helpers
+# Logging
 # =============================================================================
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 50))
 
-FIELDNAMES = (
+STATE_FIELDNAMES = (
+    ['time_s'] +
     [f'q_{i}'    for i in range(15)] +
     [f'qdot_{i}' for i in range(15)] +
     [f'tau_{i}'  for i in range(15)]
 )
+MIDI_FIELDNAMES = ['time_s', 'note', 'velocity']
 
-def _output_path(condition, k_label, cycle):
+
+def _state_path(condition, k_label, cycle):
     folder = os.path.join(_HERE, 'outputs', 'piano_playing_hand', condition, f'K_{k_label}')
     os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, f'cycle_{cycle}.csv')
+    return os.path.join(folder, f'state_{cycle}.csv')
+
+
+def _midi_path(condition, k_label, cycle):
+    folder = os.path.join(_HERE, 'outputs', 'piano_playing_hand', condition, f'K_{k_label}')
+    os.makedirs(folder, exist_ok=True)
+    return os.path.join(folder, f'midi_{cycle}.csv')
+
 
 # =============================================================================
 # ROS2 / hand initialisation
@@ -114,44 +115,45 @@ vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
 
 vmc_task = TaskVMC()
-vmc_task.set_stiffness(0.0)
-vmc_task.set_damping(0.0)
+vmc_task.set_stiffness(0.0)   # stiffness set per condition below
 for _f in PIANO_FINGERS_PLAYING:
     vmc_task.dampers[_f].damping = np.full(3, B_CART)
-    vmc_task.targets[_f] = REST_POS[_f].copy()
+    vmc_task.targets[_f] = PRESS_POS[_f].copy()   # fixed for the whole experiment
+
+# =============================================================================
+# MIDI subscriber (note_on only — velocity is the force proxy)
+# =============================================================================
+_midi_lock   = threading.Lock()
+_midi_events = []   # dicts: {'time_s': float, 'note': int, 'velocity': int}
+
+
+def _midi_note_on_cb(msg):
+    fields = dict(pair.split('=') for pair in msg.data.split())
+    with _midi_lock:
+        _midi_events.append({
+            'time_s':   time.time(),
+            'note':     int(fields['note']),
+            'velocity': int(fields['velocity']),
+        })
+
+
+controller.create_subscription(String, '/midi/note_on', _midi_note_on_cb, 10)
+controller.get_logger().info(
+    'Subscribed to /midi/note_on — start midi_publisher.py if not already running.')
 
 # =============================================================================
 # Control loop (330 Hz, background thread)
 # =============================================================================
 _lock       = threading.Lock()
 _running    = True
-_log_buffer = []
-
-_ramp_lock    = threading.Lock()
-_ramp_active  = False
-_ramp_t0      = None
-_ramp_start   = {}
-_ramp_end     = {}
-
-def _step_target_ramp():
-    global _ramp_active
-    if not _ramp_active:
-        return
-    with _ramp_lock:
-        if not _ramp_active:
-            return
-        alpha = min(1.0, (time.time() - _ramp_t0) / REF_RAMP_DURATION)
-        for f in PIANO_FINGERS_PLAYING:
-            vmc_task.targets[f] = (1 - alpha) * _ramp_start[f] + alpha * _ramp_end[f]
-        if alpha >= 1.0:
-            _ramp_active = False
+_log_buffer = []   # list of rows: [time_s, q×15, qdot×15, tau×15]
+_t0_log     = time.time()
 
 
 def _control_loop():
     step = 0
     while _running:
         rclpy.spin_once(controller, timeout_sec=0)
-        _step_target_ramp()
         q     = controller.get_joint_positions()
         q_dot = controller.get_joint_velocities()
         tau_vmc  = vmc_joint.hand_torques(q, q_dot)
@@ -162,9 +164,13 @@ def _control_loop():
 
         if not COLLECTED_DATA and step % LOG_EVERY == 0:
             with _lock:
-                _log_buffer.append(list(q) + list(q_dot) + list(tau_vmc + tau_comp))
+                _log_buffer.append(
+                    [f'{time.time() - _t0_log:.4f}'] +
+                    list(q) + list(q_dot) + list(tau_vmc + tau_comp)
+                )
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
+
 
 # =============================================================================
 # Helpers
@@ -174,59 +180,72 @@ def _set_stiffness(k_vals):
         vmc_task.springs[_f].stiffness = np.full(3, k)
 
 
-def _begin_target_ramp(phase):
-    global _ramp_active, _ramp_t0, _ramp_start, _ramp_end
-    pos = PRESS_POS if phase == 'press' else REST_POS
-    with _ramp_lock:
-        _ramp_start = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
-        _ramp_end   = {f: pos[f].copy()              for f in PIANO_FINGERS_PLAYING}
-        _ramp_t0    = time.time()
-        _ramp_active = True
-
-def _flush(writer):
+def _flush_state(writer):
     with _lock:
         rows = _log_buffer.copy()
         _log_buffer.clear()
     for row in rows:
-        writer.writerow(dict(zip(FIELDNAMES, row)))
+        writer.writerow(dict(zip(STATE_FIELDNAMES, row)))
+
+
+def _flush_midi(writer, cycle_t0):
+    with _midi_lock:
+        events = _midi_events.copy()
+        _midi_events.clear()
+    for ev in events:
+        writer.writerow({
+            'time_s':   f'{ev["time_s"] - cycle_t0:.4f}',
+            'note':     ev['note'],
+            'velocity': ev['velocity'],
+        })
+
 
 # =============================================================================
 # Protocol
 # =============================================================================
 def run_condition(label, stiffness_pairs):
-    """stiffness_pairs: list of (k_vals_list, k_label) tuples."""
-    HALF = 0.5 / PRESS_FREQUENCY
     for k_vals, k_lbl in stiffness_pairs:
         _set_stiffness(k_vals)
-        _begin_target_ramp('rest')
         k_info = '  '.join(f'K_{f}={k}' for f, k in zip(PIANO_FINGERS_PLAYING, k_vals))
-        controller.get_logger().info(f'[{label}] {k_info}  — settling ...')
+        controller.get_logger().info(f'[{label}] {k_info} — settling {SETTLE_TIME:.0f} s …')
         time.sleep(SETTLE_TIME)
 
         for cycle in range(1, N_CYCLES + 1):
             controller.get_logger().info(f'  cycle {cycle}/{N_CYCLES}')
-            if not COLLECTED_DATA:
-                f      = open(_output_path(label, k_lbl, cycle), 'w', newline='')
-                writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
-                writer.writeheader()
-            else:
-                f = writer = None
 
+            if not COLLECTED_DATA:
+                sf = open(_state_path(label, k_lbl, cycle), 'w', newline='')
+                sw = csv.DictWriter(sf, fieldnames=STATE_FIELDNAMES)
+                sw.writeheader()
+                mf = open(_midi_path(label, k_lbl, cycle), 'w', newline='')
+                mw = csv.DictWriter(mf, fieldnames=MIDI_FIELDNAMES)
+                mw.writeheader()
+            else:
+                sf = sw = mf = mw = None
+
+            # Clear buffers just before the stroke
             with _lock:
                 _log_buffer.clear()
+            with _midi_lock:
+                _midi_events.clear()
+            cycle_t0 = time.time()
 
-            _begin_target_ramp('press')
-            time.sleep(HALF)
-            _begin_target_ramp('rest')
-            time.sleep(HALF)
+            # UR5 stroke: descend to press keys, then ascend to hover position
+            arm.moveL(UR5_POSE_PRESS.tolist(), PRESS_SPEED, UR5_INIT_ACCEL)
+            arm.moveL(UR5_POSE_PIANO.tolist(), PRESS_SPEED, UR5_INIT_ACCEL)
 
-            if writer:
-                _flush(writer)
-                f.close()
+            if not COLLECTED_DATA:
+                _flush_state(sw)
+                sf.close()
+                _flush_midi(mw, cycle_t0)
+                mf.close()
 
         controller.get_logger().info(f'  [{label}] K={k_lbl} done.')
 
 
+# =============================================================================
+# Run
+# =============================================================================
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(UR5_POSE_PIANO), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 

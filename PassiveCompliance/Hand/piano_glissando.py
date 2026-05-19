@@ -1,24 +1,15 @@
 """
 Passive compliance shaping — glissando with the ADAPT Hand.
 
-Index and middle fingers are positioned side-by-side above a piano keyboard.
-Both fingers are held pressed down (spring pulling to PRESS_POS) while the
-UR5 slides along the keyboard (Y direction) for GLISSANDO_DISTANCE at
-GLISSANDO_SPEED, producing a continuous glissando motion.
+Index and middle fingers are held at the press pose while the UR5 slides along
+the keyboard for GLISSANDO_DISTANCE, then returns.  Repeated N_RUNS times.
 
-Protocol:
-  1. UR5 moves to UR5_POSE_GLISSANDO_START; hand settles at press pose.
-  2. Wait SETTLE_TIME.
-  3. UR5 slides along GLISSANDO_DIRECTION for GLISSANDO_DISTANCE.
-  4. UR5 returns to start.
-  5. Repeat N_RUNS times.
+Prerequisite — run in a separate terminal:
+    python3 HelperPianoMIDI/midi_publisher.py
 
-Controller:
-  - JointVMC  (K_ROT, B_ROT) — background joint regulation for all joints.
-  - TaskVMC   (K_CART, B_CART) — index and middle fingertips held at PRESS_POS
-    throughout the slide.
-
-Outputs: PassiveCompliance/Hand/outputs/piano_glissando/run_N.csv
+Outputs:
+  outputs/piano_glissando/run_N.csv
+  outputs/piano_glissando/midi_N.csv
 """
 
 import numpy as np
@@ -28,6 +19,8 @@ import os
 import csv
 import time
 import threading
+
+from std_msgs.msg import String
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, '../..'))
@@ -88,17 +81,23 @@ GLISSANDO_END = UR5_POSE_GLISSANDO_START + _dir6 * GLISSANDO_DISTANCE
 # Logging
 # =============================================================================
 LOG_EVERY  = max(1, int(CONTROL_FREQUENCY / 50))
-FIELDNAMES = (
+STATE_FIELDNAMES = (
     [f'q_{i}'    for i in range(15)] +
     [f'qdot_{i}' for i in range(15)] +
     [f'tau_{i}'  for i in range(15)] +
     ['phase']
 )
+MIDI_FIELDNAMES = ['time_s', 'note', 'velocity']
 
-def _output_path(run):
+def _state_path(run):
     folder = os.path.join(_HERE, 'outputs', 'piano_glissando')
     os.makedirs(folder, exist_ok=True)
     return os.path.join(folder, f'run_{run}.csv')
+
+def _midi_path(run):
+    folder = os.path.join(_HERE, 'outputs', 'piano_glissando')
+    os.makedirs(folder, exist_ok=True)
+    return os.path.join(folder, f'midi_{run}.csv')
 
 # =============================================================================
 # ROS2 / hand initialisation
@@ -119,6 +118,25 @@ for _f in PIANO_FINGERS_GLISSANDO:
     vmc_task.springs[_f].stiffness = np.full(3, K_CART)
     vmc_task.dampers[_f].damping   = np.full(3, B_CART)
     vmc_task.targets[_f] = PRESS_POS[_f].copy()
+
+# =============================================================================
+# MIDI subscriber
+# =============================================================================
+_midi_lock   = threading.Lock()
+_midi_events = []
+
+def _midi_note_on_cb(msg):
+    fields = dict(pair.split('=') for pair in msg.data.split())
+    with _midi_lock:
+        _midi_events.append({
+            'time_s':   time.time(),
+            'note':     int(fields['note']),
+            'velocity': int(fields['velocity']),
+        })
+
+controller.create_subscription(String, '/midi/note_on', _midi_note_on_cb, 10)
+controller.get_logger().info(
+    'Subscribed to /midi/note_on — start midi_publisher.py if not already running.')
 
 # =============================================================================
 # Control loop
@@ -146,12 +164,23 @@ def _control_loop():
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
 
-def _flush(writer):
+def _flush_state(writer):
     with _lock:
         rows = _log_buffer.copy()
         _log_buffer.clear()
     for row in rows:
-        writer.writerow(dict(zip(FIELDNAMES, row)))
+        writer.writerow(dict(zip(STATE_FIELDNAMES, row)))
+
+def _flush_midi(writer, run_t0):
+    with _midi_lock:
+        events = _midi_events.copy()
+        _midi_events.clear()
+    for ev in events:
+        writer.writerow({
+            'time_s':   f'{ev["time_s"] - run_t0:.4f}',
+            'note':     ev['note'],
+            'velocity': ev['velocity'],
+        })
 
 # =============================================================================
 # Protocol
@@ -177,14 +206,20 @@ try:
         time.sleep(1.0)   # let fingers reach press position before slide
 
         if not COLLECTED_DATA:
-            f      = open(_output_path(run), 'w', newline='')
-            writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
-            writer.writeheader()
+            sf = open(_state_path(run), 'w', newline='')
+            sw = csv.DictWriter(sf, fieldnames=STATE_FIELDNAMES)
+            sw.writeheader()
+            mf = open(_midi_path(run), 'w', newline='')
+            mw = csv.DictWriter(mf, fieldnames=MIDI_FIELDNAMES)
+            mw.writeheader()
         else:
-            f = writer = None
+            sf = sw = mf = mw = None
 
         with _lock:
             _log_buffer.clear()
+        with _midi_lock:
+            _midi_events.clear()
+        run_t0 = time.time()
 
         controller.get_logger().info('  sliding forward ...')
         _phase = 'slide_forward'
@@ -194,9 +229,11 @@ try:
         _phase = 'return'
         arm.moveL(list(UR5_POSE_GLISSANDO_START), GLISSANDO_SPEED, UR5_INIT_ACCEL)
 
-        if writer:
-            _flush(writer)
-            f.close()
+        if not COLLECTED_DATA:
+            _flush_state(sw)
+            sf.close()
+            _flush_midi(mw, run_t0)
+            mf.close()
 
         controller.get_logger().info(f'  run {run} done.')
 

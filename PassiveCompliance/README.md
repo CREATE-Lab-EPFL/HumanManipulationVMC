@@ -34,11 +34,13 @@ PassiveCompliance/
 
 ## Hand/
 
+Both scripts require `midi_publisher.py` running in a separate terminal (see `HelperPianoMIDI/`).
+
 | File | Description |
 |------|-------------|
-| `piano_playing_hand.py` | Conditions 1 & 2: rhythmic index+ring pressing with uniform or heterogeneous cart stiffness |
-| `piano_glissando.py` | Condition 3: index+middle glissando slide — UR5 sweeps across keys while fingers stay pressed |
+| `piano_playing_hand.py` | Conditions 1 & 2: hand holds a fixed press pose (index+ring, stiffness K); UR5 performs rhythmic press-lift strokes.  Two conditions: uniform K swept over K_SWEEP, or heterogeneous K_STIFF/K_SOFT.  Saves hand-state and MIDI CSVs per stroke. |
+| `piano_glissando.py` | Condition 3: hand holds index+middle at press pose while UR5 slides along the keyboard (Y) for GLISSANDO_DISTANCE and returns.  Saves hand-state and MIDI CSVs per run. |
 | `plot_piano.ipynb` | Plot piano playing and glissando experiments |
-| `HelperPianoMIDI/midi_publisher.py` | Physical keyboard → ROS2 MIDI topics |
-| `HelperPianoMIDI/midi_subscriber.py` | Subscribe and print MIDI events |
-| `HelperPianoMIDI/piano_config.py` | UR5 poses and shared constants for piano experiments |
+| `HelperPianoMIDI/midi_publisher.py` | Reads physical keyboard and publishes on `/midi/note_on` — must be running alongside experiment scripts |
+| `HelperPianoMIDI/midi_subscriber.py` | Subscribe and print MIDI events (debug/monitor) |
+| `HelperPianoMIDI/piano_config.py` | Shared constants for piano experiments |
