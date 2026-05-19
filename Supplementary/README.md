@@ -4,6 +4,10 @@ Additional single-finger experiments providing further characterisation of the
 VMC framework: non-linear stiffness profiles, softening on contact, and task-space
 sensing configurations.
 
+These scripts isolate specific modeling and control features, such as nonlinear
+spring laws and task-space projections, to show how they shape the measured
+force response and sensing accuracy.
+
 All experiments use the **single-finger testbed**.
 
 ## Files
