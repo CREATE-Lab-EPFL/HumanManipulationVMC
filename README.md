@@ -6,141 +6,144 @@ modulation in tendon-driven compliant robotic hands.
 Collaboration between **EPFL CREATE Lab** (Josie Hughes) and **Cambridge Control Robotics Lab** (Fulvio Forni).
 
 **Platforms**:
-- **Single finger** — 2-DOF tendon-driven finger (MCP + PIP, with mimic DIP)
-- **ADAPT Hand** — 15-DOF anthropomorphic hand (wrist + thumb + 4 fingers + spread)
+- **Single finger** - tendon-driven finger with MCP and PIP, with mimic DIP
+- **ADAPT Hand** - anthropomorphic hand with wrist, thumb, fingers, and spread
 
 ---
 
 ## Experimental Areas
 
-`[finger]` = single finger testbed · `[hand]` = ADAPT Hand
+`[finger]` = single finger testbed, `[hand]` = ADAPT Hand
 
 ---
 
-### 1. Passive Compliance Shaping — `PassiveCompliance/`
+### Passive Compliance Shaping - `PassiveCompliance/`
 
 Validates that VMC generates diverse, predictable stiffness profiles at the fingertip
 and palm through virtual springs alone. Compliance acts as a bidirectional filter:
-outward (absorbs noise/impacts), inward (provides adaptability).
+outward (absorbs noise and impacts), inward (provides adaptability).
 
-**Finger/** — single 2-DOF finger testbed
+The scripts sweep virtual stiffness settings while an external motion applies a
+controlled displacement. Logged tip force and displacement yield force-displacement
+curves across contact directions and starting poses.
 
-| File | Description |
-|------|-------------|
-| `Finger/passive_stiffness_sweep.py` | Stiffness sweep — F vs d for varying K (finger space, N·m/rad) |
-| `Finger/passive_range.py` | Dense biased K sweep, one run per K |
-| `Finger/passive_stiffness_sweep_linear.py` | Cart stiffness sweep — F vs d for varying K_cart (N/m), vertical direction |
-| `Finger/passive_range_linear.py` | Dense biased K_cart sweep, vertical direction |
-| `Finger/directional_stiffness.py` | Cart stiffness in multiple contact directions in the Y-Z plane |
-| `Finger/pose_sweep.py` | Pose sweep — F vs d from multiple starting Z heights |
-
-**Hand/** — ADAPT Hand piano playing
+**Finger/** - single finger testbed
 
 | File | Description |
 |------|-------------|
-| `Hand/piano_playing_hand.py` | Conditions 1 & 2: rhythmic index+ring pressing, uniform or heterogeneous K [N/m] |
-| `Hand/piano_glissando.py` | Condition 3: index+middle glissando — UR5 slides across keys while fingers stay pressed |
-| `Hand/HelperPianoMIDI/` | MIDI keyboard → ROS2 bridge (publisher, subscriber, UR5 config) |
+| `Finger/passive_stiffness_sweep.py` | Sweep virtual joint stiffness and record force versus displacement |
+| `Finger/passive_range.py` | Dense sweep with one run per stiffness setting |
+| `Finger/passive_stiffness_sweep_linear.py` | Sweep task-space stiffness in a pressing direction and record force versus displacement |
+| `Finger/passive_range_linear.py` | Dense sweep in task space for the pressing direction |
+| `Finger/directional_stiffness.py` | Task-space stiffness in multiple contact directions in a plane |
+| `Finger/pose_sweep.py` | Sweep starting poses and record force versus displacement |
+
+**Hand/** - ADAPT Hand piano playing
+
+| File | Description |
+|------|-------------|
+| `Hand/piano_playing_hand.py` | Hand holds a press pose while the UR5 performs rhythmic press-lift strokes. Runs uniform and mixed stiffness conditions, saving hand state and MIDI logs per stroke. |
+| `Hand/piano_glissando.py` | Hand holds a press pose while the UR5 slides along the keyboard and returns. Saves hand state and MIDI logs per run. |
+| `Hand/HelperPianoMIDI/` | MIDI keyboard to ROS bridge (publisher, subscriber, UR5 config) |
 
 ---
 
-### 2. Tunable Compliance via VMC — `TunableCompliance/`
+### Tunable Compliance via VMC - `TunableCompliance/`
 
 Shows that VMC enables real-time stiffness modulation across the full soft-to-rigid
 spectrum, adapting to contact events and object properties — without hardware changes.
 Includes single-finger characterisation and full-hand in-hand manipulation and
 dynamic-grasp studies.
 
-**Finger/** | `stiffening_contact.py`, `repulsive_stiffness_shaping.py`
+**Finger/** | `stiffening_contact.py`, `repulsive_stiffness_shaping.py` - contact-triggered stiffness updates and repulsive shaping in task space
 
-**Hand/** | `inhand_manipulation.py` — in-hand reorientation via asymmetric tip stiffness · `dynamic_grasp.py` — bottle transport under soft / stiff / adaptive (soft→stiff) tip stiffness
+**Hand/** | `inhand_manipulation.py` - in-hand reorientation via asymmetric tip stiffness; `dynamic_grasp.py` - dynamic grasping during UR5 transport under soft, stiff, and adaptive schedules
 
 ---
 
-### 3. Proprioceptive Sensing — `ProprioceptiveSensing/`
+### Proprioceptive Sensing - `ProprioceptiveSensing/`
 
 Contact force and object stiffness estimated from kinematics and virtual stiffness
 alone — no external force sensors. The deformation that absorbs impacts encodes
-force. Sensing sensitivity is maximised when C_A (virtual) ≈ C_O (object).
+force. Sensing sensitivity is maximised when virtual compliance approximately
+matches object compliance.
 
-**Finger/** | `finger_eta.py` — motor efficiency identification and force estimation validation
+**Finger/** | `finger_eta.py` - motor efficiency identification and force estimation validation
 
-**Hand/** | `object_stiffness_hand.py` — object stiffness estimation by squeezing — C_O from (C_A + C_O)
+**Hand/** | `object_stiffness_hand.py` - object stiffness estimation by squeezing with paired compliance settings
 
 ---
 
-### 4. Stiffness and Force Tracking — `StiffnessForceTracking/`
+### Stiffness and Force Tracking - `StiffnessForceTracking/`
 
 Model-based closed-loop control over the full force-displacement space.
-Two independent optimization pathways:
-- **Reference modulation** — gradient descent on d_ref: faster, decouples stiffness from force
-- **Stiffness modulation** — gradient descent on K_d: simultaneous force and stiffness control
+Independent optimization pathways:
+- **Reference modulation** - gradient descent on d_ref to move the operating point while keeping stiffness independent
+- **Stiffness modulation** - gradient descent on K_d to change the slope of the force-displacement response
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `experiment_config.py` | — | Shared config: force levels, timing, learning rates |
-| `FORCE_CONTROL.py` | — | Batch runner: executes all four controllers sequentially |
-| `force_position_control.py` | finger | Force+position control via K gradient descent (model-based) |
-| `force_position_control_scalar.py` | finger | Scalar k·I baseline for force+position control |
-| `force_stiffness_control.py` | finger | Force+stiffness control via d_ref gradient descent (model-based) |
-| `force_stiffness_control_scalar.py` | finger | Scalar θ_ref baseline for force+stiffness control |
-| `force_position_control_openloop.py` | finger | K-descent driven by model-predicted force |
-| `force_stiffness_control_openloop.py` | finger | d_ref-descent driven by model-predicted force |
+| `experiment_config.py` | - | Shared config: force targets, timing, learning rates |
+| `FORCE_CONTROL.py` | - | Batch runner: executes the controller variants sequentially |
+| `force_position_control.py` | finger | Force and position control via K gradient descent (model-based) |
+| `force_position_control_scalar.py` | finger | Scalar k*I baseline for force and position control |
+| `force_stiffness_control.py` | finger | Force and stiffness control via d_ref gradient descent (model-based) |
+| `force_stiffness_control_scalar.py` | finger | Scalar theta_ref baseline for force and stiffness control |
+| `force_position_control_openloop.py` | finger | K descent driven by model-predicted force |
+| `force_stiffness_control_openloop.py` | finger | d_ref descent driven by model-predicted force |
 | `plot_force_position_control.ipynb` | — | Plot force position control experiment |
 | `plot_force_stiffness_control.ipynb` | — | Plot force stiffness control experiment |
 | `plot_openloop_tracking.ipynb` | — | Plot openloop tracking experiment |
 
 ---
 
-### 5. Pose Control — `PoseControl/`
+### Pose Control - `PoseControl/`
 
-Position tracking validation for the 15-DOF ADAPT Hand using joint-space VMC.
-The hand is commanded through two target poses inspired by hand synergies
-(Santello et al. 1998) — PC1 (power grasp) and PC2 (precision pinch) — and
-joint convergence is recorded for each.
+Position tracking validation for the ADAPT Hand using joint-space VMC.
+The hand is commanded through a pair of target poses inspired by hand synergies
+(power grasp and precision pinch), and joint convergence is recorded for each.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `position_tracker.py` | hand | Commands PC1 and PC2 poses in sequence, logs joint convergence per pose |
+| `position_tracker.py` | hand | Commands the pose targets in sequence, logs joint convergence per pose |
 | `plot_position_tracker.ipynb` | hand | Plot position tracker experiment |
 
 ---
 
-### ADAPT Hand — Grasp Adaptation — `ADAPT-StiffControl/`
+### ADAPT Hand - Grasp Adaptation - `ADAPT-StiffControl/`
 
 End-to-end closed-loop stiffness adaptation on the full hand. The hand
-estimates object compliance with the same two-point algorithm used in
-`ProprioceptiveSensing/Hand` (settle at `K_TIP_GENTLE`, push at `K_TIP_PROBE`,
-finite difference of position and analytic VMC force), then matches its own
-fingertip stiffness to the object's via `k_applied = clip(K_GAIN / C_O_mean,
-K_MIN, K_MAX)` before lifting, holding, and placing the object back. Final
+estimates object compliance with the same paired-sample approach used in
+`ProprioceptiveSensing/Hand` (settle, probe, compare FK position and analytic
+VMC tip force), then maps compliance to applied fingertip stiffness with
+saturation before lifting, holding, and placing the object back. Final
 integrative demonstration of the paper.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `grasp_adaptation.py` | hand | Two-point compliance sensing → k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX), lift / hold / place (`hard_obj` and `soft_obj`) |
+| `grasp_adaptation.py` | hand | Gentle contact, probe, estimate compliance, then lift / hold / place with matched stiffness |
 | `plot_grasp_adaptation.ipynb` | hand | Plot grasp adaptation experiment |
 
 ---
 
-### Methods — TPU Joint Validation — `MethodsElastic/`
+### Methods - Elastic Joint Validation - `MethodsElastic/`
 
 Validates the VMC stiffness composition theorem experimentally. TPU joints are
-attached as ground-truth torsional springs at all finger joints (MCP, PIP, DIP) simultaneously.
-Motors are fully disconnected. The UR5 presses the fingertip while the load cell records
-the contact force, which is compared against the model prediction to confirm the
-stiffness mapping K_d → K_x.
+attached as ground-truth torsional springs at all finger joints. Motors can be
+disconnected or engaged depending on the script. The UR5 presses the fingertip
+while the load cell records contact force, which is compared against model
+predictions to confirm the stiffness mapping.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `elastic_band_sweep.py` | finger | UR5 descent + load cell recording — no motors, elastic bands on all joints |
-| `20mm_mimic_real_springs.py` | finger | UR5 descent + load cell — motors, K_d set to match the run-average stiffness of soft/hard bands |
-| `instant_mimic_real_springs.py` | finger | UR5 descent + load cell — motors, K_d set via feed-forward stiffness inversion + ref_descent force feedback to track instantaneous K_x(d) profile |
+| `elastic_band_sweep.py` | finger | UR5 pressing with motors disengaged and elastic bands on all joints |
+| `20mm_mimic_real_springs.py` | finger | UR5 pressing with motors engaged and a fixed virtual joint stiffness matched to the elastic-band average |
+| `instant_mimic_real_springs.py` | finger | UR5 pressing with motors engaged and online stiffness updates via feed-forward inversion and ref_descent feedback |
 | `plot_elastic_band.ipynb` | — | Plot elastic band experiment |
 
 ---
 
-### 6. Supplementary — `Supplementary/`
+### Supplementary - `Supplementary/`
 
 Additional single-finger experiments providing further characterisation of the
 VMC framework: non-linear stiffness profiles, softening on contact, and task-space
@@ -148,9 +151,9 @@ sensing configurations.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `softening_contact.py` | finger | K_d reduced online upon contact |
-| `sigmoidal_polynomial_stiffness.py` | finger | Non-linear K(d) profiles: sigmoid and polynomial |
-| `sensing_task_space.py` | finger | Force prediction for task-space and combined-space VMC configurations |
+| `softening_contact.py` | finger | Detect contact and reduce virtual stiffness to soften the interaction |
+| `sigmoidal_polynomial_stiffness.py` | finger | Use nonlinear stiffness laws to shape the force-displacement curve |
+| `sensing_task_space.py` | finger | Compare force prediction for task-space and mixed-space VMC configurations |
 | `plot_softening_contact.ipynb` | finger | Plot softening contact experiment |
 | `plot_sigmoidal_polynomial_stiffness.ipynb` | finger | Plot sigmoidal polynomial stiffness experiment |
 | `plot_sensing_task_space.ipynb` | finger | Plot sensing task space experiment |
@@ -162,40 +165,40 @@ sensing configurations.
 ```
 HumanManipulationVMC/
 │
-├── PassiveCompliance/              # Experimental area 1
+├── PassiveCompliance/              # Experimental area - passive compliance
 │   ├── Finger/                     #   single finger experiments
 │   └── Hand/                       #   ADAPT Hand piano experiments
 │       └── HelperPianoMIDI/        #     MIDI keyboard → ROS2 bridge + UR5 config
-├── TunableCompliance/              # Experimental area 2
+├── TunableCompliance/              # Experimental area - tunable compliance
 │   ├── Finger/                     #   stiffening/repulsive shaping (finger)
 │   └── Hand/                       #   emergent grasps (hand)
-├── ProprioceptiveSensing/          # Experimental area 3
+├── ProprioceptiveSensing/          # Experimental area - proprioceptive sensing
 │   ├── Finger/                     #   motor efficiency + force estimation
 │   └── Hand/                       #   object stiffness estimation
-├── StiffnessForceTracking/         # Experimental area 4
-├── PoseControl/                    # Experimental area 5
-├── ADAPT-StiffControl/             # Final demo — compliance matching on the full hand
-├── Supplementary/                  # Experimental area 6
-├── MethodsElastic/                 # Methods — VMC stiffness model validation (elastic bands)
+├── StiffnessForceTracking/         # Experimental area - stiffness and force tracking
+├── PoseControl/                    # Experimental area - pose control
+├── ADAPT-StiffControl/             # Final demo - compliance matching on the full hand
+├── Supplementary/                  # Experimental area - supplementary experiments
+├── MethodsElastic/                 # Methods - VMC stiffness model validation
 │
-├── KinematicsFinger/       # FK, Jacobians, Hessians — 2-DOF finger
-├── KinematicsHand/         # FK, Jacobians, Hessians — 15-DOF ADAPT hand
+├── KinematicsFinger/       # FK, Jacobians, Hessians - single finger
+├── KinematicsHand/         # FK, Jacobians, Hessians - ADAPT hand
 │
-├── VMCFinger/              # FingerController (900 Hz), GravLim, VMC finger/task/dirCart/repulsive
-├── VMCHand/                # HandController (330 Hz), GravLim, HandVMCJointSpace/TaskSpace
+├── VMCFinger/              # FingerController (high-rate), GravLim, VMC finger/task/dirCart/repulsive
+├── VMCHand/                # HandController (lower-rate), GravLim, HandVMCJointSpace/TaskSpace
 ├── VMC_utils/              # VirtualModels (springs, dampers), GravityCompensation
-├── StiffnessModelFinger/   # Stiffness mapping finger/task/mixed space → tip stiffness
-├── StiffnessModelHand/     # Stiffness mapping joint/task/mixed space → per-fingertip stiffness
+├── StiffnessModelFinger/   # Stiffness mapping finger/task/mixed space to tip stiffness
+├── StiffnessModelHand/     # Stiffness mapping joint/task/mixed space to per-fingertip stiffness
 │
 ├── ModelIDFinger/          # finger_params.py — single source of truth for finger parameters
 ├── ModelIDHand/            # hand_params.py, motor_config.py — single source of truth for hand parameters
 │
 ├── LoadCell/               # Arduino force sensor interface
-├── UR5_codes/              # UR5 arm control (RTDE, IP 192.168.1.10)
+├── UR5_codes/              # UR5 arm control (RTDE, IP configured in UR5_config.py)
 │
 ├── finger_go_home.py       # Bring finger to home position (run before any finger experiment)
 ├── hand_go_home.py         # Bring hand to home position (run before any hand experiment)
-├── ADAPT_Hand.urdf         # URDF of the 15-DOF ADAPT hand
+├── ADAPT_Hand.urdf         # URDF of the ADAPT hand
 └── plot_config.mplstyle    # Shared matplotlib style
 ```
 
@@ -203,33 +206,29 @@ HumanManipulationVMC/
 
 ## Setup
 
-### 1. Reduce USB serial latency
+### Reduce USB serial latency
 
-```bash
-sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
-```
+Set the usb-serial latency_timer to a low value for the connected device. See
+your OS documentation for the exact sysfs path and recommended value.
 
-### 2. Start the ROS2 Dynamixel node
+### Start the ROS2 Dynamixel node
 
-For the **finger** (2 motors):
+For the **finger**:
 ```bash
 ros2 run dynamixel_interface dynamixel_node
 ```
 
-For the **hand** (15 motors):
+For the **hand**:
 ```bash
-ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=<baudrate> -p motor_ids:=[<motor_ids>]
 ```
 
-### 3. (Optional) Configure UR5 network
+Use the motor IDs and baudrate defined in your hand configuration.
 
-```bash
-sudo ip addr flush dev eno1
-sudo ip addr add 192.168.1.11/24 dev eno1
-sudo ip link set eno1 up
-```
+### Configure UR5 network (optional)
 
-UR5 IP: `192.168.1.10`
+Configure the host interface to the UR5 subnet and bring it up. The UR5 IP and
+host settings are defined in `UR5_codes/UR5_config.py`.
 
 ---
 
@@ -239,12 +238,12 @@ UR5 IP: `192.168.1.10`
 
 ```bash
 # Finger experiments
-python3 finger_go_home.py
-python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
+python finger_go_home.py
+python PassiveCompliance/Finger/passive_stiffness_sweep.py
 
 # Hand experiments
-python3 hand_go_home.py
-python3 ADAPT-StiffControl/grasp_adaptation.py
+python hand_go_home.py
+python ADAPT-StiffControl/grasp_adaptation.py
 ```
 
 All scripts must be run from the **repository root** so that module imports resolve correctly.

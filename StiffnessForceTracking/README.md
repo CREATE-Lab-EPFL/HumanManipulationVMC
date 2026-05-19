@@ -1,15 +1,18 @@
-# StiffnessForceTracking — Experimental Area 4
+# StiffnessForceTracking — Experimental Area
 
 Model-based closed-loop control over the full force-displacement space.
-Two independent optimization pathways provide control over both the operating
+Independent optimization pathways provide control over both the operating
 point (force) and the response slope (stiffness):
 
 - **Force+position control** (`force_position_control`): gradient descent on K_d,
-  keeping d_ref fixed. Adapting K changes the slope of the F-d curve, moving both
-  the force level and the stiffness simultaneously.
+  keeping d_ref fixed. Adapting K changes the slope of the force-displacement
+  curve, moving both the force level and the stiffness simultaneously.
 - **Force+stiffness control** (`force_stiffness_control`): gradient descent on d_ref,
   keeping K_d fixed. Adapting d_ref moves the operating point while K_d (stiffness)
-  is a free independent parameter — force and stiffness are decoupled.
+  is a free independent parameter, so force and stiffness are decoupled.
+
+Both controllers compute gradients from the stiffness model and use measured
+tip force from the load cell as the tracking signal.
 
 Each method is paired with a scalar (model-free) baseline using the same learning
 rate structure for direct comparison. All timing and learning-rate parameters are
@@ -22,7 +25,7 @@ defined in `experiment_config.py`.
 | File | Platform | Description |
 |------|----------|-------------|
 | `experiment_config.py` | — | Shared config: force levels, timing, learning rates |
-| `FORCE_CONTROL.py` | — | Batch runner: executes all four controllers sequentially |
+| `FORCE_CONTROL.py` | — | Batch runner: executes the controller variants sequentially |
 | `force_position_control.py` | finger | Force+position control via K gradient descent (model-based) |
 | `force_position_control_scalar.py` | finger | Scalar k·I baseline for force+position control |
 | `force_stiffness_control.py` | finger | Force+stiffness control via d_ref gradient descent (model-based) |

@@ -17,23 +17,23 @@ pip install mido python-rtmidi
 
 ## Usage
 
-**Terminal 1 — must be running before any piano experiment script:**
+**Terminal A — must be running before any piano experiment script:**
 ```bash
-python3 midi_publisher.py                      # auto-selects first available port
-python3 midi_publisher.py --port "Arturia"     # filter by partial port name
+python midi_publisher.py                      # auto-selects an available port
+python midi_publisher.py --port "Arturia"     # filter by partial port name
 ```
 
-**Terminal 2 — optional live monitor:**
+**Terminal B — optional live monitor:**
 ```bash
-python3 midi_subscriber.py
+python midi_subscriber.py
 ```
 
 ## Topics
 
 | Topic | Type | Format |
 |-------|------|--------|
-| `/midi/note_on` | `std_msgs/String` | `note=<0-127> velocity=<0-127>` |
-| `/midi/note_off` | `std_msgs/String` | `note=<0-127>` |
-| `/midi/control` | `std_msgs/String` | `cc=<0-127> value=<0-127>` |
+| `/midi/note_on` | `std_msgs/String` | `note=<midi note> velocity=<midi velocity>` |
+| `/midi/note_off` | `std_msgs/String` | `note=<midi note>` |
+| `/midi/control` | `std_msgs/String` | `cc=<control index> value=<control value>` |
 
-Note-on with `velocity=0` is treated as note-off (standard MIDI spec).
+Note-on with no velocity is treated as note-off (standard MIDI spec).

@@ -1,4 +1,4 @@
-# TunableCompliance — Experimental Area 2
+# TunableCompliance — Experimental Area
 
 Shows that VMC enables real-time stiffness modulation across the full soft-to-rigid
 spectrum, adapting to task phases (approach, hold, release), object properties,
@@ -10,7 +10,7 @@ dynamic-grasp studies.
 
 ```
 TunableCompliance/
-├── Finger/     — single 2-DOF finger testbed experiments
+├── Finger/     — single finger testbed experiments
 └── Hand/       — ADAPT Hand experiments
 ```
 
@@ -18,10 +18,16 @@ TunableCompliance/
 
 ## Finger/
 
+Finger experiments run a contact detector based on deformation and force
+estimates, then adjust virtual stiffness on contact. The repulsive shaping
+variant adds a nonlinear repulsive element in task space to raise apparent
+stiffness beyond the baseline while maintaining passivity. Scripts log
+displacement, force estimates, and controller state for comparison.
+
 | File | Description |
 |------|-------------|
-| `stiffening_contact.py` | K_d increased online upon contact detection |
-| `repulsive_stiffness_shaping.py` | Effective stiffness shaped above the mechanical baseline |
+| `stiffening_contact.py` | Increase virtual stiffness after contact is detected |
+| `repulsive_stiffness_shaping.py` | Add a repulsive stiffness component above the baseline |
 | `plot_stiffening_contact.ipynb` | Plot stiffening contact experiment |
 | `plot_repulsive_stiffness_shaping.ipynb` | Plot repulsive stiffness shaping experiment |
 
@@ -29,9 +35,14 @@ TunableCompliance/
 
 ## Hand/
 
+Hand experiments use a simple state machine that assigns different fingertip
+stiffness patterns across hand sides to bias object motion. Dynamic grasping
+updates stiffness schedules during UR5 transport based on contact and task
+phase. Scripts log joint state and task events for analysis.
+
 | File | Description |
 |------|-------------|
-| `inhand_manipulation.py` | In-hand object reorientation via asymmetric tip stiffness across hand sides (UNIFORM / ASYM_A / ASYM_B) |
-| `dynamic_grasp.py` | Dynamic grasping of a bottle while UR5 transports it; three conditions: `soft`, `stiff`, `adaptive` (soft → stiff after a delay) |
+| `inhand_manipulation.py` | In-hand object reorientation via asymmetric fingertip stiffness across hand sides |
+| `dynamic_grasp.py` | Dynamic grasping during UR5 transport under soft, stiff, and adaptive stiffness schedules |
 | `plot_emergent_grasps.ipynb` | Plot in-hand manipulation and dynamic grasp experiments |
-| `hand_config.py` | UR5 poses, PC1 / home joint targets, asymmetric-side groupings, condition list |
+| `hand_config.py` | UR5 poses, home and synergy pose targets, asymmetric-side groupings, condition list |

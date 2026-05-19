@@ -1,4 +1,4 @@
-# ProprioceptiveSensing — Experimental Area 3
+# ProprioceptiveSensing — Experimental Area
 
 Contact force and object stiffness estimated from kinematics and virtual stiffness
 alone — no external force sensors required. The deformation that absorbs impacts
@@ -9,13 +9,17 @@ virtual compliance C_A matches the object compliance C_O.
 
 ```
 ProprioceptiveSensing/
-├── Finger/     — single 2-DOF finger testbed experiments
+├── Finger/     — single finger testbed experiments
 └── Hand/       — ADAPT Hand experiments
 ```
 
 ---
 
 ## Finger/
+
+The finger experiment calibrates motor efficiency by relating commanded torque
+to observed motion and force. That calibration is then used with virtual
+stiffness and kinematics to infer contact force from deformation.
 
 | File | Description |
 |------|-------------|
@@ -26,7 +30,11 @@ ProprioceptiveSensing/
 
 ## Hand/
 
+The hand experiment squeezes an object using a low and a high virtual
+compliance setting. An additive compliance model uses the paired measurements
+to solve for object compliance without external sensing.
+
 | File | Description |
 |------|-------------|
-| `object_stiffness_hand.py` | Object stiffness estimation by squeezing — C_O from (C_A + C_O) |
+| `object_stiffness_hand.py` | Object stiffness estimation by squeezing using an additive compliance model |
 | `plot_object_stiffness_hand.ipynb` | Plot object stiffness hand experiment |
