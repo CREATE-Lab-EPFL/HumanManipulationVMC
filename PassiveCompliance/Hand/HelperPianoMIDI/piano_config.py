@@ -20,12 +20,14 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_ANGLE_DEG        = 30.0           # MCP+PIP flexion for the press pose [deg]
-PIANO_FINGERS_PLAYING  = ['index', 'ring']
+PRESS_ANGLE_DEG         = 30.0           # [deg]  MCP+PIP flexion
+SPREAD_ANGLE_DEG        = 0.0            # [deg]  finger abduction/adduction
+PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
 
-K_ROT = 0.1     # [N·m/rad]
-B_ROT = 0.001   # [N·m·s/rad]
+K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
+K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers (task spring takes over)
+B_ROT       = 0.001  # [N·m·s/rad]
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
 K_SWEEP             = [10.0, 20.0, 100.0]   # [N/m]
@@ -36,7 +38,6 @@ N_CYCLES            = 3                      # strokes per stiffness value
 PLAYING_SETTLE_TIME = 3.0                    # [s]
 
 # ── piano_glissando.py ────────────────────────────────────────────────────────
-K_CART                = 50.0    # [N/m]
 B_CART_GLISSANDO      = 1.0     # [N·s/m]
 N_RUNS                = 5
 GLISSANDO_SETTLE_TIME = 3.0     # [s]
