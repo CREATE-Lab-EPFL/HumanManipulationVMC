@@ -131,6 +131,7 @@ _phase      = 'settle'
 def _control_loop():
     step = 0
     while _running:
+        rclpy.spin_once(controller, timeout_sec=0)
         q     = controller.get_joint_positions()
         q_dot = controller.get_joint_velocities()
         tau_vmc  = vmc_joint.hand_torques(q, q_dot)
@@ -161,8 +162,6 @@ arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
 ctrl_thread.start()
-spin_thread = threading.Thread(target=lambda: rclpy.spin(controller), daemon=True)
-spin_thread.start()
 
 try:
     for run in range(1, N_RUNS + 1):
@@ -204,7 +203,13 @@ try:
 finally:
     _running = False
     ctrl_thread.join(timeout=1.0)
+    vmc_joint.set_stiffness(0.0)
+    vmc_joint.set_damping(0.0)
+    vmc_task.set_stiffness(0.0)
+    vmc_task.set_damping(0.0)
+    controller.publish_torques(np.zeros(15))
     arm.disconnect()
     recv.disconnect()
     controller.destroy_node()
-    rclpy.shutdown()
+    if rclpy.ok():
+        rclpy.shutdown()

@@ -22,7 +22,7 @@ Virtual Model Control for the 15-DOF ADAPT Hand.
 
 Manual conversion (if needed):
 ```python
-from VMCHand.motor_config import hardware_to_software, software_to_hardware
+from ModelIDHand.motor_config import hardware_to_software, software_to_hardware
 ```
 
 ## HandController Class
