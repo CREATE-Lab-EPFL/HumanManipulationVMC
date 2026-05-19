@@ -4,6 +4,12 @@ Validates the VMC stiffness composition model using elastic joints as ground-tru
 torsional springs. The UR5 applies a controlled pressing trajectory and the load
 cell records contact force, which is compared against model predictions.
 
+Method summary:
+- Elastic joints provide a known torsional stiffness at each finger joint.
+- UR5 indentation yields force-displacement curves under repeatable contact.
+- The stiffness mapping from virtual joint space to tip space is validated by
+  comparing model predictions with measured force.
+
 ## Files
 
 | File | Description |
@@ -23,6 +29,10 @@ cell records contact force, which is compared against model predictions.
 - Estimate instantaneous stiffness profiles by differentiating force data.
 - Evaluate fixed-stiffness and online-stiffness mimic controllers against the
   elastic-band runs.
+
+The analysis ties PassiveCompliance sweeps to the elastic-band data, then checks
+both average and instantaneous stiffness behavior across the different control
+conditions.
 
 ## Output structure
 
