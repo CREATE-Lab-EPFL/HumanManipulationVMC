@@ -17,12 +17,12 @@ Joint space has 3 DOF (MCP, PIP, DIP) coupled to 2 motors. Mapping handled by th
 ROS2 node that handles hardware communication.
 
 ```python
-controller.get_joint_positions()      # motor angles    — see FingerController.py for units
-controller.get_joint_velocities()     # motor velocities — see FingerController.py for units
-controller.publish_torques(tau)       # motor torques   — see FingerController.py for units
+controller.get_joint_positions()      # motor angles, degrees
+controller.get_joint_velocities()     # motor velocities, deg/s
+controller.publish_torques(tau)       # motor torques, N·m
 ```
 
-Consuming scripts convert to SI (rad / rad·s⁻¹ / N·m) where needed.
+Consumer scripts convert positions / velocities to radians before use.
 
 **Prerequisite:** `ros2 run dynamixel_interface dynamixel_node`
 
@@ -47,13 +47,13 @@ Finger orientation set via `R_world_to_finger` in the model identification modul
 
 ## Quick Reference
 
-| Variable | Dim | Notes |
-|----------|-----|-------|
-| `q_motor` | 2 | see `FingerController.py` for unit |
-| `q_dot_motor` | 2 | see `FingerController.py` for unit |
-| `tau_motor` | 2 | published to `/goal_torque` |
+| Variable | Dim | Unit |
+|----------|-----|------|
+| `q_motor` | 2 | deg (from ROS) |
+| `q_dot_motor` | 2 | deg/s (from ROS) |
+| `tau_motor` | 2 | N·m |
 
-Internal VMC computations and the SI convention used elsewhere in the repo
-are: motor angles in rad, velocities in rad·s⁻¹, torques in N·m.
+Consumer scripts convert positions / velocities to radians before passing them
+to the VMC, gravity, and Jacobian functions, which expect SI units.
 
 See [KINEMATICS_DOCUMENTATION.md](../KinematicsFinger/KINEMATICS_DOCUMENTATION.md) for FK/Jacobians.
