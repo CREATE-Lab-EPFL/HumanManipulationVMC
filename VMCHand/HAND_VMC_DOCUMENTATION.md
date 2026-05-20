@@ -89,16 +89,16 @@ keyed by joint group:
 
 **Uniform assignment** (all joints at once):
 ```python
-vmc.set_stiffness(0.4)    # [N·m/rad]
-vmc.set_damping(0.05)     # [N·m·s/rad]
+vmc.set_stiffness(K)    # [N·m/rad]
+vmc.set_damping(B)      # [N·m·s/rad]
 ```
 
 **Per-joint fine control** — index directly into the arrays:
 ```python
-vmc.stiffness['wrist'][1]   = 0.6   # wrist yaw only
-vmc.stiffness['thumb'][2]   = 1.0   # thumb MCP only
-vmc.stiffness['index'][0]   = 0.8   # index MCP only  (0=MCP, 1=PIP, 2=DIP)
-vmc.damping['spread_ring']  = np.array([0.02])
+vmc.stiffness['wrist'][1]   = K_wrist_yaw   # wrist yaw only
+vmc.stiffness['thumb'][2]   = K_thumb_MCP   # thumb MCP only
+vmc.stiffness['index'][0]   = K_index_MCP   # index MCP only  (0=MCP, 1=PIP, 2=DIP)
+vmc.damping['spread_ring']  = np.array([B_spread_ring])
 ```
 
 ### Reference Positions
@@ -127,9 +127,9 @@ tau = J^T @ ( K*(theta_target - theta) - B*(J @ q_dot) )
 
 ```python
 vmc = VMC()
-vmc.set_stiffness(0.4)
-vmc.set_damping(0.05)
-vmc.index_target = np.deg2rad([50.0, 60.0, 60.0])
+vmc.set_stiffness(K)
+vmc.set_damping(B)
+vmc.index_target = np.deg2rad([theta_MCP, theta_PIP, theta_DIP])
 tau = vmc.hand_torques(q_motor, q_dot_motor)
 ```
 
@@ -157,7 +157,7 @@ vmc = VMC()
 
 Override `self.attachment_points` to shift the spring to the true fingertip:
 ```python
-vmc.attachment_points['index'] = np.array([0.0, 0.0, 0.025])  # 25 mm along finger axis
+vmc.attachment_points['index'] = np.array([0.0, 0.0, r_tip])  # along finger axis
 ```
 
 ### Stiffness and Damping
@@ -168,21 +168,21 @@ and can be replaced with any class from `VMC_utils.VirtualModels`.
 
 **Uniform assignment** (all points, or a subset):
 ```python
-vmc.set_stiffness(200.0)                        # isotropic, all points
-vmc.set_damping(5.0, points=['thumb', 'index']) # subset only
+vmc.set_stiffness(K_iso)                          # isotropic, all points
+vmc.set_damping(B_iso, points=['thumb', 'index']) # subset only
 ```
 
 **Per-point fine control** — set the `.stiffness` / `.damping` attribute directly:
 ```python
-vmc.springs['index'].stiffness = np.array([200.0, 100.0, 200.0])  # per-axis [x,y,z]
-vmc.dampers['thumb'].damping   = 8.0                                # scalar
-vmc.springs['palm'].stiffness  = np.diag([100.0, 50.0, 100.0])    # full 3×3
+vmc.springs['index'].stiffness = np.array([Kx, Ky, Kz])    # per-axis [x,y,z]
+vmc.dampers['thumb'].damping   = B_thumb                    # scalar
+vmc.springs['palm'].stiffness  = np.diag([Kx, Ky, Kz])     # full 3×3
 ```
 
 **Swap the model class** (e.g. tanh spring):
 ```python
 from VMC_utils.VirtualModels import TanhSpring
-vmc.springs['index'] = TanhSpring(K_max=50.0, alpha=10.0)
+vmc.springs['index'] = TanhSpring(K_max=..., alpha=...)
 ```
 
 ### Target Positions

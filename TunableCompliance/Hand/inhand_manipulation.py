@@ -363,6 +363,8 @@ def _move_arm_async(target_pose, speed, done_state):
 
 
 def _set_task_stiffness(k_dict):
+    # Palm spring is intentionally held at K_UNIFORM throughout — the
+    # asymmetric study modulates only the fingertip springs.
     for _f in FINGERTIPS:
         vmc_task.springs[_f].stiffness = np.full(3, k_dict[_f])
 
@@ -635,6 +637,8 @@ try:
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
+    arm.stopScript()
+
     vmc_joint.set_stiffness(0.0)
     vmc_joint.set_damping(0.0)
     vmc_task.set_stiffness(0.0)
@@ -646,6 +650,7 @@ finally:
         _csv_file.close()
         controller.get_logger().info(f'Data saved to: {_csv_path}')
 
+    arm.disconnect()
     recv.disconnect()
     controller.destroy_node()
     if rclpy.ok():

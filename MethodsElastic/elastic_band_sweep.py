@@ -96,6 +96,10 @@ def open_csv(run):
 # =============================================================================
 # Main loop — sequential (no state machine needed without motor control)
 # =============================================================================
+csv_file = None
+csv_writer = None
+csv_filename = None
+
 node.get_logger().info('Moving UR5 to UR5_POSE + SHIFT_TPU ...')
 init_pose = UR5_POSE.copy()
 init_pose[2] += SHIFT_TPU

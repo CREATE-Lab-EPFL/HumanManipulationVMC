@@ -13,7 +13,7 @@ See [`FINGER_VMC_DOCUMENTATION.md`](FINGER_VMC_DOCUMENTATION.md) for the full AP
 Main ROS2 control node.
 - Subscribes: `/joint_positions` (deg), `/joint_velocities` (deg/s)
 - Publishes: `/goal_torque` (N·m)
-- Internally stores state in radians (software order).
+- State is returned in the same units as received from ROS — see `FingerController.py` for the exact convention; consuming scripts convert to radians where needed.
 
 ### `FingerGravFricLim.py`
 

@@ -186,7 +186,10 @@ try:
 
             if not COLLECTED_DATA: _flush(writer, k, run)
 
+except KeyboardInterrupt:
+    controller.get_logger().info('Interrupted.')
 finally:
+    arm.stopScript()
     if f: f.close()
     _running = False
     ctrl_thread.join(timeout=1.0)

@@ -189,7 +189,10 @@ try:
         run_condition('heterogeneous', [([K_STIFF, K_SOFT], None)])
     else:
         raise ValueError(f'Unknown CONDITION: {CONDITION!r}')
+except KeyboardInterrupt:
+    controller.get_logger().info('Interrupted.')
 finally:
+    arm.stopScript()
     _running = False
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)

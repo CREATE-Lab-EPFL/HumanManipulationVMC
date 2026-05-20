@@ -607,6 +607,8 @@ try:
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
+    arm.stopScript()
+
     # Zero stiffness before releasing — safe shutdown.
     vmc_joint.set_stiffness(0.0)
     vmc_joint.set_damping(0.0)
@@ -619,6 +621,7 @@ finally:
         _csv_file.close()
         controller.get_logger().info(f'Data saved to: {_csv_path}')
 
+    arm.disconnect()
     recv.disconnect()
     controller.destroy_node()
     if rclpy.ok():
