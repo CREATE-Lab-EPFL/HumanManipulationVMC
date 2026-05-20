@@ -11,8 +11,6 @@ is then matched to the object's stiffness:
     C_O_mean   = mean over fingers
     k_applied  = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
 
-K_GAIN = 1 ⇒ controller stiffness equals object stiffness (compliance match).
-
 Protocol per object:
   1. UR5 moves to ABOVE_POSE, descends to GRASP_POSE.
   2. Hand closes to PC1 at K_TIP_GENTLE (first sensing point).
