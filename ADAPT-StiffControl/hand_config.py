@@ -43,7 +43,7 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # K_GAIN = 1.0 → match the object's stiffness exactly.
 K_TIP_GENTLE = 10.0     # [N/m]   first sensing stiffness
 K_TIP_PROBE  = 50.0     # [N/m]   second sensing stiffness (must differ from gentle)
-K_GAIN       = 1.0      # [-]     proportionality of k_applied to 1/C_O
+K_GAIN       = 5.0      # [-]     proportionality of k_applied to 1/C_O
 K_MIN        = 5.0      # [N/m]   lower bound on adapted stiffness
 K_MAX        = 150.0    # [N/m]   upper bound on adapted stiffness
 

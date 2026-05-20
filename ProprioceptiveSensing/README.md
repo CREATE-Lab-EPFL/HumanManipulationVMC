@@ -2,8 +2,7 @@
 
 Contact force and object stiffness estimated from kinematics and virtual stiffness
 alone — no external force sensors required. The deformation that absorbs impacts
-is the same that encodes contact force. Sensing sensitivity is maximised when the
-virtual compliance C_A matches the object compliance C_O.
+is the same that encodes contact force.
 
 Method summary:
 - Tip force is inferred from virtual spring deflection and the stiffness model.

@@ -77,8 +77,7 @@ between uniform and asymmetric conditions.
 
 Contact force and object stiffness estimated from kinematics and virtual stiffness
 alone — no external force sensors. The deformation that absorbs impacts encodes
-force. Sensing sensitivity is maximised when virtual compliance approximately
-matches object compliance.
+force.
 
 The sensing pipeline infers contact force from virtual spring deformation and
 kinematics. Finger experiments identify motor efficiency to map commanded torque

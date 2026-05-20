@@ -3,8 +3,7 @@ Proprioceptive sensing — object stiffness estimation with the ADAPT Hand.
 
 The hand squeezes objects of known compliance (C_0) and estimates their stiffness
 by comparing the theoretical compliance C_A (from VMC) with the observed
-deformation C_A + C_0. Matching virtual stiffness to the environment maximises
-sensing sensitivity.
+deformation C_A + C_0.
 """
 
 import numpy as np
