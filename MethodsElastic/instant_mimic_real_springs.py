@@ -19,6 +19,7 @@ from VMCFinger.FingerVMCFingerSpace import VMC
 from VMCFinger.FingerGravFricLim import GravFricLim
 from VMC_utils.VirtualModels import LinearSpring
 from StiffnessModelFinger.stiffness2fingerspace import tip_stiffness_FingerSpace
+from ModelIDFinger.finger_params import eta
 from UR5_codes.UR5_config import (
     UR5_POSE, UR5_IP,
     UR5_INIT_SPEED, UR5_INIT_ACCELERATION,
@@ -114,7 +115,7 @@ vmc = VMC(
     damping=np.array([DAMPING] * 3),
     target=FINGER_STRAIGHT,
 )
-stiff_model = tip_stiffness_FingerSpace(n=np.array([0, 0, 1]))
+stiff_model = tip_stiffness_FingerSpace(n=np.array([0, 0, 1]), eta=eta)
 
 arm  = rtde_control.RTDEControlInterface(UR5_IP)
 recv = rtde_receive.RTDEReceiveInterface(UR5_IP)
