@@ -34,7 +34,7 @@ from KinematicsHand.FK_Hand import (
     FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm,
     joint_to_motor,
 )
-from ModelIDHand.hand_params import FINGER_TIP_OFFSETS
+from ModelIDHand.hand_params import FINGER_TIP_OFFSETS, eta
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from hand_config import (
@@ -154,7 +154,7 @@ recv     = UR5Receiver()
 
 print('Initialising stiffness model (HandHessians)…')
 _t0 = time.time()
-stiff_model = tip_stiffness_MixedSpace(mode='normal')
+stiff_model = tip_stiffness_MixedSpace(eta=eta, mode='normal')
 print(f'  done in {time.time() - _t0:.1f} s')
 input('Press ENTER to continue…')
 print()
