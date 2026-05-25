@@ -254,13 +254,13 @@ JOINT_LIMITS = {
 # Motor efficiency
 # One η per motor axis, ordered as SOFTWARE_MOTOR_ORDER
 # =============================================================================
-ETA_WRIST1    = 1.0   # wrist_motor1  [0]
-ETA_WRIST2    = 1.0   # wrist_motor2  [1]
-ETA_THUMB_CMC1 = 1.0  # thumb_CMC1    [2]
-ETA_THUMB_CMC2 = 1.0  # thumb_CMC2    [3]
+ETA_WRIST1 = 1.0000   # wrist_motor1  [0]
+ETA_WRIST2 = 1.0000   # wrist_motor2  [1]
+ETA_THUMB_CMC1 = 1.0000  # thumb_CMC1    [2]
+ETA_THUMB_CMC2 = 1.0000  # thumb_CMC2    [3]
 ETA_THUMB_MCP = 0.8373  # thumb_MCP     [4]
 ETA_THUMB_IP = 0.3594  # thumb_IP      [5]
-ETA_SPREAD     = 1.0  # spread        [6]
+ETA_SPREAD = 1.0000  # spread        [6]
 ETA_INDEX_MCP = 0.8373  # index_MCP     [7]
 ETA_INDEX_PIP = 0.3594  # index_PIP     [8]
 ETA_MIDDLE_MCP = 0.8373  # middle_MCP    [9]
