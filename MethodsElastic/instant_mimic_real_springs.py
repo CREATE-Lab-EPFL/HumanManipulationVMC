@@ -35,8 +35,8 @@ _DATA_DIR = os.path.join(_HERE, 'outputs', 'data')
 
 DAMPING       = 0.003
 SETTLE_TIME   = 3.0
-LR_LOW        = 1.0e-3   # learning rate when K_x(d) < KX_LR_LOW  [rad/N]
-LR_HIGH       = 1.0e-4   # learning rate when K_x(d) > KX_LR_HIGH [rad/N]
+LR_LOW        = 8.2e-4   # learning rate when K_x(d) < KX_LR_LOW  [rad/N]
+LR_HIGH       = 5.9e-5   # learning rate when K_x(d) > KX_LR_HIGH [rad/N]
 KX_LR_LOW     = 40.0     # N/m — below this K_x, use LR_LOW
 KX_LR_HIGH    = 100.0    # N/m — above this K_x, use LR_HIGH
 DESCENT_SPEED = UR5_DESCENT_SPEED / 5   # 0.0004 m/s
