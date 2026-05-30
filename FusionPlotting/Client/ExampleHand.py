@@ -22,7 +22,7 @@ from JointClient import JointClient
 # ---------------------------------------------------------------------------
 HAND_JOINTS: dict[str, float] = {
     # --- Wrist (2 revolute DOF) ---
-    "Wrist_Flex":    15.0,
+    "Wrist_Flex":    0.0,
     "Wrist_Abd":      0.0,
 
     # --- Thumb (4 revolute DOF) ---
