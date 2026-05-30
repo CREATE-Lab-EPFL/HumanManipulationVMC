@@ -33,8 +33,8 @@ HAND_JOINTS: dict[str, float] = {
     # --- Thumb ---
     "thumb_CMC1":    30.0,
     "thumb_CMC2":    20.0,
-    "thumb_MCP":     15.0,
-    "thumb_IP":      10.0,
+    "thumb_MCP":     35.0,
+    "thumb_IP":      30.0,
 
     # --- Spread (index goes negative, ring/pinky go positive) ---
     "index_spread":   10.0,
@@ -50,7 +50,7 @@ HAND_JOINTS: dict[str, float] = {
 
     "ring_MCP":      40.0,
     "ring_PIP":      25.0,
-    
+
     "pinky_MCP":     35.0,
     "pinky_PIP":     20.0,
 }
