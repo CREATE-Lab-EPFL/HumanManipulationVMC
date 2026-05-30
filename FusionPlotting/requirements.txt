@@ -1,0 +1,5 @@
+# Client (Client/) uses only the Python standard library: json, pathlib, datetime.
+# No third-party packages required.
+#
+# The add-in (FusionAddin/) runs inside Fusion 360, which supplies adsk.core /
+# adsk.fusion — do NOT install those manually.

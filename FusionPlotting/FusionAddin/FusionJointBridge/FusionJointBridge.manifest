@@ -1,0 +1,13 @@
+{
+   "autodeskProduct": "Fusion360",
+   "type": "addin",
+   "id": "FusionJointBridge",
+   "author": "Lorenzo Vignoli",
+   "description": {
+      "": "Polls ~/FusionBridge/commands.json, applies joint targets, writes back current values."
+   },
+   "version": "1.0.0",
+   "runOnStartup": false,
+   "supportedOS": "windows|mac",
+   "editEnabled": true
+}
