@@ -27,8 +27,8 @@ from JointClient import JointClient
 # ---------------------------------------------------------------------------
 HAND_JOINTS: dict[str, float] = {
     # --- Wrist ---
-    "wrist_pitch":    0.0,   # + = flexion
-    "wrist_yaw":      0.0,   # + = ulnar deviation
+    "wrist_pitch":    10.0,   # + = flexion
+    "wrist_yaw":      10.0,   # + = ulnar deviation
 
     # --- Thumb ---
     "thumb_CMC1":    30.0,
@@ -37,17 +37,20 @@ HAND_JOINTS: dict[str, float] = {
     "thumb_IP":      10.0,
 
     # --- Spread (index goes negative, ring/pinky go positive) ---
-    "index_spread":   0.0,
-    "ring_spread":    0.0,
-    "pinky_spread":   0.0,
+    "index_spread":   10.0,
+    "ring_spread":    5.0,
+    "pinky_spread":   5.0,
 
     # --- Fingers: + = flexion ---
     "index_MCP":     45.0,
     "index_PIP":     30.0,
+
     "middle_MCP":    45.0,
     "middle_PIP":    30.0,
+
     "ring_MCP":      40.0,
     "ring_PIP":      25.0,
+    
     "pinky_MCP":     35.0,
     "pinky_PIP":     20.0,
 }

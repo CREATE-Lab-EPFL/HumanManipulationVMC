@@ -20,9 +20,9 @@ from JointClient import JointClient
 # Joint name -> target angle (degrees).  Update names to match your model.
 # ---------------------------------------------------------------------------
 FINGER_JOINTS: dict[str, float] = {
-    "MCP": 0.0,   # metacarpophalangeal — revolute
-    "PIP": 0.0,   # proximal interphalangeal — revolute
-    "DIP": 0.0,   # distal interphalangeal (mimic; may be read-only in Fusion)
+    "MCP": 20.0,   # metacarpophalangeal — revolute
+    "PIP": 30.0,   # proximal interphalangeal — revolute
+    "DIP": 40.0,   # distal interphalangeal (mimic; may be read-only in Fusion)
 }
 
 # ---------------------------------------------------------------------------
