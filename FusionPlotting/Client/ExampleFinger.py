@@ -21,8 +21,8 @@ from JointClient import JointClient
 # ---------------------------------------------------------------------------
 FINGER_JOINTS: dict[str, float] = {
     "MCP": 20.0,   # metacarpophalangeal — revolute
-    "PIP": 30.0,   # proximal interphalangeal — revolute
-    "DIP": 40.0,   # distal interphalangeal (mimic; may be read-only in Fusion)
+    "PIP": 10.0,   # proximal interphalangeal — revolute
+    "DIP": 10.0,   # distal interphalangeal (mimic; may be read-only in Fusion)
 }
 
 # ---------------------------------------------------------------------------
