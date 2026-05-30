@@ -9,18 +9,18 @@ JOINT_MAP: dict[str, tuple] = {
     "PIP": (None, +1),
     "DIP": (None, +1),
 
-    "wrist_pitch": ("Wrist_pitch", -1),
-    "wrist_yaw":   ("Wrist_yaw",   +1),
+    "wrist_pitch": ("Wrist_Pitch", -1),
+    "wrist_yaw":   ("Wrist_Yaw",   +1),
 
-    "thumb_CMC1": ("Thumb_CMC1", -1),
+    "thumb_CMC1": ("Thumb_CMC1", +1),
     "thumb_CMC2": ("Thumb_CMC2", -1),
     "thumb_MCP":  ("Thumb_MCP",  -1),
     "thumb_IP":   ("Thumb_IP",   -1),
 
-    "index_spread":  ("Index_spread",  +1),
-    "middle_spread": ("Middle_spread", +1),
-    "ring_spread":   ("Ring_spread",   +1),
-    "pinky_spread":  ("Pinky_spread",  +1),
+    "index_spread":  ("Index_Spread",  +1),
+    "middle_spread": ("Middle_Spread", +1),
+    "ring_spread":   ("Ring_Spread",   +1),
+    "pinky_spread":  ("Pinky_Spread",  +1),
 
     "index_MCP":  ("Index_MCP",  -1),
     "index_PIP":  ("Index_PIP",  -1),
