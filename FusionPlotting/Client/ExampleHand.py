@@ -1,12 +1,18 @@
 """
 Example: set joint angles for the ADAPT Hand Fusion model.
 
-The joint names must match exactly what appears in the Fusion 360 browser
-under:  CREATE Lab > Bioinspired Robotic Hands > Lorenzo Vignoli > [Hand design]
+Joint names and sign conventions follow the code (hand_params.py JOINT_LIMITS):
+  - Finger MCP/PIP/DIP: positive = flexion  (limits 0 → 1.5 / 1.2 rad)
+  - index_spread:        negative = adduction toward middle  (limits -0.3 → 0 rad)
+  - ring/pinky_spread:   positive = adduction toward middle  (limits 0 → 0.3 rad)
+  - wrist_pitch:         positive = flexion
+  - wrist_yaw:           positive = ulnar deviation
 
-To find the exact names: open the Joints folder in the Fusion browser, hover
-over each joint — the tooltip shows its name, or right-click > Properties.
-Update HAND_JOINTS below to match.
+The add-in (FusionConventions.py) handles any sign flips and name mapping
+before sending values to Fusion — you never need to manually negate values here.
+
+After running the add-in, check ~/FusionBridge/joints_discovery.json for the
+actual Fusion joint names, then update FusionConventions.py accordingly.
 """
 
 import sys
@@ -17,46 +23,40 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from JointClient import JointClient
 
 # ---------------------------------------------------------------------------
-# Joint name -> target angle in degrees (revolute) or mm (slider/spread).
-# Names below are placeholders — replace with your Fusion browser names.
+# Values in code convention (degrees).  Signs match hand_params.py JOINT_LIMITS.
 # ---------------------------------------------------------------------------
 HAND_JOINTS: dict[str, float] = {
-    # --- Wrist (2 revolute DOF) ---
-    "Wrist_Flex":    0.0,
-    "Wrist_Abd":      0.0,
+    # --- Wrist ---
+    "wrist_pitch":    0.0,   # + = flexion
+    "wrist_yaw":      0.0,   # + = ulnar deviation
 
-    # --- Thumb (4 revolute DOF) ---
-    "Thumb_CMC1":    30.0,
-    "Thumb_CMC2":    20.0,
-    "Thumb_MCP":     15.0,
-    "Thumb_IP":      10.0,
+    # --- Thumb ---
+    "thumb_CMC1":    30.0,
+    "thumb_CMC2":    20.0,
+    "thumb_MCP":     15.0,
+    "thumb_IP":      10.0,
 
-    # --- Index finger ---
-    "Index_Spread":   0.0,   # abduction — revolute or slider depending on model
-    "Index_MCP":     45.0,
-    "Index_PIP":     30.0,
+    # --- Spread (index goes negative, ring/pinky go positive) ---
+    "index_spread":   0.0,
+    "ring_spread":    0.0,
+    "pinky_spread":   0.0,
 
-    # --- Middle finger ---
-    "Middle_Spread":  0.0,
-    "Middle_MCP":    45.0,
-    "Middle_PIP":    30.0,
-
-    # --- Ring finger ---
-    "Ring_Spread":    0.0,
-    "Ring_MCP":      40.0,
-    "Ring_PIP":      25.0,
-
-    # --- Pinky finger ---
-    "Pinky_Spread":   0.0,
-    "Pinky_MCP":     35.0,
-    "Pinky_PIP":     20.0,
+    # --- Fingers: + = flexion ---
+    "index_MCP":     45.0,
+    "index_PIP":     30.0,
+    "middle_MCP":    45.0,
+    "middle_PIP":    30.0,
+    "ring_MCP":      40.0,
+    "ring_PIP":      25.0,
+    "pinky_MCP":     35.0,
+    "pinky_PIP":     20.0,
 }
 
 # ---------------------------------------------------------------------------
 
 client = JointClient()
 
-print("Writing hand targets:")
+print("Writing hand targets (code convention, degrees):")
 for name, val in HAND_JOINTS.items():
     print(f"  {name}: {val}")
 
@@ -68,8 +68,10 @@ time.sleep(0.5)
 
 current = client.read_current()
 if current:
-    print("\nValues reported by Fusion add-in:")
+    print("\nValues reported by Fusion add-in (code convention):")
     for name, val in current.items():
         print(f"  {name}: {val:.2f}")
 else:
-    print("\nNo values read back yet — is the add-in running in Fusion?")
+    print("\nNo values read back yet.")
+    print("Check ~/FusionBridge/joints_discovery.json for actual Fusion joint names,")
+    print("then update FusionConventions.py in the add-in folder.")

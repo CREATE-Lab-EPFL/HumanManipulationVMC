@@ -1,10 +1,11 @@
 """
 Fusion 360 add-in entry point.
 
-Starts a background thread that fires a custom event every POLL_INTERVAL
-seconds. The event handler (running on the Fusion main thread) calls
-JointHandler to read the bridge file, apply joint targets, and write back
-current values.
+On run():
+  1. Discovers all joints in the active design → ~/FusionBridge/joints_discovery.json
+  2. Starts a background thread that fires a custom event every POLL_INTERVAL seconds.
+     The event handler applies joint targets from the bridge file and writes back
+     current values, with sign conventions from FusionConventions.py.
 """
 
 import adsk.core
@@ -14,14 +15,13 @@ import sys
 import threading
 import traceback
 
-# Make sibling modules importable regardless of Fusion's working directory.
 _addin_dir = os.path.dirname(os.path.realpath(__file__))
 if _addin_dir not in sys.path:
     sys.path.insert(0, _addin_dir)
 
 import JointHandler
 
-POLL_INTERVAL   = 0.2          # seconds between bridge file polls
+POLL_INTERVAL   = 0.2
 CUSTOM_EVENT_ID = "FusionJointBridgeEvent"
 
 _app       = None
@@ -31,33 +31,21 @@ _stop_flag = threading.Event()
 _thread    = None
 
 
-# ---------------------------------------------------------------------------
-# Custom-event handler (runs on the Fusion main thread)
-# ---------------------------------------------------------------------------
-
 class _BridgeEventHandler(adsk.core.CustomEventHandler):
     def notify(self, args):
         try:
             JointHandler.apply_and_readback(_app)
         except Exception:
-            pass   # errors are logged inside apply_and_readback
+            pass
 
-
-# ---------------------------------------------------------------------------
-# Background polling thread
-# ---------------------------------------------------------------------------
 
 def _poll_loop() -> None:
     while not _stop_flag.wait(POLL_INTERVAL):
         try:
             _app.fireCustomEvent(CUSTOM_EVENT_ID)
         except Exception:
-            break   # app is shutting down
+            break
 
-
-# ---------------------------------------------------------------------------
-# Add-in lifecycle
-# ---------------------------------------------------------------------------
 
 def run(context):
     global _app, _ui, _thread
@@ -66,6 +54,9 @@ def run(context):
     _ui  = _app.userInterface
 
     try:
+        # Write joints_discovery.json so the user can find Fusion joint names.
+        JointHandler.discover_all_joints(_app)
+
         event   = _app.registerCustomEvent(CUSTOM_EVENT_ID)
         handler = _BridgeEventHandler()
         event.add(handler)
@@ -76,9 +67,11 @@ def run(context):
         _thread.start()
 
         _ui.messageBox(
-            "FusionJointBridge started.\n"
-            f"Polling every {int(POLL_INTERVAL * 1000)} ms.\n"
-            f"Bridge file: {JointHandler.BRIDGE_PATH}"
+            "FusionJointBridge started.\n\n"
+            f"Polling every {int(POLL_INTERVAL * 1000)} ms.\n\n"
+            f"Bridge file:    {JointHandler.BRIDGE_PATH}\n"
+            f"Discovery file: {JointHandler.DISCOVERY_PATH}\n"
+            f"Log file:       {JointHandler.LOG_PATH}"
         )
 
     except Exception:
