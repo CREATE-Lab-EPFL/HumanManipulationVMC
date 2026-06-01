@@ -19,8 +19,8 @@ if _repo not in _sys.path:
     _sys.path.insert(0, _repo)
 from PoseControl.hand_config import POSES as _POSES
 _pc1       = next(p for p in _POSES if p["label"] == "PC1")
-PC1_WRIST  = _pc1["wrist"].copy()
-PC1_THUMB  = _pc1["thumb"].copy()
+PC1_WRIST  = np.deg2rad([0.0, 0.0])
+PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
 PC1_SPREAD = {f: float(v[0]) for f, v in _pc1["spread"].items()}
 PC1_INDEX  = _pc1["index"].copy()
 PC1_MIDDLE = _pc1["middle"].copy()

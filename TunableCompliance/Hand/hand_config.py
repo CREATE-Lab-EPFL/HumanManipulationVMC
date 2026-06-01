@@ -4,7 +4,6 @@ PLACEHOLDER — tune UR5 poses to the actual setup before running.
 """
 
 import numpy as np
-import os as _os, sys as _sys
 
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # inhand_manipulation.py — hand horizontal, fingers down over the in-hand
@@ -15,20 +14,19 @@ UR5_POSE_INHAND = np.array([-0.09, 0.72, 0.30, -0.91, 1.50, 2.30])
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along +X.
 UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 
-# ── PC1 grasp pose — from PoseControl/hand_config.py (Santello et al. 1998) ───
-_repo = _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
-if _repo not in _sys.path:
-    _sys.path.insert(0, _repo)
-from PoseControl.hand_config import POSES as _POSES
-_pc1       = next(p for p in _POSES if p["label"] == "PC1")
-PC1_WRIST  = np.deg2rad([0.0, 0.0])
+# ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
+PC1_WRIST  = np.deg2rad([0.0,  0.0])
 PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
-PC1_SPREAD = {f: float(v[0]) for f, v in _pc1["spread"].items()}
-PC1_INDEX  = _pc1["index"].copy()
-PC1_MIDDLE = _pc1["middle"].copy()
-PC1_RING   = _pc1["ring_pinky"].copy()
-PC1_PINKY  = _pc1["ring_pinky"].copy()
-del _repo, _POSES, _pc1
+PC1_SPREAD = {
+    'index':  np.deg2rad(-2.0),
+    'middle': 0.0,
+    'ring':   np.deg2rad(2.0),
+    'pinky':  np.deg2rad(2.0),
+}
+PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
+PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
+PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
+PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_WRIST  = np.zeros(2)
