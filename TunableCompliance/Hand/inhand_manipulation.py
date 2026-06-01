@@ -726,7 +726,7 @@ if not COLLECTED_DATA and _csv_path is not None:
                 mag = np.linalg.norm(df.loc[mask, disp_cols].values, axis=1)
                 ax.plot(t[mask], mag * 1e3, '.', color=color, ms=2,
                         label=PHASE_LABELS[phase])
-        ax.set_ylabel(f'{finger}\n‖Δp‖ [mm]')
+        ax.set_ylabel(f'{finger}\n$\\|\\Delta p\\|$ [mm]')
         ax.grid(True, alpha=0.3)
 
     axes1[-1].set_xlabel('Time [s]')

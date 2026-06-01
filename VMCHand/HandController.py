@@ -89,15 +89,7 @@ class HandController(Node):
             torques: [15] motor torques in software order (N·m).
         """
         torques = np.clip(torques, -TORQUE_LIMITS, TORQUE_LIMITS)
-        tau_hw = software_to_hardware(torques)
-
-        # Debug: print torques being sent (every 100 calls to avoid spam)
-        if not hasattr(self, '_pub_count'):
-            self._pub_count = 0
-        self._pub_count += 1
-        if self._pub_count % 100 == 0:
-            self.get_logger().info(f'Torques (Nm): {np.round(tau_hw, 3).tolist()}')
-
+        tau_hw  = software_to_hardware(torques)
         msg = Float64MultiArray()
         msg.data = list(tau_hw)
         self.torque_pub.publish(msg)
