@@ -38,7 +38,7 @@ from ModelIDHand.hand_params import FINGER_TIP_OFFSETS, eta
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from hand_config import (
-    UR5_POSE_SQUEEZING,
+    UR5_POSE_INHAND,
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
@@ -460,7 +460,7 @@ def control_callback():
     if state == STATE_INIT_ARM:
         if not _arm_moving:
             controller.get_logger().info('Moving UR5 to squeezing pose …')
-            _move_arm_async(UR5_POSE_SQUEEZING, UR5_INIT_SPEED, STATE_SETTLE_ARM)
+            _move_arm_async(UR5_POSE_INHAND, UR5_INIT_SPEED, STATE_SETTLE_ARM)
 
     elif state == STATE_SETTLE_ARM:
         if elapsed >= SETTLE_TIME:

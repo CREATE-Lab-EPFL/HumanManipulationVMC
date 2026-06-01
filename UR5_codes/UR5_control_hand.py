@@ -52,7 +52,7 @@ HAND_POSES = {
     # PassiveCompliance/Hand/piano_glissando.py
     "piano_glissando":        _piano.UR5_POSE_GLISSANDO_START,
     # TunableCompliance/Hand/inhand_manipulation.py
-    "inhand_manipulation":    _tunable.UR5_POSE_SQUEEZING,
+    "inhand_manipulation":    _tunable.UR5_POSE_INHAND,
     # TunableCompliance/Hand/dynamic_grasp.py
     "dynamic_grasp":          _tunable.UR5_POSE_BOTTLE_START,
     # ProprioceptiveSensing/Hand/object_stiffness_hand.py

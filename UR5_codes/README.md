@@ -20,8 +20,28 @@ Configuration constants: IP address, TCP pose offsets, joint limits, speeds.
 
 ### `UR5_control.py`
 
-Main control interface using `rtde_control` and `rtde_receive`.
-Provides move functions (moveJ, moveL) and TCP force/torque reading.
+Moves the UR5 to `UR5_POSE` (the finger-experiment fixture defined in
+`UR5_config.py`). Single-shot linear move at `UR5_INIT_SPEED` /
+`UR5_INIT_ACCELERATION`. No hand actuation.
+
+### `UR5_control_hand.py`
+
+Terminal-menu version of `UR5_control.py` for hand experiments. Lists the
+initial pose of every hand experiment and moves the UR5 (only) to the
+chosen one. Poses are imported directly from each experiment's own config
+(`importlib` is used because `ADAPT-StiffControl` has a hyphen and several
+folders share the module name `hand_config.py`), so any upstream pose
+change is picked up automatically.
+
+| Menu key                 | Source config                                                  | Variable                          |
+|--------------------------|----------------------------------------------------------------|-----------------------------------|
+| `piano_playing_hand`     | `PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py`       | `UR5_POSE_PIANO`                  |
+| `piano_glissando`        | `PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py`       | `UR5_POSE_GLISSANDO_START`        |
+| `inhand_manipulation`    | `TunableCompliance/Hand/hand_config.py`                        | `UR5_POSE_INHAND`                 |
+| `dynamic_grasp`          | `TunableCompliance/Hand/hand_config.py`                        | `UR5_POSE_BOTTLE_START`           |
+| `object_stiffness_hand`  | `ProprioceptiveSensing/Hand/hand_config.py`                    | `UR5_POSE_SQUEEZING`              |
+| `grasp_adaptation_hard`  | `ADAPT-StiffControl/hand_config.py`                            | `UR5_POSE_GRASP_OBJ['hard_obj']`  |
+| `grasp_adaptation_soft`  | `ADAPT-StiffControl/hand_config.py`                            | `UR5_POSE_GRASP_OBJ['soft_obj']`  |
 
 ### `UR5_readPose.py`
 
