@@ -23,14 +23,14 @@ UR5_INIT_ACCEL = 0.05    # [m/s²]
 PRESS_ANGLE_DEG         = 30.0           # [deg]  MCP+PIP flexion
 SPREAD_ANGLE_DEG        = 0.0            # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
-PIANO_FINGERS_GLISSANDO = ['index', 'middle']
+PIANO_FINGERS_GLISSANDO = ['index', 'ring']
 
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
 K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers (task spring takes over)
 B_ROT       = 0.001  # [N·m·s/rad]
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
-K_SWEEP             = [10.0, 20.0, 100.0]   # [N/m]
+K_SWEEP             = [10.0, 30.0]           # [N/m]
 K_STIFF             = 100.0                  # [N/m]
 K_SOFT              = 10.0                   # [N/m]
 B_CART_PLAYING      = 0.5                    # [N·s/m]
