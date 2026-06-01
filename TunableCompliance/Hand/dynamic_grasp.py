@@ -334,24 +334,19 @@ def control_callback():
                 phase = 'soft' if _k_ramp_t0 is None else 'ramping'
             else:
                 phase = 'closed'
-            K_task_now = {f: np.eye(3) * _current_k_tip for f in FINGERTIPS}
-            K_task_now['palm'] = np.eye(3) * _current_k_tip
+            K_task_now = {f: _current_k_tip * np.eye(3) for f in FINGERTIPS}
+            K_task_now['palm'] = _current_k_tip * np.eye(3)
             force_cols = []
             for _f in FINGERTIPS:
                 pos  = _tip_pos(_f, q)
-                disp = pos - D_REF[_f]
+                ref  = D_REF[_f]
+                disp = pos - ref
                 frc  = stiff_model.tip_force(
                     _f, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now)
-                # Contact force is compressive only: clamp tensile (n·f < 0) to zero.
-                n_contact = stiff_model._normal(_f, q)
-                f_normal  = float(np.dot(n_contact, frc))
-                if f_normal < 0.0:
-                    frc      = np.zeros(3)
-                    f_normal = 0.0
                 force_cols += [f'{v:.6f}' for v in pos]
                 force_cols += [f'{v:.6f}' for v in disp]
                 force_cols += [f'{v:.6f}' for v in frc]
-                force_cols.append(f'{f_normal:.6f}')
+                force_cols.append(f'{float(np.linalg.norm(frc)):.6f}')
             row = ([f'{now - _experiment_start:.4f}', phase, f'{_current_k_tip:.1f}'] +
                    [f'{v:.6f}' for v in q] +
                    [f'{v:.6f}' for v in q_dot] +
