@@ -47,7 +47,7 @@ CONDITIONS  = ['soft', 'stiff', 'adaptive']
 # ── Shared joint regulation (both experiments) ────────────────────────────────
 K_ROT       = 0.05      # [N·m/rad]    background joint stiffness
 K_ROT_FLEX  = 0.02      # [N·m/rad]    flex joint stiffness when task spring is active
-B_ROT       = 0.0001    # [N·m·s/rad]  background joint damping
+B_ROT       = 0.01    # [N·m·s/rad]  background joint damping
 B_TIP       = 0.001     # [N·s/m]      task-space damping
 B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 
