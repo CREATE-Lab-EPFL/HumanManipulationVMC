@@ -14,11 +14,12 @@ Output: outputs/piano_glissando/data.csv
 import numpy as np
 import rclpy
 import sys, os, csv, time, threading
-from std_msgs.msg import String
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, '../..'))
 sys.path.insert(0, os.path.join(_HERE, 'HelperPianoMIDI'))
+
+from midi_controller import MidiController
 
 from VMCHand.HandController    import HandController, CONTROL_FREQUENCY
 from VMCHand.HandVMCJointSpace import VMC as JointVMC
@@ -92,21 +93,20 @@ for _f in PIANO_FINGERS_GLISSANDO:
     vmc_task.targets[_f]         = PRESS_POS[_f].copy()
 
 # =============================================================================
-# MIDI subscriber
+# MIDI input (direct rtmidi — no ROS2 bridge needed)
 # =============================================================================
 _midi_lock   = threading.Lock()
 _midi_events = []
 _phase       = 'settle'
 
-def _midi_cb(msg):
-    flds = dict(p.split('=') for p in msg.data.split())
+def _on_note_on(note: int, velocity: int) -> None:
     with _midi_lock:
         _midi_events.append({'time_s':   time.time(),
-                             'note':     int(flds['note']),
-                             'velocity': int(flds['velocity']),
+                             'note':     note,
+                             'velocity': velocity,
                              'phase':    _phase})
 
-controller.create_subscription(String, '/midi/note_on', _midi_cb, 10)
+midi_ctrl = MidiController(on_note_on=_on_note_on)
 
 # =============================================================================
 # Control loop
@@ -189,6 +189,7 @@ try:
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
+    midi_ctrl.close()
     arm.stopScript()
     if f: f.close()
     _running = False
