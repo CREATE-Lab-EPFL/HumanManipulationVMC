@@ -46,14 +46,14 @@ CONDITIONS  = ['soft', 'stiff', 'adaptive']
 
 # ── Shared joint regulation (both experiments) ────────────────────────────────
 K_ROT       = 0.05      # [N·m/rad]    background joint stiffness
-K_ROT_FLEX  = 0.01      # [N·m/rad]    flex joint stiffness when task spring is active
+K_ROT_FLEX  = 0.02      # [N·m/rad]    flex joint stiffness when task spring is active
 B_ROT       = 0.0001    # [N·m·s/rad]  background joint damping
 B_TIP       = 0.001     # [N·s/m]      task-space damping
 B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM = 10.0    # [N/m]  baseline uniform tip stiffness
-K_HIGH    = 200.0   # [N/m]  stiff-side stiffness
+K_HIGH    = 150.0   # [N/m]  stiff-side stiffness
 K_LOW     = 0.5     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.2     # [N·m/rad]  joint stiffness for ramp back to HOME
 
