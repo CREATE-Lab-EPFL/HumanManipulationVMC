@@ -33,7 +33,8 @@ from KinematicsHand.FK_Hand     import (
     FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm,
     joint_to_motor,
 )
-from ModelIDHand.hand_params    import FINGER_TIP_OFFSETS
+from ModelIDHand.hand_params    import FINGER_TIP_OFFSETS, eta
+from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config       import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from UR5_codes.UR5_readPose     import UR5Receiver
 from hand_config import (
@@ -105,6 +106,26 @@ D_REF = {
     'palm':   np.array(FK_motor2palm(Q_TARGET, np.zeros(3))[1]),
 }
 
+THETA_REF_DEG = np.degrees(np.concatenate([
+    PC1_WRIST, PC1_THUMB,
+    [PC1_SPREAD['index']], [PC1_SPREAD['middle']],
+    [PC1_SPREAD['ring']],  [PC1_SPREAD['pinky']],
+    PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
+]))
+
+K_JOINT_DICT_MODEL = {
+    'wrist':         K_ROT * np.eye(2),
+    'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
+    'spread_index':  K_ROT * np.eye(1),
+    'spread_middle': K_ROT * np.eye(1),
+    'spread_ring':   K_ROT * np.eye(1),
+    'spread_pinky':  K_ROT * np.eye(1),
+    'index':         np.zeros((3, 3)),
+    'middle':        np.zeros((3, 3)),
+    'ring':          np.zeros((3, 3)),
+    'pinky':         np.zeros((3, 3)),
+}
+
 # =============================================================================
 # ROS2 + controller
 # =============================================================================
@@ -145,6 +166,11 @@ vmc_task.targets['palm']           = D_REF['palm'].copy()
 grav_lim = GravFricLim()
 recv     = UR5Receiver()
 
+print('Initialising stiffness model …')
+_t0 = time.time()
+stiff_model = tip_stiffness_MixedSpace(eta=eta, mode='normal')
+print(f'  done in {time.time() - _t0:.1f} s')
+
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.setTcp([0, 0, 0, 0, 0, 0])
 arm.endTeachMode()
@@ -164,7 +190,11 @@ _FIELDNAMES = (
     ['time_s', 'phase', 'k_tip_Npm'] +
     [f'q_{i}'     for i in range(15)] +
     [f'q_dot_{i}' for i in range(15)] +
-    [f'tau_{i}'   for i in range(15)]
+    [f'tau_{i}'   for i in range(15)] +
+    [f'tip_{f}_{ax}_m'   for f in FINGERTIPS for ax in 'xyz'] +
+    [f'disp_{f}_{ax}_m'  for f in FINGERTIPS for ax in 'xyz'] +
+    [f'force_{f}_{ax}_N' for f in FINGERTIPS for ax in 'xyz'] +
+    [f'force_{f}_mag_N'  for f in FINGERTIPS]
 )
 
 _csv_path   = None
@@ -197,6 +227,13 @@ _home_start     = None
 _log_tick       = 0
 _current_k_tip  = 0.0
 _countdown_said = set()
+
+
+def _tip_pos(finger, q):
+    r = FINGER_TIP_OFFSETS[finger]
+    if finger == 'thumb':
+        return np.array(FK_motor2thumbPos(q, 'IP', r))
+    return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
 
 
 def _set_task_stiffness(k):
@@ -297,10 +334,23 @@ def control_callback():
                 phase = 'soft' if _k_ramp_t0 is None else 'ramping'
             else:
                 phase = 'closed'
+            K_task_now = {f: np.eye(3) * _current_k_tip for f in FINGERTIPS}
+            K_task_now['palm'] = np.eye(3) * _current_k_tip
+            force_cols = []
+            for _f in FINGERTIPS:
+                pos  = _tip_pos(_f, q)
+                disp = pos - D_REF[_f]
+                frc  = stiff_model.tip_force(
+                    _f, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now)
+                force_cols += [f'{v:.6f}' for v in pos]
+                force_cols += [f'{v:.6f}' for v in disp]
+                force_cols += [f'{v:.6f}' for v in frc]
+                force_cols.append(f'{float(np.linalg.norm(frc)):.6f}')
             row = ([f'{now - _experiment_start:.4f}', phase, f'{_current_k_tip:.1f}'] +
                    [f'{v:.6f}' for v in q] +
                    [f'{v:.6f}' for v in q_dot] +
-                   [f'{v:.6f}' for v in tau_vmc])
+                   [f'{v:.6f}' for v in tau_vmc] +
+                   force_cols)
             _csv_writer.writerow(row)
 
     elif state == STATE_RETURN_HOME:
