@@ -41,9 +41,10 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, CONDITIONS,
-    K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
+    K_SOFT, K_STIFF, K_RETURN, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
+    CONVERGE_VEL_THR, CONVERGE_HOLD,
 )
 import rtde_control
 
@@ -52,7 +53,10 @@ import rtde_control
 # =============================================================================
 COLLECTED_DATA = False
 
-LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
+LOG_EVERY       = max(1, int(CONTROL_FREQUENCY / 30))
+TRANSPORT_SPEED = APPROACH_SPEED / 2.0           # halved for safety
+B_RETURN        = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
+_CONVERGE_TICKS = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
 
 # =============================================================================
 # Condition selection
@@ -169,18 +173,22 @@ else:
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_MOVING = 0
-STATE_DONE   = 1
+STATE_MOVING      = 0
+STATE_RETURN_HOME = 1
+STATE_DONE        = 2
 
-state           = STATE_MOVING
-_arm_moving     = False
-_hand_closed    = False
-_stiffened      = False   # adaptive: True once K ramp completes
-_close_time     = None    # wall-clock time when hand closed
-_k_ramp_t0      = None    # wall-clock time when K ramp started
-_move_start     = None    # wall-clock time when UR5 started moving
-_log_tick       = 0
-_current_k_tip  = 0.0    # task spring stiffness currently applied
+state             = STATE_MOVING
+_arm_moving       = False
+_hand_closed      = False
+_stiffened        = False   # adaptive: True once K ramp completes
+_close_time       = None    # wall-clock time when hand closed
+_k_ramp_t0        = None    # wall-clock time when K ramp started
+_move_start       = None    # wall-clock time when UR5 started moving
+_log_tick         = 0
+_current_k_tip    = 0.0     # task spring stiffness currently applied
+_warned_close     = False   # True once the 1-cm-to-close message has been printed
+_return_started   = False   # True once the home-return sequence has been initiated
+_converge_ticks   = 0
 
 
 def _set_task_stiffness(k):
@@ -210,11 +218,22 @@ def _start_transport():
     global _arm_moving, _move_start
     def _run():
         global state, _arm_moving
-        arm.moveL(TRANSPORT_END.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
-        state       = STATE_DONE
+        arm.moveL(TRANSPORT_END.tolist(), TRANSPORT_SPEED, UR5_INIT_ACCELERATION)
+        state       = STATE_RETURN_HOME
         _arm_moving = False
     _arm_moving  = True
     _move_start  = time.time()
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _start_return():
+    global _arm_moving
+    def _run():
+        global state, _arm_moving
+        arm.moveL(UR5_POSE_BOTTLE_START.tolist(), TRANSPORT_SPEED, UR5_INIT_ACCELERATION)
+        state       = STATE_DONE
+        _arm_moving = False
+    _arm_moving = True
     threading.Thread(target=_run, daemon=True).start()
 
 # =============================================================================
