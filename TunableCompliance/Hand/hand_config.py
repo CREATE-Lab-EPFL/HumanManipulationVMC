@@ -9,7 +9,7 @@ import numpy as np
 # inhand_manipulation.py — hand horizontal, fingers down over the in-hand
 # reorientation fixture. Independent from ProprioceptiveSensing's
 # UR5_POSE_SQUEEZING (object-stiffness fixture) — edit them separately.
-UR5_POSE_INHAND = np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656])
+UR5_POSE_INHAND = np.array([-0.1405, 0.5000, 0.2594, -0.1359, -0.0809, -1.9824])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along +X.
 UR5_POSE_BOTTLE_START = np.array([-0.30, 0.60, 0.25, -0.1861, -0.027, -2.7656])
