@@ -27,7 +27,6 @@ import threading
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.animation import FuncAnimation
 
 from midi_controller import MidiController
 
@@ -280,9 +279,15 @@ def run_visualizer(midi_min: int, midi_max: int, port_name, save_dir: str,
 
     fig.canvas.mpl_connect('key_press_event', _on_key)
 
-    _anim = FuncAnimation(fig, update, interval=1000 // FPS,
-                          blit=False, cache_frame_data=False)
-    plt.show()
+    plt.ion()
+    plt.show(block=False)
+    _dt = 1.0 / FPS
+    while plt.fignum_exists(fig.number):
+        update(None)
+        fig.canvas.draw_idle()
+        fig.canvas.flush_events()
+        time.sleep(_dt)
+
     midi_ctrl.close()
 
 
