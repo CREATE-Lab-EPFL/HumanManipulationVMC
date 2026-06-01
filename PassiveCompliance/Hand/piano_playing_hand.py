@@ -6,13 +6,13 @@ rhythmic press-lift strokes per stiffness value.  MIDI note-on velocity is the
 contact-force proxy.
 
 Conditions (CONDITION):
-  'uniform'       — both fingers at the same K (K_SWEEP = 10, 20, 100 N/m).
+  'uniform'       — both fingers at the same K (K_SWEEP = 5, 20 N/m).
   'heterogeneous' — index at K_STIFF, ring at K_SOFT.
 
 Prerequisite — verify MIDI connectivity:
     python3 HelperPianoMIDI/midi_listener.py
 
-Output: outputs/piano_playing_hand/<condition>/data.csv
+Output: outputs/piano_playing_hand/data_<condition>.csv
 """
 
 import numpy as np

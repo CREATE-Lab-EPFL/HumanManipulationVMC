@@ -1,14 +1,14 @@
 """
 Passive compliance shaping — glissando with the ADAPT Hand.
 
-Index and middle fingers are held at press pose while the UR5 slides along
+Index and ring fingers are held at press pose while the UR5 slides along
 the keyboard for GLISSANDO_DISTANCE, then returns.  N_RUNS times per stiffness
-value (K_SWEEP = 10, 20, 100 N/m).
+value (K_SWEEP = 5, 20 N/m).
 
 Prerequisite — verify MIDI connectivity:
     python3 HelperPianoMIDI/midi_listener.py
 
-Output: outputs/piano_glissando/data.csv
+Output: outputs/piano_glissando/data_glissando.csv
 """
 
 import numpy as np
