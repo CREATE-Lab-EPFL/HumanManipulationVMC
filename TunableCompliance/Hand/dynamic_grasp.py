@@ -399,22 +399,21 @@ def control_callback():
                 phase = 'closed'
             K_task_now = {f: _current_k_tip * np.eye(3) for f in FINGERTIPS}
             K_task_now['palm'] = _current_k_tip * np.eye(3)
-            force_cols = []
+            tip_vals, disp_vals, force_vals, mag_vals = [], [], [], []
             for _f in FINGERTIPS:
                 pos  = _tip_pos(_f, q)
-                ref  = D_REF[_f]
-                disp = pos - ref
+                disp = pos - D_REF[_f]
                 frc  = stiff_model.tip_force(
                     _f, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now)
-                force_cols += [f'{v:.6f}' for v in pos]
-                force_cols += [f'{v:.6f}' for v in disp]
-                force_cols += [f'{v:.6f}' for v in frc]
-                force_cols.append(f'{float(np.linalg.norm(frc)):.6f}')
+                tip_vals   += [f'{v:.6f}' for v in pos]
+                disp_vals  += [f'{v:.6f}' for v in disp]
+                force_vals += [f'{v:.6f}' for v in frc]
+                mag_vals.append(f'{float(np.linalg.norm(frc)):.6f}')
             row = ([f'{now - _experiment_start:.4f}', phase, f'{_current_k_tip:.1f}'] +
                    [f'{v:.6f}' for v in q] +
                    [f'{v:.6f}' for v in q_dot] +
                    [f'{v:.6f}' for v in tau_vmc] +
-                   force_cols)
+                   tip_vals + disp_vals + force_vals + mag_vals)
             _csv_writer.writerow(row)
 
     elif state == STATE_RETURN_HOME:
