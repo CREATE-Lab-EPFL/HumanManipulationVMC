@@ -5,8 +5,8 @@ Index and middle fingers are held at press pose while the UR5 slides along
 the keyboard for GLISSANDO_DISTANCE, then returns.  N_RUNS times per stiffness
 value (K_SWEEP = 10, 20, 100 N/m).
 
-Prerequisite — run in a separate terminal:
-    python3 HelperPianoMIDI/midi_publisher.py
+Prerequisite — verify MIDI connectivity:
+    python3 HelperPianoMIDI/midi_listener.py
 
 Output: outputs/piano_glissando/data.csv
 """

@@ -9,8 +9,8 @@ Conditions (CONDITION):
   'uniform'       — both fingers at the same K (K_SWEEP = 10, 20, 100 N/m).
   'heterogeneous' — index at K_STIFF, ring at K_SOFT.
 
-Prerequisite — run in a separate terminal:
-    python3 HelperPianoMIDI/midi_publisher.py
+Prerequisite — verify MIDI connectivity:
+    python3 HelperPianoMIDI/midi_listener.py
 
 Output: outputs/piano_playing_hand/<condition>/data.csv
 """
