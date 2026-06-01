@@ -43,7 +43,7 @@ from hand_config import (
     FINGERTIPS, CONDITIONS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP,
-    APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
+    APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
 import rtde_control
 
@@ -193,6 +193,7 @@ _stiffened      = False
 _close_time     = None
 _k_ramp_t0      = None
 _move_start     = None
+_home_start     = None
 _log_tick       = 0
 _current_k_tip  = 0.0
 _countdown_said = set()
@@ -303,19 +304,23 @@ def control_callback():
             _csv_writer.writerow(row)
 
     elif state == STATE_RETURN_HOME:
-        _set_task_stiffness(0.0)
-        vmc_joint.wrist             = HOME_WRIST.copy()
-        vmc_joint.thumb             = HOME_THUMB.copy()
-        for _f in ['index', 'middle', 'ring', 'pinky']:
-            vmc_joint.spread[_f]    = np.array([HOME_SPREAD[_f]])
-        vmc_joint.index_target      = HOME_FINGER.copy()
-        vmc_joint.middle_target     = HOME_FINGER.copy()
-        vmc_joint.ring_pinky_target = HOME_FINGER.copy()
-        for _f in ['index', 'middle', 'ring', 'pinky']:
-            vmc_joint.stiffness[_f] = np.full(3, K_ROT)
-            vmc_joint.damping[_f]   = np.full(3, B_ROT)
-        controller.get_logger().info('Lift done — hand returning to home.')
-        state = STATE_DONE
+        global _home_start
+        if _home_start is None:
+            _set_task_stiffness(0.0)
+            vmc_joint.wrist             = HOME_WRIST.copy()
+            vmc_joint.thumb             = HOME_THUMB.copy()
+            for _f in ['index', 'middle', 'ring', 'pinky']:
+                vmc_joint.spread[_f]    = np.array([HOME_SPREAD[_f]])
+            vmc_joint.index_target      = HOME_FINGER.copy()
+            vmc_joint.middle_target     = HOME_FINGER.copy()
+            vmc_joint.ring_pinky_target = HOME_FINGER.copy()
+            for _f in ['index', 'middle', 'ring', 'pinky']:
+                vmc_joint.stiffness[_f] = np.full(3, K_ROT)
+                vmc_joint.damping[_f]   = np.full(3, B_ROT)
+            _home_start = now
+            controller.get_logger().info('Lift done — hand returning to home.')
+        elif now - _home_start >= HOME_DURATION:
+            state = STATE_DONE
 
     elif state == STATE_DONE:
         pass
