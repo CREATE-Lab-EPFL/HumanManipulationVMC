@@ -67,7 +67,7 @@ FIELDS  = ['time_s', 'type', 'k', 'run', 'phase'] + _S_COLS + ['note', 'velocity
 def _out_path():
     d = os.path.join(_HERE, 'outputs', 'piano_glissando')
     os.makedirs(d, exist_ok=True)
-    return os.path.join(d, 'data.csv')
+    return os.path.join(d, 'data_glissando.csv')
 
 # =============================================================================
 # Hand initialisation
@@ -84,7 +84,9 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 for _f in PIANO_FINGERS_GLISSANDO:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
-vmc_joint.ring_pinky_target = np.zeros(3)
+vmc_joint.stiffness['thumb'] = np.zeros(4)
+vmc_joint.middle_target      = np.zeros(3)
+vmc_joint.ring_pinky_target  = np.zeros(3)
 
 vmc_task = TaskVMC()
 vmc_task.set_stiffness(0.0)
@@ -153,6 +155,7 @@ def _flush(writer, k, run):
 # =============================================================================
 # Protocol
 # =============================================================================
+input('Press ENTER to start…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 

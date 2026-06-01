@@ -70,9 +70,9 @@ _S_COLS = ([f'q_{i}'    for i in range(15)] +
 FIELDS  = ['time_s', 'type', 'k_index', 'k_ring', 'cycle'] + _S_COLS + ['note', 'velocity']
 
 def _out_path(cond):
-    d = os.path.join(_HERE, 'outputs', 'piano_playing_hand', cond)
+    d = os.path.join(_HERE, 'outputs', 'piano_playing_hand')
     os.makedirs(d, exist_ok=True)
-    return os.path.join(d, 'data.csv')
+    return os.path.join(d, f'data_{cond}.csv')
 
 # =============================================================================
 # Hand initialisation
@@ -177,6 +177,7 @@ def run_condition(label, stiffness_pairs):
 # =============================================================================
 # Run
 # =============================================================================
+input('Press ENTER to start…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(UR5_POSE_PIANO), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
