@@ -15,6 +15,19 @@ _REPO = _os.path.dirname(_os.path.abspath(__file__))
 plt.style.use(_os.path.join(_REPO, 'plot_config.mplstyle'))
 
 
+# Style constants for bespoke polar charts (supplement rcParams).
+# Font/line values are intentionally read from rcParams so they track the shared mplstyle.
+RADAR_RC = {
+    'grid_color':     '0.80',
+    'grid_lw':        0.4,    # finer than the default for polar readability
+    'grid_ls':        ':',    # dotted looks cleaner on polar axes
+    'spine_color':    '#cccccc',
+    'tick_pad':       24,
+    'fill_alpha_des': 0.12,
+    'fill_alpha_trk': 0.18,
+}
+
+
 def draw_radar(
     spokes,
     traces,
