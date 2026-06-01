@@ -7,7 +7,7 @@ import numpy as np
 
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # Hand horizontal, fingers pointing down, centred over the squeezing fixture.
-UR5_POSE_SQUEEZING = np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656])
+UR5_POSE_SQUEEZING = np.array([0, 0.66, 0.29, 0.0, 0.0, -1.96])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
 PC1_WRIST  = np.deg2rad([0.0,  0.0])
