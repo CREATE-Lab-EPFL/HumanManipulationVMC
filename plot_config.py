@@ -2,13 +2,17 @@
 Shared plotting helpers for all experiments.
 
 Usage in every notebook:
-    sys.path.insert(0, '../..')          # add repo root to path
-    plt.style.use('../../plot_config.mplstyle')
-    from plot_config import draw_radar   # if radar charts are needed
+    import sys; sys.path.insert(0, '../..')   # or '..' for 1-level-deep notebooks
+    from plot_config import draw_radar         # mplstyle is applied automatically
 """
 
+import os as _os
 import numpy as np
 import matplotlib.pyplot as plt
+
+# Apply the shared mplstyle automatically when this module is imported.
+_REPO = _os.path.dirname(_os.path.abspath(__file__))
+plt.style.use(_os.path.join(_REPO, 'plot_config.mplstyle'))
 
 
 def draw_radar(
