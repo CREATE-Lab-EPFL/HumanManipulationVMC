@@ -38,18 +38,28 @@ _piano   = _load("piano_config_hand",
                  "PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py")
 _tunable = _load("tunable_hand_config",
                  "TunableCompliance/Hand/hand_config.py")
+_proprio = _load("proprio_hand_config",
+                 "ProprioceptiveSensing/Hand/hand_config.py")
 _adapt   = _load("adapt_hand_config",
                  "ADAPT-StiffControl/hand_config.py")
 
 
 # ── Hand-experiment initial poses (imported from source configs) ─────────────
+# Key = experiment script name; value = pose used by that experiment.
 HAND_POSES = {
-    "piano_playing":  _piano.UR5_POSE_PIANO,
-    "glissando":      _piano.UR5_POSE_GLISSANDO_START,
-    "squeezing":      _tunable.UR5_POSE_SQUEEZING,
-    "bottle_start":   _tunable.UR5_POSE_BOTTLE_START,
-    "grasp_hard_obj": _adapt.UR5_POSE_GRASP_OBJ["hard_obj"],
-    "grasp_soft_obj": _adapt.UR5_POSE_GRASP_OBJ["soft_obj"],
+    # PassiveCompliance/Hand/piano_playing_hand.py
+    "piano_playing_hand":     _piano.UR5_POSE_PIANO,
+    # PassiveCompliance/Hand/piano_glissando.py
+    "piano_glissando":        _piano.UR5_POSE_GLISSANDO_START,
+    # TunableCompliance/Hand/inhand_manipulation.py
+    "inhand_manipulation":    _tunable.UR5_POSE_SQUEEZING,
+    # TunableCompliance/Hand/dynamic_grasp.py
+    "dynamic_grasp":          _tunable.UR5_POSE_BOTTLE_START,
+    # ProprioceptiveSensing/Hand/object_stiffness_hand.py
+    "object_stiffness_hand":  _proprio.UR5_POSE_SQUEEZING,
+    # ADAPT-StiffControl/grasp_adaptation.py (per-object grasp pose)
+    "grasp_adaptation_hard":  _adapt.UR5_POSE_GRASP_OBJ["hard_obj"],
+    "grasp_adaptation_soft":  _adapt.UR5_POSE_GRASP_OBJ["soft_obj"],
 }
 
 
@@ -79,7 +89,7 @@ def prompt_experiment():
     print("\nAvailable hand experiments:")
     for i, name in enumerate(names, start=1):
         pose = np.asarray(HAND_POSES[name])
-        print(f"  [{i}] {name:<16}  pose = {np.round(pose, 4).tolist()}")
+        print(f"  [{i}] {name:<22}  pose = {np.round(pose, 4).tolist()}")
 
     while True:
         choice = input(f"\nSelect experiment [1-{len(names)}] or name: ").strip()
