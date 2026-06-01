@@ -52,8 +52,8 @@ B_TIP       = 0.001     # [N·s/m]      task-space damping
 B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 30.0    # [N/m]  baseline uniform tip stiffness
-K_HIGH    = 150.0   # [N/m]  stiff-side stiffness
+K_UNIFORM = 20.0    # [N/m]  baseline uniform tip stiffness
+K_HIGH    = 80.0   # [N/m]  stiff-side stiffness
 K_LOW     = 5.0     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.2     # [N·m/rad]  joint stiffness for ramp back to HOME
 
