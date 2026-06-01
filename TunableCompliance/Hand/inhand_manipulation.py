@@ -458,6 +458,7 @@ def control_callback():
     global state, _state_start
     global _converge_ticks, _log_tick, _converged
     global _use_task_vmc
+    global _confirm_ready, _confirm_pending
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -532,7 +533,6 @@ def control_callback():
                 f'\n[Confirm] Press ENTER to start ASYM_A '
                 f'(pinky+ring → {K_LOW} N/m, thumb+index+middle → {K_HIGH} N/m) …')
         elif _confirm_ready:
-            global _confirm_pending
             _confirm_pending = False
             _begin_k_ramp(K_DICT_UNIFORM, K_DICT_ASYM_A, STATE_ASYM_A_CONV)
             state        = STATE_ASYM_A_RAMP
