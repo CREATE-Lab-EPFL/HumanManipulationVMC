@@ -240,7 +240,7 @@ _experiment_start = time.time()
 
 def control_callback():
     global _hand_closed, _stiffened, _close_time, _k_ramp_t0, _log_tick
-    global _countdown_said, state
+    global _countdown_said, state, _home_start
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -304,13 +304,12 @@ def control_callback():
             _csv_writer.writerow(row)
 
     elif state == STATE_RETURN_HOME:
-        global _home_start
         if _home_start is None:
             _set_task_stiffness(0.0)
             vmc_joint.wrist             = HOME_WRIST.copy()
             vmc_joint.thumb             = HOME_THUMB.copy()
             for _f in ['index', 'middle', 'ring', 'pinky']:
-                vmc_joint.spread[_f]    = np.array([HOME_SPREAD[_f]])
+                vmc_joint.spread[_f]    = HOME_SPREAD[_f].copy()
             vmc_joint.index_target      = HOME_FINGER.copy()
             vmc_joint.middle_target     = HOME_FINGER.copy()
             vmc_joint.ring_pinky_target = HOME_FINGER.copy()
