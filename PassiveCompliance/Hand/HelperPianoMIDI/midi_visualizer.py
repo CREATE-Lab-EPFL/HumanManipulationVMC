@@ -6,7 +6,11 @@ Live MIDI piano-roll visualizer.
     python3 midi_visualizer.py --midi-min 36 --midi-max 96
     python3 midi_visualizer.py --light                 # white theme for paper figures
     python3 midi_visualizer.py --persist               # auto-reconnect on device loss
+    python3 midi_visualizer.py --verbose               # also print events to terminal
     python3 midi_visualizer.py --list                  # list available ports
+
+This script opens its own MIDI connection — do NOT run midi_listener.py at
+the same time or ALSA will split events between the two processes.
 
 Keys (while the window is open):
     s — save current frame as PNG + PDF (paper-quality, 300 DPI)
@@ -91,11 +95,20 @@ _events_lock = threading.Lock()
 _active: dict          = {}                      # note → _NoteEvent
 _finished              = collections.deque(maxlen=3000)
 _t0                    = time.time()
+_verbose               = False   # set by run_visualizer
+
+_NOTE_NAMES_FULL = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+
+def _note_name_full(n: int) -> str:
+    return f'{_NOTE_NAMES_FULL[n % 12]}{n // 12 - 1}'
 
 
 def _on_note_on(note: int, velocity: int) -> None:
     with _events_lock:
         _active[note] = _NoteEvent(note, velocity, time.time() - _t0)
+    if _verbose:
+        print(f'[NOTE ON ] {_note_name_full(note):4s} (MIDI {note:3d})  velocity={velocity:3d}')
 
 
 def _on_note_off(note: int) -> None:
@@ -105,6 +118,8 @@ def _on_note_off(note: int) -> None:
             ev = _active.pop(note)
             ev.end = t
             _finished.append(ev)
+    if _verbose:
+        print(f'[NOTE OFF] {_note_name_full(note):4s} (MIDI {note:3d})')
 
 
 # ── Figure builder ────────────────────────────────────────────────────────────
@@ -171,7 +186,9 @@ def _build_figure(midi_min: int, midi_max: int, theme: dict):
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 def run_visualizer(midi_min: int, midi_max: int, port_name, save_dir: str,
-                   theme: dict, persist: bool) -> None:
+                   theme: dict, persist: bool, verbose: bool = False) -> None:
+    global _verbose
+    _verbose = verbose
 
     # MIDI connection (with optional retry loop)
     midi_ctrl = None
@@ -284,6 +301,8 @@ def main():
                         help='Keep retrying if no MIDI device is connected')
     parser.add_argument('--save-dir', default='.',
                         help='Directory for saved figures (default: current dir)')
+    parser.add_argument('--verbose',  action='store_true',
+                        help='Also print note events to terminal (replaces midi_listener.py)')
     parser.add_argument('--list',     action='store_true',
                         help='List available MIDI ports and exit')
     args = parser.parse_args()
@@ -297,7 +316,7 @@ def main():
     theme = _LIGHT if args.light else _DARK
 
     run_visualizer(args.midi_min, args.midi_max, args.port,
-                   args.save_dir, theme, args.persist)
+                   args.save_dir, theme, args.persist, args.verbose)
 
 
 if __name__ == '__main__':

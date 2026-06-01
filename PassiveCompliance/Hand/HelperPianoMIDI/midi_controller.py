@@ -132,6 +132,10 @@ class MidiController:
             for i, p in enumerate(ports):
                 if hint in p.lower():
                     return i
+        # Prefer real hardware over ALSA's virtual "Midi Through" loopback
+        for i, p in enumerate(ports):
+            if 'through' not in p.lower():
+                return i
         return 0
 
     def _callback(self, event, _data):
