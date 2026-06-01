@@ -44,7 +44,6 @@ from hand_config import (
     K_SOFT, K_STIFF, K_RETURN, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
-    CONVERGE_VEL_THR, CONVERGE_HOLD,
 )
 import rtde_control
 
@@ -56,7 +55,6 @@ COLLECTED_DATA = False
 LOG_EVERY       = max(1, int(CONTROL_FREQUENCY / 30))
 TRANSPORT_SPEED = APPROACH_SPEED / 2.0           # halved for safety
 B_RETURN        = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
-_CONVERGE_TICKS = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
 
 # =============================================================================
 # Condition selection
@@ -243,6 +241,7 @@ _experiment_start = time.time()
 
 def control_callback():
     global _hand_closed, _stiffened, _close_time, _k_ramp_t0, _log_tick
+    global _warned_close, _return_started, _converge_ticks
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -264,8 +263,13 @@ def control_callback():
 
         elapsed_move = now - _move_start
 
+        # Warn 1 cm before the closing point.
+        if not _warned_close and elapsed_move >= (CLOSE_DISTANCE - 0.01) / TRANSPORT_SPEED:
+            controller.get_logger().info('APPROACHING CLOSE POINT — 1 CM TO GO')
+            _warned_close = True
+
         # Close hand when UR5 has traveled CLOSE_DISTANCE.
-        if not _hand_closed and elapsed_move >= CLOSE_DISTANCE / APPROACH_SPEED:
+        if not _hand_closed and elapsed_move >= CLOSE_DISTANCE / TRANSPORT_SPEED:
             _close_hand()
             _hand_closed = True
             _close_time  = now
@@ -298,6 +302,30 @@ def control_callback():
                    [f'{v:.6f}' for v in q_dot] +
                    [f'{v:.6f}' for v in tau_vmc])
             _csv_writer.writerow(row)
+
+    elif state == STATE_RETURN_HOME:
+        if not _return_started:
+            _set_task_stiffness(0.0)
+            vmc_joint.wrist             = HOME_WRIST.copy()
+            vmc_joint.thumb             = HOME_THUMB.copy()
+            for _f in ['index', 'middle', 'ring', 'pinky']:
+                vmc_joint.spread[_f]    = np.array([HOME_SPREAD[_f]])
+            vmc_joint.index_target      = HOME_FINGER.copy()
+            vmc_joint.middle_target     = HOME_FINGER.copy()
+            vmc_joint.ring_pinky_target = HOME_FINGER.copy()
+            for _f in ['index', 'middle', 'ring', 'pinky']:
+                vmc_joint.stiffness[_f] = np.full(3, K_ROT)
+                vmc_joint.damping[_f]   = np.full(3, B_ROT)
+            _return_started = True
+            controller.get_logger().info('Experiment done — returning hand to home and UR5 to start …')
+            _start_return()
+
+        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
+            _converge_ticks += 1
+        else:
+            _converge_ticks = 0
+        if _converge_ticks >= _CONVERGE_TICKS:
+            controller.get_logger().info('Hand at home.')
 
     elif state == STATE_DONE:
         pass
