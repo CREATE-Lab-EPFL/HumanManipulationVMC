@@ -72,6 +72,6 @@ SOFT_DURATION    = 2.0    # [s]    (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
-APPROACH_SPEED  = 0.05   # [m/s]
+APPROACH_SPEED  = 0.02   # [m/s]
 TOTAL_DISTANCE  = 0.40   # [m]   total X displacement
 CLOSE_DISTANCE  = 0.15   # [m]   X at which the hand closes to PC1

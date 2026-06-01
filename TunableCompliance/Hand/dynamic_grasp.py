@@ -9,9 +9,10 @@ the PC1 pose.  Three conditions, selected at startup:
   'stiff'    — K_TIP = K_STIFF throughout  (hand grips firmly)
   'adaptive' — K_TIP = K_SOFT at close; switches to K_STIFF after SOFT_DURATION
 
-After the UR5 has traveled TOTAL_DISTANCE the experiment ends.
+After the UR5 has traveled TOTAL_DISTANCE the experiment ends, then the
+hand returns to home and the UR5 drives back to UR5_POSE_BOTTLE_START.
 
-Outputs: TunableCompliance/Hand/outputs/dynamic_grasp/dynamic_grasp_<cond>_N.csv
+Outputs: TunableCompliance/Hand/outputs/dynamic_grasp/dynamic_grasp_<cond>.csv
 """
 
 import numpy as np
@@ -41,7 +42,7 @@ from hand_config import (
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, CONDITIONS,
-    K_SOFT, K_STIFF, K_RETURN, SOFT_DURATION, K_RAMP_DURATION,
+    K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE,
 )
@@ -50,11 +51,9 @@ import rtde_control
 # =============================================================================
 # Collected data
 # =============================================================================
-COLLECTED_DATA = False
+COLLECTED_DATA  = False
 
-LOG_EVERY       = max(1, int(CONTROL_FREQUENCY / 30))
-TRANSPORT_SPEED = APPROACH_SPEED / 2.0           # halved for safety
-B_RETURN        = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
+LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 # =============================================================================
 # Condition selection
@@ -75,6 +74,8 @@ K_INIT = _K_INIT[CONDITION]
 # =============================================================================
 TRANSPORT_END = UR5_POSE_BOTTLE_START + np.array([TOTAL_DISTANCE, 0.0, 0.0, 0.0, 0.0, 0.0])
 
+# Absolute time from transport start at which the hand will close
+_CLOSE_TIME_S = CLOSE_DISTANCE / APPROACH_SPEED
 
 # =============================================================================
 # FK targets for task spring
@@ -151,7 +152,7 @@ def _output_path():
 
 _FIELDNAMES = (
     ['time_s', 'phase', 'k_tip_Npm'] +
-    [f'q_{i}'    for i in range(15)] +
+    [f'q_{i}'     for i in range(15)] +
     [f'q_dot_{i}' for i in range(15)] +
     [f'tau_{i}'   for i in range(15)]
 )
@@ -184,9 +185,8 @@ _k_ramp_t0        = None    # wall-clock time when K ramp started
 _move_start       = None    # wall-clock time when UR5 started moving
 _log_tick         = 0
 _current_k_tip    = 0.0     # task spring stiffness currently applied
-_warned_close     = False   # True once the 1-cm-to-close message has been printed
+_countdown_said   = set()   # countdown seconds already announced
 _return_started   = False   # True once the home-return sequence has been initiated
-_converge_ticks   = 0
 
 
 def _set_task_stiffness(k):
@@ -198,7 +198,6 @@ def _set_task_stiffness(k):
 
 
 def _close_hand():
-    """Instantly shift joint targets to PC1 and enable task spring."""
     vmc_joint.wrist             = PC1_WRIST.copy()
     vmc_joint.thumb             = PC1_THUMB.copy()
     for _f in ['index', 'middle', 'ring', 'pinky']:
@@ -216,11 +215,11 @@ def _start_transport():
     global _arm_moving, _move_start
     def _run():
         global state, _arm_moving
-        arm.moveL(TRANSPORT_END.tolist(), TRANSPORT_SPEED, UR5_INIT_ACCELERATION)
+        arm.moveL(TRANSPORT_END.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
         state       = STATE_RETURN_HOME
         _arm_moving = False
-    _arm_moving  = True
-    _move_start  = time.time()
+    _arm_moving = True
+    _move_start = time.time()
     threading.Thread(target=_run, daemon=True).start()
 
 
@@ -228,7 +227,7 @@ def _start_return():
     global _arm_moving
     def _run():
         global state, _arm_moving
-        arm.moveL(UR5_POSE_BOTTLE_START.tolist(), TRANSPORT_SPEED, UR5_INIT_ACCELERATION)
+        arm.moveL(UR5_POSE_BOTTLE_START.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
         state       = STATE_DONE
         _arm_moving = False
     _arm_moving = True
@@ -241,7 +240,7 @@ _experiment_start = time.time()
 
 def control_callback():
     global _hand_closed, _stiffened, _close_time, _k_ramp_t0, _log_tick
-    global _warned_close, _return_started, _converge_ticks
+    global _countdown_said, _return_started
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -263,18 +262,19 @@ def control_callback():
 
         elapsed_move = now - _move_start
 
-        # Warn 1 cm before the closing point.
-        if not _warned_close and elapsed_move >= (CLOSE_DISTANCE - 0.01) / TRANSPORT_SPEED:
-            controller.get_logger().info('APPROACHING CLOSE POINT — 1 CM TO GO')
-            _warned_close = True
+        # 5-second countdown before the closing point.
+        if not _hand_closed:
+            secs_left = int(np.ceil(_CLOSE_TIME_S - elapsed_move))
+            if 1 <= secs_left <= 5 and secs_left not in _countdown_said:
+                controller.get_logger().info(f'CLOSING IN {secs_left} s …')
+                _countdown_said.add(secs_left)
 
         # Close hand when UR5 has traveled CLOSE_DISTANCE.
-        if not _hand_closed and elapsed_move >= CLOSE_DISTANCE / TRANSPORT_SPEED:
+        if not _hand_closed and elapsed_move >= _CLOSE_TIME_S:
             _close_hand()
             _hand_closed = True
             _close_time  = now
-            controller.get_logger().info(
-                f'Hand closed — k_tip = {K_INIT:.0f} N/m')
+            controller.get_logger().info(f'Hand closed — k_tip = {K_INIT:.0f} N/m')
 
         # Adaptive: ramp K from K_SOFT to K_STIFF after SOFT_DURATION.
         if CONDITION == 'adaptive' and _hand_closed and not _stiffened:
@@ -320,13 +320,6 @@ def control_callback():
             controller.get_logger().info('Experiment done — returning hand to home and UR5 to start …')
             _start_return()
 
-        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
-            _converge_ticks += 1
-        else:
-            _converge_ticks = 0
-        if _converge_ticks >= _CONVERGE_TICKS:
-            controller.get_logger().info('Hand at home.')
-
     elif state == STATE_DONE:
         pass
 
@@ -337,7 +330,9 @@ arm.moveL(UR5_POSE_BOTTLE_START.tolist(), UR5_INIT_SPEED, UR5_INIT_ACCELERATION)
 controller.get_logger().info(
     f'Dynamic grasp | condition: {CONDITION} | '
     f'K_SOFT = {K_SOFT} N/m | K_STIFF = {K_STIFF} N/m | '
-    f'close at X = {CLOSE_DISTANCE:.2f} m')
+    f'close at X+{CLOSE_DISTANCE:.2f} m | speed = {APPROACH_SPEED:.3f} m/s')
+
+input('\nPress ENTER to start …\n')
 
 controller.create_timer(1.0 / CONTROL_FREQUENCY, control_callback)
 
