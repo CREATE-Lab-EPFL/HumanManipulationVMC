@@ -2,15 +2,14 @@
 Tunable compliance — dynamic grasping of a bottle (ADAPT Hand).
 
 The UR5 moves horizontally along +X from UR5_POSE_BOTTLE_START.  At
-CLOSE_DISTANCE the hand targets instantly shift from home (all zeros) to
-the PC1 pose.  Three conditions, selected at startup:
+CLOSE_DISTANCE the hand closes to PC1.  The arm then continues forward
+while rising in Z (parabolic lift), then stops.  The hand returns to
+home; the UR5 stays in place.
 
-  'soft'     — K_TIP = K_SOFT throughout  (hand barely grips)
-  'stiff'    — K_TIP = K_STIFF throughout  (hand grips firmly)
-  'adaptive' — K_TIP = K_SOFT at close; switches to K_STIFF after SOFT_DURATION
-
-After the UR5 has traveled TOTAL_DISTANCE the experiment ends, then the
-hand returns to home and the UR5 drives back to UR5_POSE_BOTTLE_START.
+Conditions (selected at startup):
+  'soft'     — K_TIP = K_SOFT throughout
+  'stiff'    — K_TIP = K_STIFF throughout
+  'adaptive' — K_TIP = K_SOFT at close; ramps to K_STIFF after SOFT_DURATION
 
 Outputs: TunableCompliance/Hand/outputs/dynamic_grasp/dynamic_grasp_<cond>.csv
 """
@@ -51,7 +50,7 @@ import rtde_control
 # =============================================================================
 # Collected data
 # =============================================================================
-COLLECTED_DATA  = False
+COLLECTED_DATA = False
 
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
@@ -70,11 +69,22 @@ _K_INIT = {'soft': K_SOFT, 'stiff': K_STIFF, 'adaptive': K_SOFT}
 K_INIT = _K_INIT[CONDITION]
 
 # =============================================================================
-# UR5 transport endpoint
+# UR5 trajectory
 # =============================================================================
-TRANSPORT_END = UR5_POSE_BOTTLE_START + np.array([TOTAL_DISTANCE, 0.0, 0.0, 0.0, 0.0, 0.0])
+# Phase 1 (pre-close): horizontal to CLOSE_POSE at APPROACH_SPEED
+CLOSE_POSE = UR5_POSE_BOTTLE_START.copy()
+CLOSE_POSE[0] += CLOSE_DISTANCE
 
-# Absolute time from transport start at which the hand will close
+# Phase 2 (post-close): forward + upward — same X speed, Z speed = APPROACH_SPEED / 2
+_POST_X    = TOTAL_DISTANCE - CLOSE_DISTANCE
+_POST_Z    = _POST_X / 2.0                                    # vz = vx/2 → dz = dx/2
+_POST_SPEED = np.sqrt(APPROACH_SPEED**2 + (APPROACH_SPEED / 2)**2)  # combined TCP speed
+
+FINAL_POSE = CLOSE_POSE.copy()
+FINAL_POSE[0] += _POST_X
+FINAL_POSE[2] += _POST_Z
+
+# Time from transport start at which the hand closes
 _CLOSE_TIME_S = CLOSE_DISTANCE / APPROACH_SPEED
 
 # =============================================================================
@@ -176,17 +186,16 @@ STATE_MOVING      = 0
 STATE_RETURN_HOME = 1
 STATE_DONE        = 2
 
-state             = STATE_MOVING
-_arm_moving       = False
-_hand_closed      = False
-_stiffened        = False   # adaptive: True once K ramp completes
-_close_time       = None    # wall-clock time when hand closed
-_k_ramp_t0        = None    # wall-clock time when K ramp started
-_move_start       = None    # wall-clock time when UR5 started moving
-_log_tick         = 0
-_current_k_tip    = 0.0     # task spring stiffness currently applied
-_countdown_said   = set()   # countdown seconds already announced
-_return_started   = False   # True once the home-return sequence has been initiated
+state           = STATE_MOVING
+_arm_moving     = False
+_hand_closed    = False
+_stiffened      = False
+_close_time     = None
+_k_ramp_t0      = None
+_move_start     = None
+_log_tick       = 0
+_current_k_tip  = 0.0
+_countdown_said = set()
 
 
 def _set_task_stiffness(k):
@@ -215,22 +224,12 @@ def _start_transport():
     global _arm_moving, _move_start
     def _run():
         global state, _arm_moving
-        arm.moveL(TRANSPORT_END.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
+        arm.moveL(CLOSE_POSE.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
+        arm.moveL(FINAL_POSE.tolist(), _POST_SPEED,    UR5_INIT_ACCELERATION)
         state       = STATE_RETURN_HOME
         _arm_moving = False
     _arm_moving = True
     _move_start = time.time()
-    threading.Thread(target=_run, daemon=True).start()
-
-
-def _start_return():
-    global _arm_moving
-    def _run():
-        global state, _arm_moving
-        arm.moveL(UR5_POSE_BOTTLE_START.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
-        state       = STATE_DONE
-        _arm_moving = False
-    _arm_moving = True
     threading.Thread(target=_run, daemon=True).start()
 
 # =============================================================================
@@ -240,7 +239,7 @@ _experiment_start = time.time()
 
 def control_callback():
     global _hand_closed, _stiffened, _close_time, _k_ramp_t0, _log_tick
-    global _countdown_said, _return_started
+    global _countdown_said, state
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -304,21 +303,19 @@ def control_callback():
             _csv_writer.writerow(row)
 
     elif state == STATE_RETURN_HOME:
-        if not _return_started:
-            _set_task_stiffness(0.0)
-            vmc_joint.wrist             = HOME_WRIST.copy()
-            vmc_joint.thumb             = HOME_THUMB.copy()
-            for _f in ['index', 'middle', 'ring', 'pinky']:
-                vmc_joint.spread[_f]    = np.array([HOME_SPREAD[_f]])
-            vmc_joint.index_target      = HOME_FINGER.copy()
-            vmc_joint.middle_target     = HOME_FINGER.copy()
-            vmc_joint.ring_pinky_target = HOME_FINGER.copy()
-            for _f in ['index', 'middle', 'ring', 'pinky']:
-                vmc_joint.stiffness[_f] = np.full(3, K_ROT)
-                vmc_joint.damping[_f]   = np.full(3, B_ROT)
-            _return_started = True
-            controller.get_logger().info('Experiment done — returning hand to home and UR5 to start …')
-            _start_return()
+        _set_task_stiffness(0.0)
+        vmc_joint.wrist             = HOME_WRIST.copy()
+        vmc_joint.thumb             = HOME_THUMB.copy()
+        for _f in ['index', 'middle', 'ring', 'pinky']:
+            vmc_joint.spread[_f]    = np.array([HOME_SPREAD[_f]])
+        vmc_joint.index_target      = HOME_FINGER.copy()
+        vmc_joint.middle_target     = HOME_FINGER.copy()
+        vmc_joint.ring_pinky_target = HOME_FINGER.copy()
+        for _f in ['index', 'middle', 'ring', 'pinky']:
+            vmc_joint.stiffness[_f] = np.full(3, K_ROT)
+            vmc_joint.damping[_f]   = np.full(3, B_ROT)
+        controller.get_logger().info('Lift done — hand returning to home.')
+        state = STATE_DONE
 
     elif state == STATE_DONE:
         pass
