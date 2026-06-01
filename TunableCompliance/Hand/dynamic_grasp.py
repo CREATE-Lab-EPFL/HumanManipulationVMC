@@ -1,15 +1,13 @@
 """
 Tunable compliance — dynamic grasping of a bottle (ADAPT Hand).
 
-The UR5 moves horizontally along +X from UR5_POSE_BOTTLE_START.  At
-CLOSE_DISTANCE the hand closes to PC1.  The arm then continues forward
-while rising in Z (parabolic lift), then stops.  The hand returns to
-home; the UR5 stays in place.
+Runs all three conditions back-to-back in a single session:
+  1) stiff    — K_TIP = K_STIFF throughout
+  2) soft     — K_TIP = K_SOFT throughout
+  3) adaptive — K_TIP = K_SOFT at close; ramps to K_STIFF after SOFT_DURATION
 
-Conditions (selected at startup):
-  'soft'     — K_TIP = K_SOFT throughout
-  'stiff'    — K_TIP = K_STIFF throughout
-  'adaptive' — K_TIP = K_SOFT at close; ramps to K_STIFF after SOFT_DURATION
+After each trial the hand returns home (at K_HOME stiffness) and the UR5 arm
+resets to UR5_POSE_BOTTLE_START.  The operator confirms before the next trial.
 
 Outputs: TunableCompliance/Hand/outputs/dynamic_grasp/dynamic_grasp_<cond>.csv
 """
@@ -41,9 +39,9 @@ from hand_config import (
     UR5_POSE_BOTTLE_START,
     PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
-    FINGERTIPS, CONDITIONS,
+    FINGERTIPS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
-    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP,
+    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP, K_HOME,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
 import rtde_control
@@ -56,36 +54,25 @@ COLLECTED_DATA = False
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 # =============================================================================
-# Condition selection
+# Conditions — run in this order
 # =============================================================================
-print('\nSelect condition:')
-for i, c in enumerate(CONDITIONS):
-    print(f'  {i + 1}) {c}')
-_sel = int(input('Enter number: ')) - 1
-assert 0 <= _sel < len(CONDITIONS), 'Invalid selection'
-CONDITION = CONDITIONS[_sel]
-print(f'Selected: {CONDITION}\n')
-
-_K_INIT = {'soft': K_SOFT, 'stiff': K_STIFF, 'adaptive': K_SOFT}
-K_INIT = _K_INIT[CONDITION]
+CONDITIONS_ORDER = ['stiff', 'soft', 'adaptive']
+_K_INIT_MAP = {'soft': K_SOFT, 'stiff': K_STIFF, 'adaptive': K_SOFT}
 
 # =============================================================================
-# UR5 trajectory
+# UR5 trajectory (fixed geometry, same for every trial)
 # =============================================================================
-# Phase 1 (pre-close): horizontal to CLOSE_POSE at APPROACH_SPEED
 CLOSE_POSE = UR5_POSE_BOTTLE_START.copy()
 CLOSE_POSE[0] += CLOSE_DISTANCE
 
-# Phase 2 (post-close): forward + upward — same X speed, Z speed = APPROACH_SPEED / 2
-_POST_X    = TOTAL_DISTANCE - CLOSE_DISTANCE
-_POST_Z    = _POST_X / 2.0                                    # vz = vx/2 → dz = dx/2
-_POST_SPEED = np.sqrt(APPROACH_SPEED**2 + (APPROACH_SPEED / 2)**2)  # combined TCP speed
+_POST_X     = TOTAL_DISTANCE - CLOSE_DISTANCE
+_POST_Z     = _POST_X / 2.0
+_POST_SPEED = np.sqrt(APPROACH_SPEED**2 + (APPROACH_SPEED / 2)**2)
 
 FINAL_POSE = CLOSE_POSE.copy()
 FINAL_POSE[0] += _POST_X
 FINAL_POSE[2] += _POST_Z
 
-# Time from transport start at which the hand closes
 _CLOSE_TIME_S = CLOSE_DISTANCE / APPROACH_SPEED
 
 # =============================================================================
@@ -177,15 +164,8 @@ arm.endTeachMode()
 controller.get_logger().info('UR5 connected')
 
 # =============================================================================
-# CSV
+# CSV helpers
 # =============================================================================
-
-def _output_path():
-    folder = os.path.join(_HERE, 'outputs', 'dynamic_grasp')
-    os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, f'dynamic_grasp_{CONDITION}.csv')
-
-
 _FIELDNAMES = (
     ['time_s', 'phase', 'k_tip_Npm'] +
     [f'q_{i}'     for i in range(15)] +
@@ -197,27 +177,43 @@ _FIELDNAMES = (
     [f'force_{f}_mag_N'  for f in FINGERTIPS]
 )
 
-_csv_path   = None
-_csv_file   = None
-_csv_writer = None
-if not COLLECTED_DATA:
-    _csv_path   = _output_path()
-    _csv_file   = open(_csv_path, 'w', newline='')
-    _csv_writer = csv.writer(_csv_file)
-    _csv_writer.writerow(_FIELDNAMES)
-    controller.get_logger().info(f'Saving to: {_csv_path}')
-else:
-    controller.get_logger().info('Data collection disabled (COLLECTED_DATA = True).')
+
+def _open_csv(condition):
+    if COLLECTED_DATA:
+        return None, None, None
+    folder = os.path.join(_HERE, 'outputs', 'dynamic_grasp')
+    os.makedirs(folder, exist_ok=True)
+    path   = os.path.join(folder, f'dynamic_grasp_{condition}.csv')
+    f      = open(path, 'w', newline='')
+    w      = csv.writer(f)
+    w.writerow(_FIELDNAMES)
+    controller.get_logger().info(f'Saving to: {path}')
+    return path, f, w
+
+
+def _close_csv(csv_file, csv_path):
+    if csv_file is not None and not csv_file.closed:
+        csv_file.close()
+        controller.get_logger().info(f'Data saved to: {csv_path}')
 
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_MOVING      = 0
-STATE_RETURN_HOME = 1
-STATE_DONE        = 2
+STATE_MOVING       = 0
+STATE_RETURN_HOME  = 1   # hand → HOME, arm → BOTTLE_START
+STATE_CONFIRM_NEXT = 2   # wait for operator confirmation
+STATE_DONE         = 3
 
-state           = STATE_MOVING
+state = STATE_MOVING
+
+# --- condition sequencing ---
+_cond_idx       = 0
+CONDITION       = CONDITIONS_ORDER[_cond_idx]
+_experiment_start = time.time()
+
+# --- per-trial state ---
 _arm_moving     = False
+_arm_resetting  = False
 _hand_closed    = False
 _stiffened      = False
 _close_time     = None
@@ -227,13 +223,10 @@ _home_start     = None
 _log_tick       = 0
 _current_k_tip  = 0.0
 _countdown_said = set()
+_confirm_ready  = False
+_confirm_pending = False
 
-
-def _tip_pos(finger, q):
-    r = FINGER_TIP_OFFSETS[finger]
-    if finger == 'thumb':
-        return np.array(FK_motor2thumbPos(q, 'IP', r))
-    return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
+_csv_path, _csv_file, _csv_writer = _open_csv(CONDITION)
 
 
 def _set_task_stiffness(k):
@@ -242,6 +235,13 @@ def _set_task_stiffness(k):
     for _f in FINGERTIPS:
         vmc_task.springs[_f].stiffness = np.full(3, k)
     vmc_task.springs['palm'].stiffness = np.full(3, k)
+
+
+def _tip_pos(finger, q):
+    r = FINGER_TIP_OFFSETS[finger]
+    if finger == 'thumb':
+        return np.array(FK_motor2thumbPos(q, 'IP', r))
+    return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
 
 
 def _close_hand():
@@ -255,7 +255,24 @@ def _close_hand():
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.stiffness[_f] = np.full(3, K_ROT_FLEX)
         vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
-    _set_task_stiffness(K_INIT)
+    _set_task_stiffness(_K_INIT_MAP[CONDITION])
+
+
+def _hand_to_home_stiff():
+    """Open hand and set high return stiffness."""
+    _set_task_stiffness(0.0)
+    vmc_joint.wrist             = HOME_WRIST.copy()
+    vmc_joint.thumb             = HOME_THUMB.copy()
+    for _f in ['index', 'middle', 'ring', 'pinky']:
+        vmc_joint.spread[_f]    = HOME_SPREAD[_f].copy()
+    vmc_joint.index_target      = HOME_FINGER.copy()
+    vmc_joint.middle_target     = HOME_FINGER.copy()
+    vmc_joint.ring_pinky_target = HOME_FINGER.copy()
+    for _f in ['index', 'middle', 'ring', 'pinky']:
+        vmc_joint.stiffness[_f] = np.full(3, K_HOME)
+        vmc_joint.damping[_f]   = np.full(3, B_ROT)
+    vmc_joint.stiffness['wrist'] = np.full(2, K_HOME)
+    vmc_joint.stiffness['thumb'] = np.full(4, K_HOME)
 
 
 def _start_transport():
@@ -270,14 +287,59 @@ def _start_transport():
     _move_start = time.time()
     threading.Thread(target=_run, daemon=True).start()
 
+
+def _start_arm_reset():
+    global _arm_resetting
+    def _run():
+        global _arm_resetting
+        arm.moveL(UR5_POSE_BOTTLE_START.tolist(), UR5_INIT_SPEED, UR5_INIT_ACCELERATION)
+        _arm_resetting = False
+    _arm_resetting = True
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _ask_confirm_async(prompt):
+    global _confirm_ready, _confirm_pending
+    _confirm_ready   = False
+    _confirm_pending = True
+    def _run():
+        global _confirm_ready
+        input(prompt)
+        _confirm_ready = True
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _reset_trial():
+    """Reset all per-trial state for the next condition."""
+    global _arm_moving, _hand_closed, _stiffened, _close_time
+    global _k_ramp_t0, _move_start, _home_start, _log_tick
+    global _current_k_tip, _countdown_said, _confirm_ready, _confirm_pending
+    global _csv_path, _csv_file, _csv_writer, CONDITION, _experiment_start
+    _arm_moving     = False
+    _hand_closed    = False
+    _stiffened      = False
+    _close_time     = None
+    _k_ramp_t0      = None
+    _move_start     = None
+    _home_start     = None
+    _log_tick       = 0
+    _current_k_tip  = 0.0
+    _countdown_said = set()
+    _confirm_ready  = False
+    _confirm_pending = False
+    CONDITION = CONDITIONS_ORDER[_cond_idx]
+    _experiment_start = time.time()
+    _csv_path, _csv_file, _csv_writer = _open_csv(CONDITION)
+
+
 # =============================================================================
 # Control callback
 # =============================================================================
-_experiment_start = time.time()
 
 def control_callback():
     global _hand_closed, _stiffened, _close_time, _k_ramp_t0, _log_tick
-    global _countdown_said, state, _home_start
+    global _countdown_said, state, _home_start, _arm_resetting
+    global _cond_idx, _confirm_ready, _confirm_pending
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -293,27 +355,27 @@ def control_callback():
 
     if state == STATE_MOVING:
         if not _arm_moving:
-            controller.get_logger().info('Starting transport …')
+            controller.get_logger().info(
+                f'[{CONDITION}] Starting transport …')
             _start_transport()
             return
 
         elapsed_move = now - _move_start
 
-        # 5-second countdown before the closing point.
+        # 5-second countdown.
         if not _hand_closed:
             secs_left = int(np.ceil(_CLOSE_TIME_S - elapsed_move))
             if 1 <= secs_left <= 5 and secs_left not in _countdown_said:
                 controller.get_logger().info(f'CLOSING IN {secs_left} s …')
                 _countdown_said.add(secs_left)
 
-        # Close hand when UR5 has traveled CLOSE_DISTANCE.
         if not _hand_closed and elapsed_move >= _CLOSE_TIME_S:
             _close_hand()
             _hand_closed = True
             _close_time  = now
-            controller.get_logger().info(f'Hand closed — k_tip = {K_INIT:.0f} N/m')
+            controller.get_logger().info(
+                f'Hand closed — k_tip = {_K_INIT_MAP[CONDITION]:.0f} N/m')
 
-        # Adaptive: ramp K from K_SOFT to K_STIFF after SOFT_DURATION.
         if CONDITION == 'adaptive' and _hand_closed and not _stiffened:
             if _k_ramp_t0 is None:
                 if now - _close_time >= SOFT_DURATION:
@@ -324,7 +386,8 @@ def control_callback():
                 _set_task_stiffness(K_SOFT + alpha * (K_STIFF - K_SOFT))
                 if alpha >= 1.0:
                     _stiffened = True
-                    controller.get_logger().info(f'Stiffened — k_tip = {K_STIFF:.0f} N/m')
+                    controller.get_logger().info(
+                        f'Stiffened — k_tip = {K_STIFF:.0f} N/m')
 
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
@@ -356,35 +419,48 @@ def control_callback():
 
     elif state == STATE_RETURN_HOME:
         if _home_start is None:
-            _set_task_stiffness(0.0)
-            vmc_joint.wrist             = HOME_WRIST.copy()
-            vmc_joint.thumb             = HOME_THUMB.copy()
-            for _f in ['index', 'middle', 'ring', 'pinky']:
-                vmc_joint.spread[_f]    = HOME_SPREAD[_f].copy()
-            vmc_joint.index_target      = HOME_FINGER.copy()
-            vmc_joint.middle_target     = HOME_FINGER.copy()
-            vmc_joint.ring_pinky_target = HOME_FINGER.copy()
-            for _f in ['index', 'middle', 'ring', 'pinky']:
-                vmc_joint.stiffness[_f] = np.full(3, K_ROT)
-                vmc_joint.damping[_f]   = np.full(3, B_ROT)
+            _hand_to_home_stiff()
+            _start_arm_reset()
             _home_start = now
-            controller.get_logger().info('Lift done — hand returning to home.')
-        elif now - _home_start >= HOME_DURATION:
-            state = STATE_DONE
+            controller.get_logger().info(
+                f'[{CONDITION}] Lift done — hand returning to home, arm resetting …')
+        elif now - _home_start >= HOME_DURATION and not _arm_resetting:
+            _close_csv(_csv_file, _csv_path)
+            if _cond_idx + 1 < len(CONDITIONS_ORDER):
+                state = STATE_CONFIRM_NEXT
+            else:
+                state = STATE_DONE
+                controller.get_logger().info('All conditions complete.')
+
+    elif state == STATE_CONFIRM_NEXT:
+        if not _confirm_pending:
+            next_cond = CONDITIONS_ORDER[_cond_idx + 1]
+            k_next    = _K_INIT_MAP[next_cond]
+            _ask_confirm_async(
+                f'\n[Confirm] Press ENTER to start next condition: '
+                f'{next_cond} (k_tip = {k_next:.0f} N/m) …\n')
+        elif _confirm_ready:
+            _cond_idx += 1
+            _reset_trial()
+            state = STATE_MOVING
+            controller.get_logger().info(
+                f'Starting condition {_cond_idx + 1}/{len(CONDITIONS_ORDER)}: '
+                f'{CONDITION}')
 
     elif state == STATE_DONE:
         pass
+
 
 # =============================================================================
 # Run
 # =============================================================================
 arm.moveL(UR5_POSE_BOTTLE_START.tolist(), UR5_INIT_SPEED, UR5_INIT_ACCELERATION)
 controller.get_logger().info(
-    f'Dynamic grasp | condition: {CONDITION} | '
+    f'Dynamic grasp | order: {" → ".join(CONDITIONS_ORDER)} | '
     f'K_SOFT = {K_SOFT} N/m | K_STIFF = {K_STIFF} N/m | '
     f'close at X+{CLOSE_DISTANCE:.2f} m | speed = {APPROACH_SPEED:.3f} m/s')
 
-input('\nPress ENTER to start …\n')
+input(f'\nPress ENTER to start first condition: {CONDITIONS_ORDER[0]} …\n')
 
 controller.create_timer(1.0 / CONTROL_FREQUENCY, control_callback)
 
@@ -393,6 +469,7 @@ try:
         rclpy.spin_once(controller, timeout_sec=0.01)
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
+    _close_csv(_csv_file, _csv_path)
 finally:
     arm.stopScript()
 
@@ -402,10 +479,6 @@ finally:
     vmc_task.set_damping(0.0)
     controller.publish_torques(np.zeros(15))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
-
-    if _csv_file is not None and not _csv_file.closed:
-        _csv_file.close()
-        controller.get_logger().info(f'Data saved to: {_csv_path}')
 
     arm.disconnect()
     recv.disconnect()
