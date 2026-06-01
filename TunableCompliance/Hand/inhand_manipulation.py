@@ -317,16 +317,18 @@ STATE_SETTLE_ARM   = 1
 STATE_RAMP_TO_PC1  = 2
 STATE_UNIFORM_CONV = 3
 STATE_UNIFORM_REC  = 4
-STATE_ASYM_A_RAMP  = 5
-STATE_ASYM_A_CONV  = 6
-STATE_ASYM_A_REC   = 7
-STATE_ASYM_B_RAMP  = 8
-STATE_ASYM_B_CONV  = 9
-STATE_ASYM_B_REC   = 10
-STATE_UNLOAD       = 11
-STATE_RAMP_TO_HOME = 12
-STATE_RETURN       = 13
-STATE_DONE         = 14
+STATE_CONFIRM_A    = 5
+STATE_ASYM_A_RAMP  = 6
+STATE_ASYM_A_CONV  = 7
+STATE_ASYM_A_REC   = 8
+STATE_CONFIRM_B    = 9
+STATE_ASYM_B_RAMP  = 10
+STATE_ASYM_B_CONV  = 11
+STATE_ASYM_B_REC   = 12
+STATE_UNLOAD       = 13
+STATE_RAMP_TO_HOME = 14
+STATE_RETURN       = 15
+STATE_DONE         = 16
 
 state             = STATE_INIT_ARM
 _state_start      = time.time()
@@ -337,6 +339,19 @@ _CONVERGE_TICKS   = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
 _log_tick         = 0
 _converged        = False
 _use_task_vmc     = False
+_confirm_ready    = False
+_confirm_pending  = False
+
+
+def _ask_confirm_async(prompt):
+    global _confirm_ready, _confirm_pending
+    _confirm_ready   = False
+    _confirm_pending = True
+    def _run():
+        global _confirm_ready
+        input(prompt)
+        _confirm_ready = True
+    threading.Thread(target=_run, daemon=True).start()
 
 _ramp_t0            = None
 _ramp_start_targets = None
@@ -508,8 +523,20 @@ def control_callback():
             if not COLLECTED_DATA:
                 _csv_file.flush()
             _state_start = now
+            state = STATE_CONFIRM_A
+            controller.get_logger().info('UNIFORM recorded. Waiting for confirmation …')
+
+    elif state == STATE_CONFIRM_A:
+        if not _confirm_pending:
+            _ask_confirm_async(
+                f'\n[Confirm] Press ENTER to start ASYM_A '
+                f'(pinky+ring → {K_LOW} N/m, thumb+index+middle → {K_HIGH} N/m) …')
+        elif _confirm_ready:
+            global _confirm_pending
+            _confirm_pending = False
             _begin_k_ramp(K_DICT_UNIFORM, K_DICT_ASYM_A, STATE_ASYM_A_CONV)
-            state = STATE_ASYM_A_RAMP
+            state        = STATE_ASYM_A_RAMP
+            _state_start = now
             controller.get_logger().info(
                 f'Ramping to ASYM_A (pinky+ring → {K_LOW} N/m, '
                 f'thumb+index+middle → {K_HIGH} N/m) over {RAMP_DURATION:.1f} s …')
@@ -546,8 +573,19 @@ def control_callback():
             if not COLLECTED_DATA:
                 _csv_file.flush()
             _state_start = now
+            state = STATE_CONFIRM_B
+            controller.get_logger().info('ASYM_A recorded. Waiting for confirmation …')
+
+    elif state == STATE_CONFIRM_B:
+        if not _confirm_pending:
+            _ask_confirm_async(
+                f'\n[Confirm] Press ENTER to start ASYM_B '
+                f'(thumb+index+middle → {K_LOW} N/m, pinky+ring → {K_HIGH} N/m) …')
+        elif _confirm_ready:
+            _confirm_pending = False
             _begin_k_ramp(K_DICT_ASYM_A, K_DICT_ASYM_B, STATE_ASYM_B_CONV)
-            state = STATE_ASYM_B_RAMP
+            state        = STATE_ASYM_B_RAMP
+            _state_start = now
             controller.get_logger().info(
                 f'Ramping to ASYM_B (thumb+index+middle → {K_LOW} N/m, '
                 f'pinky+ring → {K_HIGH} N/m) over {RAMP_DURATION:.1f} s …')
@@ -655,3 +693,87 @@ finally:
     controller.destroy_node()
     if rclpy.ok():
         rclpy.shutdown()
+
+# =============================================================================
+# Post-experiment plots (only when data was collected)
+# =============================================================================
+if not COLLECTED_DATA and _csv_path is not None:
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.style
+
+    try:
+        matplotlib.style.use(
+            os.path.join(_HERE, '..', '..', 'plot_config.mplstyle'))
+    except OSError:
+        pass
+
+    df = pd.read_csv(_csv_path)
+    t  = df['time_s'].values
+
+    PHASE_COLORS = {'uniform': '#4C72B0', 'asym_a': '#DD8452', 'asym_b': '#55A868'}
+    PHASE_LABELS = {'uniform': 'Uniform', 'asym_a': 'Asym A', 'asym_b': 'Asym B'}
+
+    # ── Figure 1: fingertip displacement magnitude per phase ─────────────────
+    fig1, axes1 = plt.subplots(len(FINGERTIPS), 1, figsize=(10, 8), sharex=True)
+    fig1.suptitle('Fingertip displacement from PC1 reference')
+
+    for ax, finger in zip(axes1, FINGERTIPS):
+        for phase, color in PHASE_COLORS.items():
+            mask = df['phase'] == phase
+            disp_cols = [f'disp_{finger}_{ax_}_m' for ax_ in 'xyz']
+            if all(c in df.columns for c in disp_cols):
+                mag = np.linalg.norm(df.loc[mask, disp_cols].values, axis=1)
+                ax.plot(t[mask], mag * 1e3, '.', color=color, ms=2,
+                        label=PHASE_LABELS[phase])
+        ax.set_ylabel(f'{finger}\n‖Δp‖ [mm]')
+        ax.grid(True, alpha=0.3)
+
+    axes1[-1].set_xlabel('Time [s]')
+    axes1[0].legend(loc='upper right', markerscale=4)
+    fig1.tight_layout()
+    fig1.savefig(os.path.join(os.path.dirname(_csv_path), 'disp_magnitude.png'),
+                 dpi=150)
+
+    # ── Figure 2: per-finger stiffness over time ──────────────────────────────
+    fig2, ax2 = plt.subplots(figsize=(10, 4))
+    fig2.suptitle('Fingertip stiffness schedule')
+
+    for finger in FINGERTIPS:
+        col = f'k_{finger}_Npm'
+        if col in df.columns:
+            ax2.plot(t, df[col].values, label=finger)
+
+    ax2.set_xlabel('Time [s]')
+    ax2.set_ylabel('K_tip [N/m]')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    fig2.tight_layout()
+    fig2.savefig(os.path.join(os.path.dirname(_csv_path), 'stiffness_schedule.png'),
+                 dpi=150)
+
+    # ── Figure 3: tip stiffness eigenvalues per finger (box per phase) ───────
+    eig_cols_exist = all(
+        f'stiff_1st_{f}_eig_0_Npm' in df.columns for f in FINGERTIPS)
+    if eig_cols_exist:
+        fig3, axes3 = plt.subplots(1, len(FINGERTIPS), figsize=(14, 4), sharey=True)
+        fig3.suptitle('Tip stiffness eigenvalues by phase (1st-order)')
+        for ax, finger in zip(axes3, FINGERTIPS):
+            data_by_phase = []
+            labels        = []
+            for phase in PHASE_COLORS:
+                mask = df['phase'] == phase
+                for k in range(3):
+                    col = f'stiff_1st_{finger}_eig_{k}_Npm'
+                    data_by_phase.append(df.loc[mask, col].values)
+                    labels.append(f'{PHASE_LABELS[phase]}\neig{k}')
+            ax.boxplot(data_by_phase, labels=labels, patch_artist=True)
+            ax.set_title(finger)
+            ax.set_ylabel('Eigenvalue [N/m]')
+            ax.tick_params(axis='x', labelsize=6)
+            ax.grid(True, alpha=0.3)
+        fig3.tight_layout()
+        fig3.savefig(os.path.join(os.path.dirname(_csv_path), 'stiffness_eigenvalues.png'),
+                     dpi=150)
+
+    plt.show()
