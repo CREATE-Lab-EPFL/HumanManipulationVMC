@@ -26,7 +26,10 @@ from KinematicsHand.FK_Hand import (
     FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm,
     joint_to_motor,
 )
-from ModelIDHand.hand_params import FINGER_TIP_OFFSETS, eta
+from ModelIDHand.hand_params import (
+    FINGER_TIP_OFFSETS, eta,
+    SOFTWARE_MOTOR_ORDER, goal_limit_torque,
+)
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from hand_config import (
@@ -48,6 +51,9 @@ import rtde_control
 COLLECTED_DATA = False
 
 B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
+
+# Motors already reported as saturated (log once per motor, not every tick).
+_sat_warned: set = set()
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 
@@ -483,7 +489,16 @@ def control_callback():
     tau_vmc   = tau_joint + tau_task
     tau_comp  = grav_lim.compute_compensation_torques(
         q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
-    controller.publish_torques(tau_vmc + tau_comp)
+    tau_total = tau_vmc + tau_comp
+    controller.publish_torques(tau_total)
+
+    # Torque saturation debug: log once the first time each finger motor hits the limit.
+    for i in range(2, 15):   # skip wrist motors [0,1]
+        if i not in _sat_warned and abs(tau_total[i]) >= goal_limit_torque * 0.95:
+            _sat_warned.add(i)
+            controller.get_logger().warn(
+                f'[SAT] {SOFTWARE_MOTOR_ORDER[i]} (motor {i}): '
+                f'{tau_total[i]:.3f} N·m  (limit {goal_limit_torque} N·m)')
 
     now     = time.time()
     elapsed = now - _state_start
