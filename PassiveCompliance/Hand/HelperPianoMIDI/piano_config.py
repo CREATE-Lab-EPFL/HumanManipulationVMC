@@ -20,7 +20,7 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_ANGLE_DEG         = 40.0           # [deg]  MCP+PIP flexion
+PRESS_POSE              = np.deg2rad([40.0, 40.0, 40.0])  # [MCP, PIP, DIP] flexion [rad]
 SPREAD_ANGLE_DEG        = 0.0            # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'ring']

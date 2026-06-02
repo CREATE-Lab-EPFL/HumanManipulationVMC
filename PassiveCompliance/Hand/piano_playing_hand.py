@@ -34,7 +34,7 @@ from ModelIDHand.motor_config  import MOTOR_SLICES
 from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
-    PRESS_ANGLE_DEG, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
+    PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
     K_ROT, K_ROT_PRESS, B_ROT, B_CART_PLAYING as B_CART,
     PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES, RAMP_DURATION,
@@ -53,7 +53,7 @@ COLLECTED_DATA = False
 Q_PRESS = np.zeros(15)
 Q_PRESS[6] = np.deg2rad(SPREAD_ANGLE_DEG)
 for _f in PIANO_FINGERS_PLAYING:
-    Q_PRESS[MOTOR_SLICES[_f]] = np.deg2rad(PRESS_ANGLE_DEG)
+    Q_PRESS[MOTOR_SLICES[_f]] = PRESS_POSE[:2]
 
 PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', np.zeros(3)))
              for f in PIANO_FINGERS_PLAYING}
@@ -89,7 +89,7 @@ vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
 for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
-_PRESS_JOINTS = np.deg2rad([PRESS_ANGLE_DEG] * 3)
+_PRESS_JOINTS = PRESS_POSE.copy()
 for _f in PIANO_FINGERS_PLAYING:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
 # Playing fingers: joint target at press angle, task spring takes over during ramp
