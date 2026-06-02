@@ -35,7 +35,7 @@ OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
 K_TIP_GENTLE = 10.0            # [N/m]   gentle-grasp stiffness (baseline)
-K_TIP_SWEEP  = [100, 200, 300]  # [N/m]   stiffness levels for the sweep
+K_TIP_SWEEP  = [50, 100, 150]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT       = 0.1       # [N·m/rad]

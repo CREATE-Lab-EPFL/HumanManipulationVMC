@@ -614,6 +614,17 @@ def control_callback():
         if elapsed >= CONVERGE_HOLD:
             controller.get_logger().info(
                 f'Contact released. Ramping PC1 → HOME over {RAMP_DURATION:.1f} s …')
+            # Snap VMC targets to actual joint positions so K_RETURN applies with
+            # zero initial error — avoids the closing-back transient that occurs
+            # when fingers drifted from the PC1 targets during the free-floating
+            # UNLOAD second.
+            vmc_joint.wrist             = FK_motor2wrist(q)
+            vmc_joint.thumb             = FK_motor2thumb(q)
+            for _f in ['index', 'middle', 'ring', 'pinky']:
+                vmc_joint.spread[_f]    = np.array([FK_motor2spread(q, _f)])
+            vmc_joint.index_target      = FK_motor2finger(q, 'index')
+            vmc_joint.middle_target     = FK_motor2finger(q, 'middle')
+            vmc_joint.ring_pinky_target = FK_motor2finger(q, 'ring')
             # Uniform K_RETURN so all joints follow the ramp back.
             _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
             _begin_ramp(HOME_POSE_TARGETS)
