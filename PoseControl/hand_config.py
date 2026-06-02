@@ -6,7 +6,11 @@ import numpy as np
 
 # ── VMC parameters ─────────────────────────────────────────────────────────────
 STIFFNESS = 0.6    # [N·m/rad]
-DAMPING   = 0.001  # [N·m·s/rad]
+DAMPING   = 0.03   # [N·m·s/rad]
+
+# Lower gains used when ramping back to home (smoother, less overshoot)
+RETURN_STIFFNESS = 0.15  # [N·m/rad]
+RETURN_DAMPING   = 0.02  # [N·m·s/rad]
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 CONVERGE_VEL_THR = 0.02   # [rad/s]

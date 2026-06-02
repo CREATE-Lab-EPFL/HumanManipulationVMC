@@ -34,14 +34,14 @@ def _load(module_alias, relative_path):
     return module
 
 
-_piano   = _load("piano_config_hand",
-                 "PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py")
-_tunable = _load("tunable_hand_config",
-                 "TunableCompliance/Hand/hand_config.py")
-_proprio = _load("proprio_hand_config",
-                 "ProprioceptiveSensing/Hand/hand_config.py")
-_adapt   = _load("adapt_hand_config",
-                 "ADAPT-StiffControl/hand_config.py")
+_piano    = _load("piano_config_hand",
+                  "PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py")
+_tunable  = _load("tunable_hand_config",
+                  "TunableCompliance/Hand/hand_config.py")
+_proprio  = _load("proprio_hand_config",
+                  "ProprioceptiveSensing/Hand/hand_config.py")
+_adapt    = _load("adapt_hand_config",
+                  "ADAPT-StiffControl/hand_config.py")
 
 
 # ── Hand-experiment initial poses (imported from source configs) ─────────────
@@ -60,6 +60,8 @@ HAND_POSES = {
     # ADAPT-StiffControl/grasp_adaptation.py (per-object grasp pose)
     "grasp_adaptation_hard":  _adapt.UR5_POSE_GRASP_OBJ["hard_obj"],
     "grasp_adaptation_soft":  _adapt.UR5_POSE_GRASP_OBJ["soft_obj"],
+    # PoseControl/position_tracker.py (UR5 stays still; arm parked at squeezing pose)
+    "position_tracking":      _proprio.UR5_POSE_SQUEEZING,
 }
 
 

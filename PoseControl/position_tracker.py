@@ -22,7 +22,7 @@ from KinematicsHand.FK_Hand import (
 )
 from UR5_codes.UR5_readPose import UR5Receiver
 from hand_config import (
-    POSES, HOME_POSE, STIFFNESS, DAMPING,
+    POSES, HOME_POSE, STIFFNESS, DAMPING, RETURN_STIFFNESS, RETURN_DAMPING,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT,
     LOG_DURATION, RAMP_DURATION,
 )
@@ -263,6 +263,8 @@ def control_callback():
                 csv_file.close()
                 controller.get_logger().info(f"Saved: {csv_path}")
 
+            vmc.set_stiffness(RETURN_STIFFNESS)
+            vmc.set_damping(RETURN_DAMPING)
             _begin_ramp(HOME_POSE)
             state           = STATE_RAMP_TO_HOME
             state_start     = now
@@ -279,6 +281,8 @@ def control_callback():
                 state = STATE_DONE
                 controller.get_logger().info("All poses complete — home reached.")
             else:
+                vmc.set_stiffness(STIFFNESS)
+                vmc.set_damping(DAMPING)
                 _begin_ramp(POSES[current_pose_idx])
                 pose_start      = now
                 state_start     = now
