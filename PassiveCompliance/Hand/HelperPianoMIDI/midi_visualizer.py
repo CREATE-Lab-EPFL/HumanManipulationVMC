@@ -296,8 +296,8 @@ def main():
     parser = argparse.ArgumentParser(description='Live MIDI piano-roll visualizer')
     parser.add_argument('--port',     default=None,
                         help='Partial MIDI port name (case-insensitive match)')
-    parser.add_argument('--midi-min', type=int, default=36,
-                        help='Lowest MIDI note displayed (default 36 = C2)')
+    parser.add_argument('--midi-min', type=int, default=28,
+                        help='Lowest MIDI note displayed (default 28 = E1)')
     parser.add_argument('--midi-max', type=int, default=96,
                         help='Highest MIDI note displayed (default 96 = C7)')
     parser.add_argument('--light',    action='store_true',
