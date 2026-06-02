@@ -91,9 +91,9 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 for _f in PIANO_FINGERS_PLAYING:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
-vmc_joint.stiffness['thumb']  = np.zeros(4)
-vmc_joint.stiffness['middle'] = np.zeros(3)
-vmc_joint.stiffness['pinky']  = np.zeros(3)
+# Unused fingers: keep K_ROT stiffness (already set), targets at home (zero)
+vmc_joint.thumb               = np.zeros(4)
+vmc_joint.middle_target       = np.zeros(3)
 vmc_joint.ring_pinky_target   = np.zeros(3)
 
 vmc_task = TaskVMC()

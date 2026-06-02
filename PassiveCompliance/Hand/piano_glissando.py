@@ -34,7 +34,7 @@ from piano_config import (
     PRESS_ANGLE_DEG, SPREAD_ANGLE_DEG, PIANO_FINGERS_GLISSANDO,
     K_SWEEP, K_ROT, K_ROT_PRESS, B_ROT, N_RUNS,
     B_CART_GLISSANDO as B_CART,
-    GLISSANDO_SETTLE_TIME as SETTLE_TIME,
+    GLISSANDO_SETTLE_TIME as SETTLE_TIME, RAMP_DURATION,
 )
 import rtde_control
 
@@ -84,9 +84,9 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 for _f in PIANO_FINGERS_GLISSANDO:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
-vmc_joint.stiffness['thumb']  = np.zeros(4)
-vmc_joint.stiffness['middle'] = np.zeros(3)
-vmc_joint.stiffness['pinky']  = np.zeros(3)
+# Unused fingers: keep K_ROT stiffness (already set), targets at home (zero)
+vmc_joint.thumb               = np.zeros(4)
+vmc_joint.middle_target       = np.zeros(3)
 vmc_joint.ring_pinky_target   = np.zeros(3)
 
 vmc_task = TaskVMC()
@@ -94,7 +94,7 @@ vmc_task.set_stiffness(0.0)
 vmc_task.set_damping(0.0)
 for _f in PIANO_FINGERS_GLISSANDO:
     vmc_task.dampers[_f].damping = np.full(3, B_CART)
-    vmc_task.targets[_f]         = PRESS_POS[_f].copy()
+    vmc_task.targets[_f]         = REST_POS[_f].copy()   # start at rest; ramp will bring to press
 
 # =============================================================================
 # MIDI input (direct rtmidi — no ROS2 bridge needed)
@@ -154,6 +154,29 @@ def _flush(writer, k, run):
         writer.writerow(r)
 
 # =============================================================================
+# Ramp helper (main-thread blocking; control loop runs throughout)
+# =============================================================================
+
+def _ramp_targets(end_pos, k_end=None):
+    """Ramp task targets to end_pos; also ramp stiffness to k_end if given."""
+    start_pos = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_GLISSANDO}
+    start_k   = {f: float(vmc_task.springs[f].stiffness.flat[0])
+                 for f in PIANO_FINGERS_GLISSANDO} if k_end is not None else None
+    dt = 1.0 / CONTROL_FREQUENCY
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        for _f in PIANO_FINGERS_GLISSANDO:
+            vmc_task.targets[_f] = (1 - alpha) * start_pos[_f] + alpha * end_pos[_f]
+            if k_end is not None:
+                vmc_task.springs[_f].stiffness = np.full(3,
+                    (1 - alpha) * start_k[_f] + alpha * k_end)
+        if alpha >= 1.0:
+            break
+        time.sleep(dt)
+
+
+# =============================================================================
 # Protocol
 # =============================================================================
 input('Press ENTER to start…')
@@ -162,6 +185,8 @@ arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
 ctrl_thread.start()
+
+_ramp_targets(PRESS_POS, k_end=K_SWEEP[0])   # gradual initial approach
 
 f      = open(_out_path(), 'w', newline='') if not COLLECTED_DATA else None
 writer = csv.DictWriter(f, fieldnames=FIELDS) if f else None
@@ -174,12 +199,9 @@ try:
         for run in range(1, N_RUNS + 1):
             controller.get_logger().info(f'K={k:.0f} run {run}/{N_RUNS} — settling ...')
             _phase = 'settle'
-            for _f in PIANO_FINGERS_GLISSANDO:
-                vmc_task.targets[_f] = REST_POS[_f].copy()
+            _ramp_targets(REST_POS)       # gradual lift to rest, stiffness unchanged
             time.sleep(SETTLE_TIME)
-            for _f in PIANO_FINGERS_GLISSANDO:
-                vmc_task.targets[_f] = PRESS_POS[_f].copy()
-            time.sleep(1.0)
+            _ramp_targets(PRESS_POS)      # gradual press, stiffness unchanged
 
             with _lock:      _buf.clear()
             with _midi_lock: _midi_events.clear()
@@ -196,6 +218,7 @@ except KeyboardInterrupt:
 finally:
     midi_ctrl.close()
     arm.stopScript()
+    _ramp_targets(REST_POS, k_end=0.0)   # gradual return home, control loop still active
     if f: f.close()
     _running = False
     ctrl_thread.join(timeout=1.0)
