@@ -60,15 +60,25 @@ class VMC:
             'ring':   np.array([np.deg2rad(10.0)]),
             'pinky':  np.array([np.deg2rad(10.0)]),
         }
-        self.index_target      = np.deg2rad([40.0, 90.0, 90.0])
-        self.middle_target     = np.deg2rad([40.0, 90.0, 90.0])
-        self.ring_pinky_target = np.deg2rad([40.0, 90.0, 90.0])
+        self.index_target  = np.deg2rad([40.0, 90.0, 90.0])
+        self.middle_target = np.deg2rad([40.0, 90.0, 90.0])
+        self.ring_target   = np.deg2rad([40.0, 90.0, 90.0])
+        self.pinky_target  = np.deg2rad([40.0, 90.0, 90.0])
 
         self.jac = HandJacobians()
 
     # ------------------------------------------------------------------
     # Convenience setters
     # ------------------------------------------------------------------
+
+    @property
+    def ring_pinky_target(self):
+        return self.ring_target
+
+    @ring_pinky_target.setter
+    def ring_pinky_target(self, value):
+        self.ring_target  = np.asarray(value).copy()
+        self.pinky_target = np.asarray(value).copy()
 
     def set_stiffness(self, K):
         """Assign uniform stiffness K [N·m/rad] to every joint."""
@@ -135,10 +145,10 @@ class VMC:
         tau += self._joint_torque(FK_motor2finger(q_motor, 'middle'), self.middle_target, J, q_dot_motor,
                                   self.stiffness['middle'], self.damping['middle'])
 
-        # Ring and pinky (shared reference)
-        for finger in ['ring', 'pinky']:
+        # Ring and pinky (independent targets)
+        for finger, target in [('ring', self.ring_target), ('pinky', self.pinky_target)]:
             J = np.array(self.jac.get_angles_jacobian(finger, q_motor))
-            tau += self._joint_torque(FK_motor2finger(q_motor, finger), self.ring_pinky_target, J, q_dot_motor,
+            tau += self._joint_torque(FK_motor2finger(q_motor, finger), target, J, q_dot_motor,
                                       self.stiffness[finger], self.damping[finger])
 
         return tau
