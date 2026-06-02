@@ -90,4 +90,5 @@ HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
 APPROACH_SPEED  = 0.025  # [m/s]
 TOTAL_DISTANCE  = 0.40   # [m]   total X displacement
 CLOSE_DISTANCE  = 0.15   # [m]   X at which the hand closes to PC1
-K_HOME          = 0.5    # [N·m/rad]  joint stiffness for hand return to HOME
+K_HOME          = 0.15   # [N·m/rad]  finger/thumb stiffness for hand return to HOME
+K_HOME_WRIST    = 0.05   # [N·m/rad]  wrist stiffness for return to HOME (softer — wrist oscillates most)

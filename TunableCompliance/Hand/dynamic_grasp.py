@@ -47,7 +47,7 @@ from hand_config import (
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
-    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP, K_HOME,
+    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP, K_HOME, K_HOME_WRIST,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
 import rtde_control
@@ -277,7 +277,7 @@ def _hand_to_home_stiff():
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.stiffness[_f] = np.full(3, K_HOME)
         vmc_joint.damping[_f]   = np.full(3, B_ROT)
-    vmc_joint.stiffness['wrist'] = np.full(2, K_HOME)
+    vmc_joint.stiffness['wrist'] = np.full(2, K_HOME_WRIST)
     vmc_joint.stiffness['thumb'] = np.full(4, K_HOME)
 
 
