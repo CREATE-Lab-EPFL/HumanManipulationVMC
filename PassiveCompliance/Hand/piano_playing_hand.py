@@ -37,7 +37,7 @@ from piano_config import (
     PRESS_ANGLE_DEG, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
     K_ROT, K_ROT_PRESS, B_ROT, B_CART_PLAYING as B_CART,
-    PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES,
+    PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES, RAMP_DURATION,
 )
 import rtde_control
 
@@ -56,6 +56,8 @@ for _f in PIANO_FINGERS_PLAYING:
     Q_PRESS[MOTOR_SLICES[_f]] = np.deg2rad(PRESS_ANGLE_DEG)
 
 PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', np.zeros(3)))
+             for f in PIANO_FINGERS_PLAYING}
+REST_POS  = {f: np.array(FK_motor2fingerPos(np.zeros(15), f, 'DIP', np.zeros(3)))
              for f in PIANO_FINGERS_PLAYING}
 
 UR5_POSE_PRESS     = UR5_POSE_PIANO.copy()

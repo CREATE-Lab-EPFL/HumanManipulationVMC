@@ -36,6 +36,7 @@ K_SOFT              = 10.0                   # [N/m]
 B_CART_PLAYING      = 0.5                    # [N·s/m]
 N_CYCLES            = 3                      # strokes per stiffness value
 PLAYING_SETTLE_TIME = 3.0                    # [s]
+RAMP_DURATION       = 3.0                    # [s]  gradual approach to / return from press pose
 
 # ── piano_glissando.py ────────────────────────────────────────────────────────
 B_CART_GLISSANDO      = 1.0     # [N·s/m]
