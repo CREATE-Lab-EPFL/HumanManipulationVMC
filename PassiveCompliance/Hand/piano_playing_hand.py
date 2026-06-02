@@ -91,8 +91,9 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 for _f in PIANO_FINGERS_PLAYING:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
-# Unused fingers: keep K_ROT stiffness (already set), targets at home (zero)
+# Unused fingers: all targets at home (zero) with K_ROT stiffness (already set globally)
 vmc_joint.thumb               = np.zeros(4)
+vmc_joint.index_target        = np.zeros(3)
 vmc_joint.middle_target       = np.zeros(3)
 vmc_joint.ring_pinky_target   = np.zeros(3)
 
@@ -164,8 +165,7 @@ def run_condition(label, stiffness_pairs):
     if writer: writer.writeheader()
     try:
         for k_vals, _ in stiffness_pairs:
-            for _f, k in zip(PIANO_FINGERS_PLAYING, k_vals):
-                vmc_task.springs[_f].stiffness = np.full(3, k)
+            _ramp_stiffness(k_vals)   # gradual stiffness transition
             controller.get_logger().info(f'[{label}] K={k_vals} — settling {SETTLE_TIME:.0f}s ...')
             time.sleep(SETTLE_TIME)
             for cycle in range(1, N_CYCLES + 1):
@@ -180,6 +180,22 @@ def run_condition(label, stiffness_pairs):
 # =============================================================================
 # Ramp helpers (main-thread blocking; control loop runs throughout)
 # =============================================================================
+
+def _ramp_stiffness(k_vals):
+    """Gradually change task spring stiffness to k_vals while holding position targets."""
+    start_k = [float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING]
+    if max(abs(start_k[i] - k_vals[i]) for i in range(len(k_vals))) < 0.1:
+        return
+    dt = 1.0 / CONTROL_FREQUENCY
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        for i, _f in enumerate(PIANO_FINGERS_PLAYING):
+            vmc_task.springs[_f].stiffness = np.full(3, (1 - alpha) * start_k[i] + alpha * k_vals[i])
+        if alpha >= 1.0:
+            break
+        time.sleep(dt)
+
 
 def _ramp_to_press():
     """Gradually move task targets REST→PRESS and ramp stiffness 0→K_SWEEP[0]."""

@@ -84,8 +84,9 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 for _f in PIANO_FINGERS_GLISSANDO:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
-# Unused fingers: keep K_ROT stiffness (already set), targets at home (zero)
+# Unused fingers: all targets at home (zero) with K_ROT stiffness (already set globally)
 vmc_joint.thumb               = np.zeros(4)
+vmc_joint.index_target        = np.zeros(3)
 vmc_joint.middle_target       = np.zeros(3)
 vmc_joint.ring_pinky_target   = np.zeros(3)
 
@@ -194,12 +195,11 @@ if writer: writer.writeheader()
 
 try:
     for k in K_SWEEP:
-        for _f in PIANO_FINGERS_GLISSANDO:
-            vmc_task.springs[_f].stiffness = np.full(3, k)
         for run in range(1, N_RUNS + 1):
             controller.get_logger().info(f'K={k:.0f} run {run}/{N_RUNS} — settling ...')
             _phase = 'settle'
-            _ramp_targets(REST_POS)       # gradual lift to rest, stiffness unchanged
+            # Ramp stiffness to the new K level during the first lift; subsequent runs are no-ops
+            _ramp_targets(REST_POS, k_end=k if run == 1 else None)
             time.sleep(SETTLE_TIME)
             _ramp_targets(PRESS_POS)      # gradual press, stiffness unchanged
 
