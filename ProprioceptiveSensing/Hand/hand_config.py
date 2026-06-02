@@ -18,10 +18,10 @@ PC1_SPREAD = {
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
-PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
-PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
-PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
+PC1_INDEX  = np.deg2rad([55.0, 75.0, 75.0])
+PC1_MIDDLE = np.deg2rad([55.0, 75.0, 75.0])
+PC1_RING   = np.deg2rad([55.0, 75.0, 75.0])
+PC1_PINKY  = np.deg2rad([55.0, 75.0, 75.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_WRIST  = np.zeros(2)
