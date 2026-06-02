@@ -100,7 +100,7 @@ vmc_task = TaskVMC()
 vmc_task.set_stiffness(0.0)
 for _f in PIANO_FINGERS_PLAYING:
     vmc_task.dampers[_f].damping = np.full(3, B_CART)
-    vmc_task.targets[_f]         = PRESS_POS[_f].copy()
+    vmc_task.targets[_f]         = REST_POS[_f].copy()
 
 # =============================================================================
 # MIDI input (direct rtmidi — no ROS2 bridge needed)
@@ -178,6 +178,41 @@ def run_condition(label, stiffness_pairs):
         if f: f.close()
 
 # =============================================================================
+# Ramp helpers (main-thread blocking; control loop runs throughout)
+# =============================================================================
+
+def _ramp_to_press():
+    """Gradually move task targets REST→PRESS and ramp stiffness 0→K_SWEEP[0]."""
+    start_pos = {f: REST_POS[f].copy() for f in PIANO_FINGERS_PLAYING}
+    dt = 1.0 / CONTROL_FREQUENCY
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        for _f in PIANO_FINGERS_PLAYING:
+            vmc_task.targets[_f]           = (1 - alpha) * start_pos[_f] + alpha * PRESS_POS[_f]
+            vmc_task.springs[_f].stiffness = np.full(3, alpha * K_SWEEP[0])
+        if alpha >= 1.0:
+            break
+        time.sleep(dt)
+
+
+def _ramp_to_home():
+    """Gradually return task targets PRESS→REST and ramp stiffness to 0."""
+    start_pos = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
+    start_k   = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING}
+    dt = 1.0 / CONTROL_FREQUENCY
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        for _f in PIANO_FINGERS_PLAYING:
+            vmc_task.targets[_f]           = (1 - alpha) * start_pos[_f] + alpha * REST_POS[_f]
+            vmc_task.springs[_f].stiffness = np.full(3, (1 - alpha) * start_k[_f])
+        if alpha >= 1.0:
+            break
+        time.sleep(dt)
+
+
+# =============================================================================
 # Run
 # =============================================================================
 input('Press ENTER to start…')
@@ -186,6 +221,8 @@ arm.moveL(list(UR5_POSE_PIANO), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
 ctrl_thread.start()
+
+_ramp_to_press()
 
 try:
     if CONDITION == 'uniform':
@@ -199,6 +236,7 @@ except KeyboardInterrupt:
 finally:
     midi_ctrl.close()
     arm.stopScript()
+    _ramp_to_home()    # gradual return while control loop is still active
     _running = False
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)
