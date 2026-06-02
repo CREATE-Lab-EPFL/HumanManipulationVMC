@@ -86,12 +86,12 @@ _PRESS_JOINTS = PRESS_POSE.copy()
 for _f in PIANO_FINGERS_GLISSANDO:
     vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
 # Playing fingers: soft joint spring toward press pose (task spring dominates)
-vmc_joint.index_target = _PRESS_JOINTS.copy()
-vmc_joint.ring_target  = _PRESS_JOINTS.copy()
+vmc_joint.index_target  = _PRESS_JOINTS.copy()
+vmc_joint.middle_target = _PRESS_JOINTS.copy()
 # Unused fingers: held at home with K_ROT
-vmc_joint.thumb         = np.zeros(4)
-vmc_joint.middle_target = np.zeros(3)
-vmc_joint.pinky_target  = np.zeros(3)
+vmc_joint.thumb        = np.zeros(4)
+vmc_joint.ring_target  = np.zeros(3)
+vmc_joint.pinky_target = np.zeros(3)
 
 vmc_task = TaskVMC()
 vmc_task.set_stiffness(0.0)
