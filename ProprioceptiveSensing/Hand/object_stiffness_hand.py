@@ -102,15 +102,10 @@ K_JOINT_DICT_MODEL = {
 }
 
 # =============================================================================
-# Object selection
+# Object sequencing (all objects run back-to-back in one session)
 # =============================================================================
-print('\nSelect object:')
-for i, obj in enumerate(OBJECTS):
-    print(f'  {i + 1}) {obj}')
-_sel = int(input('Enter number: ')) - 1
-assert 0 <= _sel < len(OBJECTS), 'Invalid selection'
-OBJECT_NAME = OBJECTS[_sel]
-print(f'Selected: {OBJECT_NAME}\n')
+_obj_idx    = 0
+OBJECT_NAME = OBJECTS[_obj_idx]
 
 # =============================================================================
 # ROS2 + controller initialisation
@@ -319,7 +314,8 @@ STATE_SWEEP_REC    = 7
 STATE_UNLOAD       = 8
 STATE_RAMP_TO_HOME = 9
 STATE_RETURN       = 10
-STATE_DONE         = 11
+STATE_CONFIRM_NEXT = 11
+STATE_DONE         = 12
 
 state             = STATE_INIT_ARM
 _state_start      = time.time()
@@ -332,6 +328,8 @@ _converged        = False
 _sweep_idx        = 0
 _current_k_tip    = K_TIP_GENTLE
 _use_task_vmc     = False
+_confirm_ready    = False
+_confirm_pending  = False
 
 _ramp_t0            = None
 _ramp_start_targets = None
@@ -340,6 +338,46 @@ _ramp_end_targets   = None
 _k_ramp_start = None
 _k_ramp_end   = None
 _k_ramp_after = None
+
+
+def _ask_confirm_async(prompt):
+    global _confirm_ready, _confirm_pending
+    _confirm_ready   = False
+    _confirm_pending = True
+    def _run():
+        global _confirm_ready
+        input(prompt)
+        _confirm_ready = True
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _reset_trial():
+    global _obj_idx, OBJECT_NAME, _experiment_start
+    global _csv_path, _csv_file, _csv_writer
+    global _converge_ticks, _converged, _sweep_idx, _current_k_tip
+    global _use_task_vmc, _log_tick, _confirm_ready, _confirm_pending
+
+    if _csv_file is not None and not _csv_file.closed:
+        _csv_file.close()
+
+    _obj_idx       += 1
+    OBJECT_NAME     = OBJECTS[_obj_idx]
+    _experiment_start = time.time()
+    _converge_ticks = 0
+    _converged      = False
+    _sweep_idx      = 0
+    _current_k_tip  = K_TIP_GENTLE
+    _use_task_vmc   = False
+    _log_tick       = 0
+    _confirm_ready  = False
+    _confirm_pending = False
+
+    if not COLLECTED_DATA:
+        _csv_path   = _output_path()
+        _csv_file   = open(_csv_path, 'w', newline='')
+        _csv_writer = csv.writer(_csv_file)
+        _csv_writer.writerow(_csv_header())
+        controller.get_logger().info(f'Saving to: {_csv_path}')
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -434,6 +472,7 @@ def control_callback():
     global state, _state_start
     global _converge_ticks, _log_tick, _converged
     global _sweep_idx, _current_k_tip, _use_task_vmc
+    global _obj_idx, _confirm_ready, _confirm_pending
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
