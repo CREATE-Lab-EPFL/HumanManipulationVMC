@@ -620,8 +620,27 @@ def control_callback():
         else:
             _converge_ticks = 0
         if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
-            state = STATE_DONE
-            controller.get_logger().info('Home reached. Experiment complete.')
+            if _obj_idx + 1 < len(OBJECTS):
+                state        = STATE_CONFIRM_NEXT
+                _state_start = now
+                controller.get_logger().info(
+                    f'Object {_obj_idx + 1}/{len(OBJECTS)} done. '
+                    f'Place next object and press ENTER …')
+            else:
+                state = STATE_DONE
+                controller.get_logger().info('All objects complete.')
+
+    elif state == STATE_CONFIRM_NEXT:
+        if not _confirm_pending:
+            _ask_confirm_async(
+                f'\n[Confirm] Place {OBJECTS[_obj_idx + 1]} and press ENTER to continue …\n')
+        elif _confirm_ready:
+            _reset_trial()
+            _begin_ramp(PC1_POSE_TARGETS)
+            _state_start = now
+            state        = STATE_RAMP_TO_PC1
+            controller.get_logger().info(
+                f'Starting object {_obj_idx + 1}/{len(OBJECTS)}: {OBJECT_NAME}')
 
     elif state == STATE_DONE:
         pass
@@ -633,7 +652,7 @@ def control_callback():
 timer_period = 1.0 / CONTROL_FREQUENCY
 controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
-    f'Object stiffness hand — object: {OBJECT_NAME} | '
+    f'Object stiffness hand — objects: {OBJECTS} | '
     f'k_rot = {K_ROT} N·m/rad | '
     f'k_tip gentle = {K_TIP_GENTLE} N/m | '
     f'sweep = {K_TIP_SWEEP} N/m | '
