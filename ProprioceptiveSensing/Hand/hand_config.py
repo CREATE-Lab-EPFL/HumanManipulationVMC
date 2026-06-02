@@ -31,7 +31,7 @@ HOME_FINGER = np.zeros(3)
 
 # ── Experiment lists ───────────────────────────────────────────────────────────
 FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
-OBJECTS    = ['object_1', 'object_2', 'object_3']
+OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
 K_TIP_GENTLE = 10.0            # [N/m]   gentle-grasp stiffness (baseline)

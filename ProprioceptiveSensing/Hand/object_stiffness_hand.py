@@ -303,19 +303,20 @@ PC1_POSE_TARGETS = {
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_INIT_ARM     = 0
-STATE_SETTLE_ARM   = 1
-STATE_RAMP_TO_PC1  = 2
-STATE_GENTLE_CONV  = 3
-STATE_GENTLE_REC   = 4
-STATE_K_TIP_RAMP   = 5
-STATE_SWEEP_CONV   = 6
-STATE_SWEEP_REC    = 7
-STATE_UNLOAD       = 8
-STATE_RAMP_TO_HOME = 9
-STATE_RETURN       = 10
-STATE_CONFIRM_NEXT = 11
-STATE_DONE         = 12
+STATE_INIT_ARM      = 0
+STATE_SETTLE_ARM    = 1
+STATE_CLOSE_CONFIRM = 2   # wait for "Close for X object?" confirmation
+STATE_RAMP_TO_PC1   = 3
+STATE_GENTLE_CONV   = 4
+STATE_GENTLE_REC    = 5
+STATE_K_TIP_RAMP    = 6
+STATE_SWEEP_CONV    = 7
+STATE_SWEEP_REC     = 8
+STATE_UNLOAD        = 9
+STATE_RAMP_TO_HOME  = 10
+STATE_RETURN        = 11
+STATE_CONFIRM_NEXT  = 12
+STATE_DONE          = 13
 
 state             = STATE_INIT_ARM
 _state_start      = time.time()
@@ -494,8 +495,21 @@ def control_callback():
 
     elif state == STATE_SETTLE_ARM:
         if elapsed >= SETTLE_TIME:
+            controller.get_logger().info('UR5 settled. Waiting for close confirmation …')
+            _confirm_ready   = False
+            _confirm_pending = False
+            _state_start     = now
+            state            = STATE_CLOSE_CONFIRM
+
+    elif state == STATE_CLOSE_CONFIRM:
+        if not _confirm_pending:
+            _ask_confirm_async(
+                f'\n[Confirm] Close for {OBJECT_NAME} object? Press ENTER …\n')
+        elif _confirm_ready:
+            _confirm_ready   = False
+            _confirm_pending = False
             controller.get_logger().info(
-                f'UR5 settled. Ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
+                f'Closing — ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
             _begin_ramp(PC1_POSE_TARGETS)
             _state_start = now
             state        = STATE_RAMP_TO_PC1
@@ -636,9 +650,9 @@ def control_callback():
                 f'\n[Confirm] Place {OBJECTS[_obj_idx + 1]} and press ENTER to continue …\n')
         elif _confirm_ready:
             _reset_trial()
-            _begin_ramp(PC1_POSE_TARGETS)
+            # _reset_trial() resets _confirm_ready/_confirm_pending to False
             _state_start = now
-            state        = STATE_RAMP_TO_PC1
+            state        = STATE_CLOSE_CONFIRM
             controller.get_logger().info(
                 f'Starting object {_obj_idx + 1}/{len(OBJECTS)}: {OBJECT_NAME}')
 
