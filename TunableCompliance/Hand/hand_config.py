@@ -14,19 +14,33 @@ UR5_POSE_INHAND = np.array([-0.09, 0.72, 0.30, -0.91, 1.50, 2.30])
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along +X.
 UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 
-# ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_WRIST  = np.deg2rad([0.0,  0.0])
-PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
-PC1_SPREAD = {
+# ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
+INHAND_PC1_WRIST  = np.deg2rad([0.0,  0.0])
+INHAND_PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
+INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
-PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
-PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
-PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
+INHAND_PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
+INHAND_PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
+INHAND_PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
+INHAND_PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
+
+# ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
+GRASP_PC1_WRIST  = np.deg2rad([0.0,  0.0])
+GRASP_PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
+GRASP_PC1_SPREAD = {
+    'index':  np.deg2rad(-2.0),
+    'middle': 0.0,
+    'ring':   np.deg2rad(2.0),
+    'pinky':  np.deg2rad(2.0),
+}
+GRASP_PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
+GRASP_PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
+GRASP_PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
+GRASP_PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_WRIST  = np.zeros(2)
