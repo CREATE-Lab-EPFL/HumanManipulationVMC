@@ -219,9 +219,14 @@ def _ramp_to_press():
 
 
 def _ramp_to_home():
-    """Gradually return task targets PRESS→REST and ramp stiffness to 0."""
-    start_pos = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
-    start_k   = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING}
+    """Gradually open the hand back to home: task targets PRESS→REST with task
+    stiffness→0, and joint-space finger/wrist targets PRESS→home (joint springs
+    stay active so the fingers actively extend rather than staying flexed)."""
+    start_pos   = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
+    start_k     = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING}
+    start_jt    = {'index': vmc_joint.index_target.copy(), 'ring': vmc_joint.ring_target.copy()}
+    start_wrist = vmc_joint.wrist.copy()
+    home_joint  = np.zeros(3)
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
@@ -229,6 +234,9 @@ def _ramp_to_home():
         for _f in PIANO_FINGERS_PLAYING:
             vmc_task.targets[_f]           = (1 - alpha) * start_pos[_f] + alpha * REST_POS[_f]
             vmc_task.springs[_f].stiffness = np.full(3, (1 - alpha) * start_k[_f])
+        vmc_joint.index_target = (1 - alpha) * start_jt['index'] + alpha * home_joint
+        vmc_joint.ring_target  = (1 - alpha) * start_jt['ring']  + alpha * home_joint
+        vmc_joint.wrist        = (1 - alpha) * start_wrist       + alpha * np.zeros(2)
         if alpha >= 1.0:
             break
         time.sleep(dt)
