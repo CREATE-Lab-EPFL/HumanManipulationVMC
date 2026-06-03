@@ -58,6 +58,11 @@ PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', _R)) for f in PIA
 _dir          = GLISSANDO_DIRECTION[:3] / np.linalg.norm(GLISSANDO_DIRECTION[:3])
 GLISSANDO_END = UR5_POSE_GLISSANDO_START + np.concatenate([_dir, [0, 0, 0]]) * GLISSANDO_DISTANCE
 
+# Lowered (key-engaged) poses: descend GLISSANDO_DEPTH along base-frame Z
+_DOWN                = np.array([0.0, 0.0, GLISSANDO_DEPTH, 0.0, 0.0, 0.0])
+GLISSANDO_START_DOWN = UR5_POSE_GLISSANDO_START - _DOWN
+GLISSANDO_END_DOWN   = GLISSANDO_END - _DOWN
+
 # =============================================================================
 # CSV schema
 # =============================================================================
@@ -224,10 +229,15 @@ try:
             with _lock:      _buf.clear()
             with _midi_lock: _midi_events.clear()
 
+            # Descend GLISSANDO_DEPTH so the pressed finger actually engages the keys
+            _phase = 'press_down'
+            arm.moveL(list(GLISSANDO_START_DOWN), UR5_INIT_SPEED, UR5_INIT_ACCEL)
             _phase = 'slide_forward'
-            arm.moveL(list(GLISSANDO_END), GLISSANDO_SPEED, UR5_INIT_ACCEL)
-            # Lift the finger to home BEFORE retracting, so it does not drag
-            # backward across the keys (that would damage the hand)
+            arm.moveL(list(GLISSANDO_END_DOWN), GLISSANDO_SPEED, UR5_INIT_ACCEL)
+            # Rise back up BEFORE coming home, then lift the finger off the keys, so it
+            # never drags backward across them (that would damage the hand)
+            _phase = 'lift_up'
+            arm.moveL(list(GLISSANDO_END), UR5_INIT_SPEED, UR5_INIT_ACCEL)
             _phase = 'lift'
             _ramp_targets(REST_POS)
             _phase = 'return'
