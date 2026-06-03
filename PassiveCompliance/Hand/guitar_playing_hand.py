@@ -142,12 +142,19 @@ def _flush(writer, ktors, run):
 # =============================================================================
 
 def _ramp_closed(k_torsional):
-    """Ramp fingers from current joint targets → FINGER_CLOSED_POSE at k_torsional.
-    The stiffness is set to k_torsional for the closed fingers before the ramp."""
-    for _f in CLOSED_FINGERS:
-        vmc_joint.stiffness[_f][:] = k_torsional
-    start = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
+    """Close the fingers to FINGER_CLOSED_POSE then settle at k_torsional.
+
+    Two phases so the fingers actually reach the target even when k_torsional
+    is very soft (e.g. 0.1 N·m/rad which alone can't overcome gravity):
+      Phase 1 — approach: move targets 0°→FINGER_CLOSED_POSE at full K_ROT stiffness.
+      Phase 2 — soften:   reduce stiffness K_ROT→k_torsional with targets fixed.
+    """
     dt = 1.0 / CONTROL_FREQUENCY
+
+    # Phase 1: close at K_ROT (firm enough to always reach the target)
+    for _f in CLOSED_FINGERS:
+        vmc_joint.stiffness[_f][:] = K_ROT
+    start = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
@@ -155,6 +162,17 @@ def _ramp_closed(k_torsional):
         vmc_joint.middle_target = (1 - alpha) * start['middle'] + alpha * FINGER_CLOSED_POSE
         vmc_joint.ring_target   = (1 - alpha) * start['ring']   + alpha * FINGER_CLOSED_POSE
         vmc_joint.pinky_target  = (1 - alpha) * start['pinky']  + alpha * FINGER_CLOSED_POSE
+        if alpha >= 1.0:
+            break
+        time.sleep(dt)
+
+    # Phase 2: reduce stiffness to the experimental value (fingers already at target)
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        k = (1 - alpha) * K_ROT + alpha * k_torsional
+        for _f in CLOSED_FINGERS:
+            vmc_joint.stiffness[_f][:] = k
         if alpha >= 1.0:
             break
         time.sleep(dt)
