@@ -28,6 +28,9 @@ PIANO_FINGERS_GLISSANDO = ['index', 'middle']
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
 K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers (task spring takes over)
 B_ROT       = 0.01   # [N·m·s/rad]
+B_ROT_HOLD  = 0.05   # [N·m·s/rad]  damping for held (non-playing) DOFs — suppresses oscillation
+
+WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (positive tilts up); tune to taste
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
 K_SWEEP             = [5.0, 20.0]           # [N/m]
