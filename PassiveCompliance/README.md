@@ -10,7 +10,7 @@ before contact), inward (smoothens deformations and provides adaptability).
 ```
 PassiveCompliance/
 ├── Finger/     — single finger testbed experiments
-└── Hand/       — ADAPT Hand piano-playing experiments
+└── Hand/       — ADAPT Hand multi-instrument experiments (piano, guitar)
 ```
 
 ---
@@ -25,10 +25,10 @@ contact direction or starting pose.
 
 Key technical elements:
 - Joint-space and task-space virtual springs are used to shape the apparent
-	stiffness at the fingertip.
+  stiffness at the fingertip.
 - Directional constraints isolate normal and tangential responses.
 - The output is a family of force-displacement curves for comparison across
-	directions and poses.
+  directions and poses.
 
 | File | Description |
 |------|-------------|
@@ -47,22 +47,46 @@ Key technical elements:
 
 ## Hand/
 
-Both scripts require `midi_publisher.py` running in a separate terminal (see `HelperPianoMIDI/`).
+All hand experiments require the ADAPT Hand on ROS2 (`dynamixel_node`) and a UR5
+reachable at `UR5_IP`. See the helper subdirectory READMEs for per-instrument
+dependencies.
 
-The hand maintains a press pose under joint-space VMC while the UR5 drives key
-motion. Experiments compare uniform versus mixed fingertip stiffness and log
-joint state together with MIDI events to relate compliance to key interaction.
+### Piano (`piano_playing_hand.py`)
+
+Index and ring fingers are held at a fixed press pose under joint-space VMC while
+the UR5 performs rhythmic press-lift strokes across three compliance conditions:
+uniform low K, uniform high K, and heterogeneous (stiff index / soft ring). MIDI
+note-on velocity is the intensity proxy.
 
 Key technical elements:
-- Joint-space VMC stabilizes a press pose while allowing compliance at the tips.
-- UR5 motion provides repeatable key interaction trajectories.
-- MIDI events provide timing tags for contact and release phases.
+- Task-space Cartesian springs (K_SWEEP) are the swept variable; rotary springs
+  are fixed across all conditions so only task-space compliance changes.
+- The wrist is held (near-)rigid to isolate finger compliance from wrist mobility.
+- No friction compensation (FRICTION_TAU_MAX = 0) — stiction is excluded to avoid
+  limit-cycling on the unsprung non-playing fingers.
 
 | File | Description |
 |------|-------------|
-| `piano_playing_hand.py` | Hand holds a fixed press pose while the UR5 performs rhythmic press-lift strokes. Runs both uniform and mixed stiffness conditions, saving hand state and MIDI logs per stroke. |
-| `piano_glissando.py` | Hand holds a press pose while the UR5 slides along the keyboard and returns. Saves hand state and MIDI logs per run. |
-| `plot_piano.ipynb` | Plot piano playing and glissando experiments |
-| `HelperPianoMIDI/midi_publisher.py` | Reads physical keyboard and publishes on `/midi/note_on` — must be running alongside experiment scripts |
-| `HelperPianoMIDI/midi_subscriber.py` | Subscribe and print MIDI events (debug/monitor) |
-| `HelperPianoMIDI/piano_config.py` | Shared constants for piano experiments |
+| `piano_playing_hand.py` | Three-condition piano experiment (uniform low K / uniform high K / heterogeneous) |
+| `plot_piano.ipynb` | Piano roll and intensity-per-note figures |
+| `HelperPianoMIDI/` | MIDI keyboard interface, live visualizer, config constants |
+
+### Guitar (`guitar_playing_hand.py`)
+
+All fingers except the thumb are held closed at a fixed flexion pose under a
+torsional (joint-space) spring. The UR5 drags the closed hand linearly across
+the strings; a microphone records the sound. Three torsional stiffness values
+are compared; the microphone RMS level is the intensity proxy (no MIDI needed).
+
+Key technical elements:
+- Torsional (joint-space) stiffness is the swept variable; task-space springs are
+  not used — the experiment isolates the effect of joint stiffness on sound.
+- The wrist is held (near-)rigid for the same reason as in the piano.
+- Between runs the fingers are opened to home, the arm is repositioned, and the
+  fingers are closed again before the next sweep.
+
+| File | Description |
+|------|-------------|
+| `guitar_playing_hand.py` | Guitar experiment — linear arm sweep across strings at three torsional stiffnesses, N_RUNS per condition |
+| `plot_guitar.ipynb` | Intensity-over-time and mean-intensity-vs-K figures |
+| `HelperGuitar/` | Microphone interface (`sounddevice` backend), config constants |
