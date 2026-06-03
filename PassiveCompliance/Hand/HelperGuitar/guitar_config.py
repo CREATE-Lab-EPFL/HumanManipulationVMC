@@ -12,8 +12,8 @@ import numpy as np
 
 # ── UR5 sweep: linear move from START to END ────────────────────────────────────
 # PLACEHOLDER — tune to the actual guitar mounting.
-UR5_POSE_GUITAR_START = np.array([0.12, 0.51, 0.10, -1.45, -0.42, -0.64])
-UR5_POSE_GUITAR_END   = np.array([0.12, 0.41, 0.10, -1.45, -0.42, -0.64])
+UR5_POSE_GUITAR_START = np.array([0.0, 0.61, 0.22, -1.66, -0.61, -0.54])
+UR5_POSE_GUITAR_END   = np.array([0.0, 0.52, 0.22, -1.66, -0.61, -0.54])
 SWEEP_SPEED           = 0.05    # [m/s]  linear sweep speed (must be in [0, 3])
 SWEEP_ACCEL           = 0.5     # [m/s²]
 
