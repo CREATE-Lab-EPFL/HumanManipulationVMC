@@ -67,10 +67,15 @@ vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
 
-# Thumb + spreads: K=0, damping only (same as piano non-playing fingers)
+# Thumb + spreads: K=0, damping only
 for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
     vmc_joint.damping[_hold][:]   = B_ROT_HOLD
+
+# Closed fingers: use B_ROT_HOLD throughout — B_ROT alone is too low for K=K_ROT
+# and causes oscillation. Damping does not affect the K comparison.
+for _f in CLOSED_FINGERS:
+    vmc_joint.damping[_f][:] = B_ROT_HOLD
 
 # Wrist: held (near-)rigid so it does not contribute to the measured compliance
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
