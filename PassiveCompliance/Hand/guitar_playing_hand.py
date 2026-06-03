@@ -178,7 +178,8 @@ def _ramp_closed(k_torsional):
 
 
 def _ramp_to_home():
-    """Open fingers back to home, ramping targets and stiffness → K_ROT."""
+    """Open fingers back to home, ramping targets and stiffness → K_ROT (0.4).
+    Damping stays at B_ROT (0.001) throughout."""
     starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
     start_wrist = vmc_joint.wrist.copy()
     start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
