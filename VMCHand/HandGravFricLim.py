@@ -48,6 +48,11 @@ class GravFricLim:
 
         self.R_world2hand = np.eye(3) if R_world2hand is None else np.asarray(R_world2hand)
 
+        # Max static-friction compensation torque [N·m]. Scalar or [15] per-motor array.
+        # Override per-task (e.g. lower/zero it to kill stiction limit-cycles on
+        # unsprung fingers). Defaults to the model value from hand_params.
+        self.friction_max = friction_max
+
         # Fixed rotation from UR5 flange frame to hand base frame (from hand_params)
         self._R_mounting = rot_axis(np.array([0.0, 0.0, 1.0]), HAND_MOUNTING_ANGLE)
 
@@ -118,7 +123,7 @@ class GravFricLim:
             tau_friction: [15] friction compensation motor torques (N·m).
         """
 
-        return friction_max * np.exp(-(q_dot_motor / friction_vlim) ** 2) * np.sign(tau_motor)
+        return self.friction_max * np.exp(-(q_dot_motor / friction_vlim) ** 2) * np.sign(tau_motor)
 
     def joint_limit_torques(self, q_motor):
         """

@@ -33,6 +33,9 @@ B_ROT_HOLD  = 0.05   # [N·m·s/rad]  damping for held (non-playing) DOFs — su
 WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (rotation about wrist -X axis;
                          #         old default was -20. Verify up/down direction on the rig).
 
+# Friction-compensation max torque [N·m] for this task
+FRICTION_TAU_MAX = 0.0
+
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
 K_SWEEP             = [20.0, 100.0]           # [N/m]
 K_STIFF             = 100.0                  # [N/m]
