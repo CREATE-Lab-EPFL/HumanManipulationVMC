@@ -12,7 +12,7 @@ PRESS_ACCEL    = 3.0     # [m/s²]  press-stroke acceleration — the real lever
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
 UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
-GLISSANDO_DIRECTION      = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+GLISSANDO_DIRECTION      = np.array([0.0, -1.0, 0.0, 0.0, 0.0, 0.0])
 GLISSANDO_DISTANCE       = 0.23    # [m]
 GLISSANDO_SPEED          = 0.05    # [m/s]
 
