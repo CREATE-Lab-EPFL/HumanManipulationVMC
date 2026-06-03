@@ -21,7 +21,7 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_POSE              = np.deg2rad([50.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
+PRESS_POSE              = np.deg2rad([80.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
 SPREAD_ANGLE_DEG        = 10.0           # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
@@ -53,5 +53,5 @@ RAMP_DURATION       = 3.0                    # [s]  gradual approach to / return
 
 # ── piano_glissando.py ────────────────────────────────────────────────────────
 B_CART_GLISSANDO      = 1.0     # [N·s/m]
-N_RUNS                = 5
+N_RUNS                = 3
 GLISSANDO_SETTLE_TIME = 3.0     # [s]

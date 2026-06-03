@@ -3,7 +3,7 @@ Passive compliance shaping — glissando with the ADAPT Hand.
 
 Index and ring fingers are held at press pose while the UR5 slides along
 the keyboard for GLISSANDO_DISTANCE, then returns.  N_RUNS times per stiffness
-value (K_SWEEP = 5, 20 N/m).
+value.
 
 Prerequisite — verify MIDI connectivity:
     python3 HelperPianoMIDI/midi_listener.py
@@ -183,7 +183,7 @@ def _ramp_targets(end_pos, k_end=None):
 # =============================================================================
 # Protocol
 # =============================================================================
-input('Press ENTER to start…')
+input('Press ENTER to connect the UR5 and approach the keyboard…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
@@ -199,6 +199,8 @@ if writer: writer.writeheader()
 try:
     for k in K_SWEEP:
         for run in range(1, N_RUNS + 1):
+            print(f'\n=== Glissando  K={k:.0f}  run {run}/{N_RUNS} ===')
+            input('    Press ENTER to start this run…')
             controller.get_logger().info(f'K={k:.0f} run {run}/{N_RUNS} — settling ...')
             _phase = 'settle'
             # Ramp stiffness to the new K level during the first lift; subsequent runs are no-ops
