@@ -72,6 +72,11 @@ for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_p
     vmc_joint.stiffness[_hold][:] = 0.0
     vmc_joint.damping[_hold][:]   = B_ROT_HOLD
 
+# Closed fingers: always use B_HOME — we measure stiffness not damping, and B_ROT
+# alone is too low for K_ROT and causes oscillation throughout all phases
+for _f in CLOSED_FINGERS:
+    vmc_joint.damping[_f][:] = B_HOME
+
 # Wrist: held (near-)rigid so it does not contribute to the measured compliance
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
 vmc_joint.stiffness['wrist'][:] = WRIST_K_FIX
@@ -151,28 +156,28 @@ def _ramp_closed(k_torsional):
     """
     dt = 1.0 / CONTROL_FREQUENCY
 
-    # Phase 1: close at K_ROT (firm enough to always reach the target)
-    for _f in CLOSED_FINGERS:
-        vmc_joint.stiffness[_f][:] = K_ROT
-    start = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
+    # Phase 1: ramp targets 0°→FINGER_CLOSED_POSE and stiffness → K_ROT together
+    start_tgt = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
+    start_k   = {f: float(vmc_joint.stiffness[f].flat[0]) for f in CLOSED_FINGERS}
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
-        vmc_joint.index_target  = (1 - alpha) * start['index']  + alpha * FINGER_CLOSED_POSE
-        vmc_joint.middle_target = (1 - alpha) * start['middle'] + alpha * FINGER_CLOSED_POSE
-        vmc_joint.ring_target   = (1 - alpha) * start['ring']   + alpha * FINGER_CLOSED_POSE
-        vmc_joint.pinky_target  = (1 - alpha) * start['pinky']  + alpha * FINGER_CLOSED_POSE
+        vmc_joint.index_target  = (1-alpha)*start_tgt['index']  + alpha*FINGER_CLOSED_POSE
+        vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*FINGER_CLOSED_POSE
+        vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*FINGER_CLOSED_POSE
+        vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*FINGER_CLOSED_POSE
+        for _f in CLOSED_FINGERS:
+            vmc_joint.stiffness[_f][:] = (1-alpha)*start_k[_f] + alpha*K_ROT
         if alpha >= 1.0:
             break
         time.sleep(dt)
 
-    # Phase 2: reduce stiffness to the experimental value (fingers already at target)
+    # Phase 2: ramp stiffness K_ROT → k_torsional with targets fixed
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
-        k = (1 - alpha) * K_ROT + alpha * k_torsional
         for _f in CLOSED_FINGERS:
-            vmc_joint.stiffness[_f][:] = k
+            vmc_joint.stiffness[_f][:] = (1-alpha)*K_ROT + alpha*k_torsional
         if alpha >= 1.0:
             break
         time.sleep(dt)
