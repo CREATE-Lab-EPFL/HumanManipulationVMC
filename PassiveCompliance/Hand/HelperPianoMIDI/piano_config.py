@@ -4,13 +4,13 @@ import numpy as np
 
 # ── Piano playing ──────────────────────────────────────────────────────────────
 # PLACEHOLDER — tune UR5_POSE_PIANO and PRESS_DEPTH to the actual keyboard.
-UR5_POSE_PIANO = np.array([0.13, 0.51, 0.08, -1.45, -0.42, -0.64])
+UR5_POSE_PIANO = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
 PRESS_DEPTH    = 0.025   # [m]  UR5 descends along base-frame Z to press keys
 PRESS_SPEED    = 0.05    # [m/s]
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
 # PLACEHOLDER — tune UR5_POSE_GLISSANDO_START to the actual keyboard.
-UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.08, -1.45, -0.42, -0.64])
+UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
 GLISSANDO_DIRECTION      = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
 GLISSANDO_DISTANCE       = 0.23    # [m]
 GLISSANDO_SPEED          = 0.05    # [m/s]
@@ -20,14 +20,14 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_POSE              = np.deg2rad([40.0, 40.0, 40.0])  # [MCP, PIP, DIP] flexion [rad]
+PRESS_POSE              = np.deg2rad([50.0, 50.0, 50.0])  # [MCP, PIP, DIP] flexion [rad]
 SPREAD_ANGLE_DEG        = 0.0            # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
 
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
 K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers (task spring takes over)
-B_ROT       = 0.001  # [N·m·s/rad]
+B_ROT       = 0.01   # [N·m·s/rad]
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
 K_SWEEP             = [5.0, 20.0]           # [N/m]
