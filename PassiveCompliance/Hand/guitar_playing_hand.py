@@ -70,12 +70,6 @@ vmc_joint.set_damping(B_ROT)
 # Thumb + spreads: K=0, damping only
 for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
-    vmc_joint.damping[_hold][:]   = B_ROT_HOLD
-
-# Closed fingers: always use B_HOME — we measure stiffness not damping, and B_ROT
-# alone is too low for K_ROT and causes oscillation throughout all phases
-for _f in CLOSED_FINGERS:
-    vmc_joint.damping[_f][:] = B_HOME
 
 # Wrist: held (near-)rigid so it does not contribute to the measured compliance
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
