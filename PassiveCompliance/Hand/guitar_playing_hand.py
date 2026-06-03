@@ -32,7 +32,7 @@ from guitar_config import (
     FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
     TORSIONAL_SPRINGS, B_ROT, B_ROT_HOLD, K_ROT,
     WRIST_PITCH_DEG, WRIST_K_FIX, WRIST_B_FIX,
-    RAMP_DURATION, SETTLE_TIME, N_RUNS, FRICTION_TAU_MAX, K_WAIT,
+    RAMP_DURATION, SETTLE_TIME, N_RUNS, FRICTION_TAU_MAX,
     SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_BLOCKSIZE, MIC_DEVICE,
     ONSET_THRESHOLD, ONSET_REFRACTORY,
 )
@@ -71,11 +71,6 @@ vmc_joint.set_damping(B_ROT)
 for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
     vmc_joint.damping[_hold][:]   = B_ROT_HOLD
-
-# Closed fingers: use B_ROT_HOLD throughout — B_ROT alone is too low for K=K_ROT
-# and causes oscillation. Damping does not affect the K comparison.
-for _f in CLOSED_FINGERS:
-    vmc_joint.damping[_f][:] = B_ROT_HOLD
 
 # Wrist: held (near-)rigid so it does not contribute to the measured compliance
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
