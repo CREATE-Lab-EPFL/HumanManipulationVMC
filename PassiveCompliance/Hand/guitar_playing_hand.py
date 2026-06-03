@@ -178,12 +178,10 @@ def _ramp_closed(k_torsional):
 
 
 def _ramp_to_home():
-    """Open fingers back to home, ramping targets, stiffness (→ K_ROT) and
-    damping (→ B_HOME) simultaneously so there are no sudden steps."""
+    """Open fingers back to home, ramping targets and stiffness → K_ROT."""
     starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
     start_wrist = vmc_joint.wrist.copy()
     start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
-    start_bs    = {f: vmc_joint.damping[f].copy() for f in CLOSED_FINGERS}
     home = np.zeros(3)
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
@@ -196,8 +194,6 @@ def _ramp_to_home():
         vmc_joint.wrist         = (1 - alpha) * start_wrist + alpha * np.zeros(2)
         for g in start_ks:
             vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
-        for _f in CLOSED_FINGERS:
-            vmc_joint.damping[_f][:] = (1 - alpha) * start_bs[_f] + alpha * B_HOME
         if alpha >= 1.0:
             break
         time.sleep(dt)
