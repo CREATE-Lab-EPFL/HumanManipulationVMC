@@ -5,7 +5,7 @@ import numpy as np
 # ── Piano playing ──────────────────────────────────────────────────────────────
 UR5_POSE_PIANO = np.array([0.12, 0.51, 0.07, -1.45, -0.42, -0.64])
 PRESS_DEPTH    = 0.08    # [m]  UR5 descends along base-frame Z to press keys
-PRESS_SPEED    = 0.50    # [m/s]
+PRESS_SPEED    = 5.0     # [m/s]
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
 UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
@@ -36,7 +36,7 @@ WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (rotation about wri
 FRICTION_TAU_MAX = 0.0
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
-K_SWEEP             = [5.0, 50.0]           # [N/m]
+K_SWEEP             = [5.0, 100.0]           # [N/m]
 K_SOFT              = K_SWEEP[0]             # [N/m]  heterogeneous: ring = sweep min
 K_STIFF             = K_SWEEP[1]             # [N/m]  heterogeneous: index = sweep max
 B_CART_PLAYING      = 0.5                    # [N·s/m]

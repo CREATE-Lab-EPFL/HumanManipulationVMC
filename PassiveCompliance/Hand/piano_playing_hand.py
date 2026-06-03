@@ -220,12 +220,14 @@ def _ramp_to_press():
 
 def _ramp_to_home():
     """Gradually open the hand back to home: task targets PRESS→REST with task
-    stiffness→0, and joint-space finger/wrist targets PRESS→home (joint springs
-    stay active so the fingers actively extend rather than staying flexed)."""
+    stiffness→0, joint-space finger/wrist targets PRESS→home, and every joint's
+    rotational stiffness ramped up to the proper background K_ROT so the hand
+    returns firmly (the playing/held fingers were soft/zero during the task)."""
     start_pos   = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
     start_k     = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING}
     start_jt    = {'index': vmc_joint.index_target.copy(), 'ring': vmc_joint.ring_target.copy()}
     start_wrist = vmc_joint.wrist.copy()
+    start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
     home_joint  = np.zeros(3)
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
@@ -237,6 +239,8 @@ def _ramp_to_home():
         vmc_joint.index_target = (1 - alpha) * start_jt['index'] + alpha * home_joint
         vmc_joint.ring_target  = (1 - alpha) * start_jt['ring']  + alpha * home_joint
         vmc_joint.wrist        = (1 - alpha) * start_wrist       + alpha * np.zeros(2)
+        for g in start_ks:                                   # restore rotational stiffness → K_ROT
+            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
         if alpha >= 1.0:
             break
         time.sleep(dt)
