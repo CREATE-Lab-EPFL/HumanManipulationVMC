@@ -36,8 +36,8 @@ WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (rotation about wri
                          #         old default was -20. Verify up/down direction on the rig).
 # Hold the wrist (near-)RIGID so the measured compliance comes only from the fingers,
 # not from a soft wrist spring. This is a stiff PD hold (P = stiffness, D = damping).
-WRIST_K_FIX = 8.0        # [N·m/rad]  high stiffness — effectively fixes the wrist
-WRIST_B_FIX = 0.3        # [N·m·s/rad]  matched damping to keep the stiff hold stable
+WRIST_K_FIX = 12.0        # [N·m/rad]  high stiffness — effectively fixes the wrist
+WRIST_B_FIX = 0.5        # [N·m·s/rad]  matched damping to keep the stiff hold stable
 
 # Friction-compensation max torque [N·m] for this task
 FRICTION_TAU_MAX = 0.0
