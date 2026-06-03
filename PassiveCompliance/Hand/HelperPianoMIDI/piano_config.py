@@ -35,7 +35,7 @@ WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (rotation about wri
 FRICTION_TAU_MAX = 0.0
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
-K_SWEEP             = [20.0, 100.0]           # [N/m]
+K_SWEEP             = [5.0, 50.0]           # [N/m]
 K_SOFT              = K_SWEEP[0]             # [N/m]  heterogeneous: ring = sweep min
 K_STIFF             = K_SWEEP[1]             # [N/m]  heterogeneous: index = sweep max
 B_CART_PLAYING      = 0.5                    # [N·s/m]

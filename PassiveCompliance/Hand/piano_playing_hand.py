@@ -99,8 +99,7 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 _PRESS_JOINTS = PRESS_POSE.copy()
 for _f in PIANO_FINGERS_PLAYING:
-    # [MCP, PIP, DIP]: stiffen MCP 4x for postural authority; PIP/DIP stay soft
-    vmc_joint.stiffness[_f] = np.array([4.0 * K_ROT_PRESS, K_ROT_PRESS, K_ROT_PRESS])
+    vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
 # Playing fingers: soft joint spring toward press pose (task spring dominates)
 vmc_joint.index_target = _PRESS_JOINTS.copy()
 vmc_joint.ring_target  = _PRESS_JOINTS.copy()
