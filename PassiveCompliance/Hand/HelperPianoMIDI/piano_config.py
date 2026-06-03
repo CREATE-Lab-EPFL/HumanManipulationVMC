@@ -20,7 +20,7 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_POSE              = np.deg2rad([50.0, 50.0, 50.0])  # [MCP, PIP, DIP] flexion [rad]
+PRESS_POSE              = np.deg2rad([80.0, 50.0, 50.0])  # [MCP, PIP, DIP] flexion [rad]
 SPREAD_ANGLE_DEG        = 0.0            # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
@@ -30,7 +30,8 @@ K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers (task spring takes over)
 B_ROT       = 0.01   # [N·m·s/rad]
 B_ROT_HOLD  = 0.05   # [N·m·s/rad]  damping for held (non-playing) DOFs — suppresses oscillation
 
-WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (positive tilts up); tune to taste
+WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (rotation about wrist -X axis;
+                         #         old default was -20. Verify up/down direction on the rig).
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
 K_SWEEP             = [20.0, 100.0]           # [N/m]

@@ -87,10 +87,12 @@ recv          = UR5Receiver()
 vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
-# Held (non-playing) DOFs need real damping or they oscillate about their target
-for _hold in ['thumb', 'middle', 'pinky', 'wrist',
+# Non-playing fingers: no spring (K=0), damping only — pure dissipation, no oscillation
+for _hold in ['thumb', 'middle', 'pinky',
               'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
-    vmc_joint.damping[_hold][:] = B_ROT_HOLD
+    vmc_joint.stiffness[_hold][:] = 0.0
+    vmc_joint.damping[_hold][:]   = B_ROT_HOLD
+# Wrist keeps its spring so it holds the chosen pitch
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
 for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
@@ -100,7 +102,7 @@ for _f in PIANO_FINGERS_PLAYING:
 # Playing fingers: soft joint spring toward press pose (task spring dominates)
 vmc_joint.index_target = _PRESS_JOINTS.copy()
 vmc_joint.ring_target  = _PRESS_JOINTS.copy()
-# Unused fingers: held at home with K_ROT
+# Unused fingers: targets unused (K=0); damping-only, set above
 vmc_joint.thumb         = np.zeros(4)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.pinky_target  = np.zeros(3)
