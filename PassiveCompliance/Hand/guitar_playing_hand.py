@@ -220,9 +220,9 @@ try:
         input('    Press ENTER to start this condition…')
         controller.get_logger().info(f'[{desc}] settling {SETTLE_TIME:.0f}s ...')
 
-        # Ramp to the new torsional stiffness and close the fingers
+        # Open fingers to K_WAIT so the hand is free while the user sets up
         _phase = 'settle'
-        _ramp_closed(ktors)
+        _ramp_to_home()
         time.sleep(SETTLE_TIME)
 
         f      = open(_out_path(ktors), 'w', newline='') if not COLLECTED_DATA else None
@@ -235,22 +235,24 @@ try:
                 input('        Press ENTER to start this run…')
                 controller.get_logger().info(f'K={ktors:.1f}  run {run}/{N_RUNS}')
 
+                # Close fingers firmly then settle at k_torsional (after ENTER so
+                # the hand stays compliant while the user is positioning/waiting)
+                _phase = 'settle'
+                _ramp_closed(ktors)
+
                 # --- sweep (the recorded phase) ---
                 with _lock: _buf.clear()
                 _phase = 'sweep'
                 arm.moveL(list(UR5_POSE_GUITAR_END), SWEEP_SPEED, SWEEP_ACCEL)
                 if not COLLECTED_DATA: _flush(writer, ktors, run)
 
-                # --- return arm to start (fingers still closed) ---
+                # --- return arm to start ---
                 _phase = 'return'
                 arm.moveL(list(UR5_POSE_GUITAR_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
-                # --- open fingers to home, then close again for the next run ---
-                if run < N_RUNS:
-                    _phase = 'lift'
-                    _ramp_to_home()
-                    _phase = 'settle'
-                    _ramp_closed(ktors)     # close with the same stiffness for the next run
+                # --- open fingers to home at K_WAIT; wait for next ENTER ---
+                _phase = 'lift'
+                _ramp_to_home()   # fingers open, K_WAIT (nearly free) until next ENTER
         finally:
             if f: f.close()
 
