@@ -29,14 +29,11 @@ SPREAD_ANGLE_DEG       = 0.0         # [deg]  finger abduction/adduction
 
 # Torsional (joint-space) spring stiffnesses to compare:
 TORSIONAL_SPRINGS      = [0.1, 0.3]   # [N·m/rad]
-B_ROT                  = 0.02   # [N·m·s/rad]  joint damping during experiment
+B_ROT                  = 0.001  # [N·m·s/rad]  uniform joint damping (all DOFs)
 K_ROT                  = 0.4    # [N·m/rad]  background / home stiffness
-B_ROT_HOLD             = 0.05   # [N·m·s/rad]  damping for K=0 (non-playing) DOFs
-B_HOME                 = 0.3    # [N·m·s/rad]  high damping used when returning to home
-                                 #  — prevents oscillation when K snaps back to K_ROT
 WRIST_PITCH_DEG        = 0.0    # [deg]  wrist pitch reference
 WRIST_K_FIX            = 8.0    # [N·m/rad]  wrist held (near-)rigid
-WRIST_B_FIX            = 0.3    # [N·m·s/rad]
+WRIST_B_FIX            = 0.001  # [N·m·s/rad]
 
 FRICTION_TAU_MAX       = 0.0    # [N·m]  no friction compensation (as in the piano)
 
