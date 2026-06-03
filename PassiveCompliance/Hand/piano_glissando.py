@@ -32,7 +32,8 @@ from piano_config import (
     UR5_POSE_GLISSANDO_START, GLISSANDO_DIRECTION, GLISSANDO_DISTANCE, GLISSANDO_SPEED,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PIANO_FINGERS_GLISSANDO,
-    K_SWEEP, K_ROT, K_ROT_PRESS, B_ROT, N_RUNS,
+    K_SWEEP, K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, N_RUNS,
+    WRIST_PITCH_DEG, WRIST_K_FIX, WRIST_B_FIX, FRICTION_TAU_MAX,
     B_CART_GLISSANDO as B_CART,
     GLISSANDO_SETTLE_TIME as SETTLE_TIME, RAMP_DURATION,
 )
@@ -75,19 +76,30 @@ def _out_path():
 rclpy.init()
 controller    = HandController()
 grav_fric_lim = GravFricLim()
+grav_fric_lim.friction_max = FRICTION_TAU_MAX   # task-specific stiction comp (see piano_config)
 recv          = UR5Receiver()
 
 vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
+# Non-playing fingers: no spring (K=0), damping only — pure dissipation, no oscillation
+for _hold in ['thumb', 'index', 'ring', 'pinky',
+              'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
+    vmc_joint.stiffness[_hold][:] = 0.0
+    vmc_joint.damping[_hold][:]   = B_ROT_HOLD
+# Wrist held (near-)RIGID via a stiff PD so the measured compliance is finger-only
+vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
+vmc_joint.stiffness['wrist'][:] = WRIST_K_FIX
+vmc_joint.damping['wrist'][:]   = WRIST_B_FIX
 for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 _PRESS_JOINTS = PRESS_POSE.copy()
 for _f in PIANO_FINGERS_GLISSANDO:
-    vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
+    # [MCP, PIP, DIP]: MCP held firmer (fixed K_MCP_PRESS); PIP/DIP stay soft
+    vmc_joint.stiffness[_f] = np.array([K_MCP_PRESS, K_ROT_PRESS, K_ROT_PRESS])
 # Playing finger (middle only): soft joint spring toward press pose (task spring dominates)
 vmc_joint.middle_target = _PRESS_JOINTS.copy()
-# Unused fingers: held at home with K_ROT
+# Unused fingers: targets unused (K=0); damping-only, set above
 vmc_joint.thumb        = np.zeros(4)
 vmc_joint.index_target = np.zeros(3)
 vmc_joint.ring_target  = np.zeros(3)
