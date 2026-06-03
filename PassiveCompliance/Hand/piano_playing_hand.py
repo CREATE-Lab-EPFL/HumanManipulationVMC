@@ -36,7 +36,8 @@ from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED, PRESS_ACCEL,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
-    K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG, FRICTION_TAU_MAX,
+    K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG,
+    WRIST_K_FIX, WRIST_B_FIX, FRICTION_TAU_MAX,
     B_CART_PLAYING as B_CART,
     PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES, RAMP_DURATION,
 )
@@ -93,8 +94,10 @@ for _hold in ['thumb', 'middle', 'pinky',
               'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
     vmc_joint.damping[_hold][:]   = B_ROT_HOLD
-# Wrist keeps its spring so it holds the chosen pitch
+# Wrist held (near-)RIGID via a stiff PD so the measured compliance is finger-only
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
+vmc_joint.stiffness['wrist'][:] = WRIST_K_FIX
+vmc_joint.damping['wrist'][:]   = WRIST_B_FIX
 for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 _PRESS_JOINTS = PRESS_POSE.copy()
