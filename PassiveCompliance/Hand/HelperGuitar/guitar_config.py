@@ -28,7 +28,7 @@ CLOSED_FINGERS         = ['index', 'middle', 'ring', 'pinky']
 SPREAD_ANGLE_DEG       = 0.0         # [deg]  finger abduction/adduction
 
 # Torsional (joint-space) spring stiffnesses to compare:
-TORSIONAL_SPRINGS      = [0.3, 0.5]   # [N·m/rad]
+TORSIONAL_SPRINGS      = [1.0, 2.0]   # [N·m/rad]
 B_ROT                  = 0.02   # [N·m·s/rad]  joint damping
 K_ROT                  = 0.4    # [N·m/rad]  background stiffness (thumb, wrist, spreads)
 B_ROT_HOLD             = 0.05   # [N·m·s/rad]  damping for K=0 (non-playing) DOFs
