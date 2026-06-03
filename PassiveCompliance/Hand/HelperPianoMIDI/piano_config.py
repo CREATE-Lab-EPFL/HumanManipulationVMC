@@ -17,6 +17,8 @@ GLISSANDO_DISTANCE       = 0.10    # [m]
 GLISSANDO_SPEED          = 0.05    # [m/s]
 GLISSANDO_DEPTH          = 0.01    # [m]  UR5 descends this much after pressing to engage
                                    #       the keys, and rises back up before returning home
+GLISSANDO_RETURN_LIFT    = 0.05    # [m]  UR5 rises this much to travel the return clear of the
+                                   #       keys, then lowers back down at the start
 
 # ── Shared ─────────────────────────────────────────────────────────────────────
 UR5_IP         = "192.168.1.10"
@@ -54,7 +56,7 @@ PLAYING_SETTLE_TIME = 3.0                    # [s]
 RAMP_DURATION       = 3.0                    # [s]  gradual approach to / return from press pose
 
 # ── piano_glissando.py ────────────────────────────────────────────────────────
-K_SWEEP_GLISSANDO     = [10.0, 200.0]   # [N/m]  stiffness sweep for the glissando (independent)
+K_SWEEP_GLISSANDO     = [50.0, 200.0]   # [N/m]  stiffness sweep for the glissando (independent)
 B_CART_GLISSANDO      = 1.0     # [N·s/m]
 N_RUNS                = 3
 GLISSANDO_SETTLE_TIME = 3.0     # [s]

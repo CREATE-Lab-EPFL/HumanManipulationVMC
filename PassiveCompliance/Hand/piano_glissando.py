@@ -30,7 +30,7 @@ from ModelIDHand.motor_config  import MOTOR_SLICES
 from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_GLISSANDO_START, GLISSANDO_DIRECTION, GLISSANDO_DISTANCE, GLISSANDO_SPEED,
-    GLISSANDO_DEPTH,
+    GLISSANDO_DEPTH, GLISSANDO_RETURN_LIFT,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PIANO_FINGERS_GLISSANDO,
     K_SWEEP_GLISSANDO as K_SWEEP, K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, N_RUNS,
@@ -62,6 +62,11 @@ GLISSANDO_END = UR5_POSE_GLISSANDO_START + np.concatenate([_dir, [0, 0, 0]]) * G
 _DOWN                = np.array([0.0, 0.0, GLISSANDO_DEPTH, 0.0, 0.0, 0.0])
 GLISSANDO_START_DOWN = UR5_POSE_GLISSANDO_START - _DOWN
 GLISSANDO_END_DOWN   = GLISSANDO_END - _DOWN
+
+# Raised poses: rise GLISSANDO_RETURN_LIFT so the return travels clear of the keys
+_UP                  = np.array([0.0, 0.0, GLISSANDO_RETURN_LIFT, 0.0, 0.0, 0.0])
+GLISSANDO_START_UP   = UR5_POSE_GLISSANDO_START + _UP
+GLISSANDO_END_UP     = GLISSANDO_END + _UP
 
 # =============================================================================
 # CSV schema
@@ -270,11 +275,17 @@ try:
             # Rise back up BEFORE coming home, then lift the finger off the keys, so it
             # never drags backward across them (that would damage the hand)
             _phase = 'lift_up'
-            arm.moveL(list(GLISSANDO_END), UR5_INIT_SPEED, UR5_INIT_ACCEL)
+            arm.moveL(list(GLISSANDO_END), UR5_INIT_SPEED, UR5_INIT_ACCEL)   # disengage keys
             _phase = 'lift'
             _ramp_targets(REST_POS, joint_target=np.zeros(3))   # open the finger fully to home
+            # Raise GLISSANDO_RETURN_LIFT, travel the return up high (clear of the keys),
+            # then lower back down at the start
+            _phase = 'raise'
+            arm.moveL(list(GLISSANDO_END_UP), UR5_INIT_SPEED, UR5_INIT_ACCEL)
             _phase = 'return'
-            arm.moveL(list(UR5_POSE_GLISSANDO_START), GLISSANDO_SPEED, UR5_INIT_ACCEL)
+            arm.moveL(list(GLISSANDO_START_UP), GLISSANDO_SPEED, UR5_INIT_ACCEL)
+            _phase = 'lower'
+            arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
             # Next run presses the finger down again (top of the loop)
 
             if not COLLECTED_DATA: _flush(writer, k, run)
