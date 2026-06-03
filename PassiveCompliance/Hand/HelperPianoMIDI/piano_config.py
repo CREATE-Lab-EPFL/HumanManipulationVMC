@@ -3,7 +3,7 @@
 import numpy as np
 
 # ── Piano playing ──────────────────────────────────────────────────────────────
-UR5_POSE_PIANO = np.array([0.12, 0.51, 0.07, -1.45, -0.42, -0.64])
+UR5_POSE_PIANO = np.array([0.12, 0.51, 0.06, -1.45, -0.42, -0.64])
 PRESS_DEPTH    = 0.06    # [m]  UR5 descends along base-frame Z to press keys
 PRESS_SPEED    = 3.0     # [m/s]  UR5 moveL caps TCP speed at 3 m/s (must be in [0, 3])
 PRESS_ACCEL    = 3.0     # [m/s²]  press-stroke acceleration — the real lever for strike speed
@@ -21,14 +21,14 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_POSE              = np.deg2rad([80.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
-SPREAD_ANGLE_DEG        = -10.0           # [deg]  finger abduction/adduction
+PRESS_POSE              = np.deg2rad([50.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
+SPREAD_ANGLE_DEG        = 10.0           # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
 
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
 K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers, PIP/DIP (task spring takes over)
-K_MCP_PRESS = 0.20   # [N·m/rad]  playing fingers, MCP — fixed, NOT a function of K_SWEEP
+K_MCP_PRESS = 0.10   # [N·m/rad]  playing fingers, MCP — fixed, NOT a function of K_SWEEP
 B_ROT       = 0.01   # [N·m·s/rad]
 B_ROT_HOLD  = 0.05   # [N·m·s/rad]  damping for held (non-playing) DOFs — suppresses oscillation
 
@@ -43,7 +43,7 @@ WRIST_B_FIX = 0.5        # [N·m·s/rad]  matched damping to keep the stiff hold
 FRICTION_TAU_MAX = 0.0
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
-K_SWEEP             = [5.0, 100.0]           # [N/m]
+K_SWEEP             = [10.0, 200.0]           # [N/m]
 K_SOFT              = K_SWEEP[0]             # [N/m]  heterogeneous: ring = sweep min
 K_STIFF             = K_SWEEP[1]             # [N/m]  heterogeneous: index = sweep max
 B_CART_PLAYING      = 0.5                    # [N·s/m]
