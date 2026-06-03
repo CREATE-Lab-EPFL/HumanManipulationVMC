@@ -43,9 +43,8 @@ from piano_config import (
 import rtde_control
 
 # =============================================================================
-# Select condition
+# Data collection toggle (all three tasks run in sequence — see TASKS below)
 # =============================================================================
-CONDITION      = 'uniform'    # 'uniform' | 'heterogeneous'
 COLLECTED_DATA = False
 
 # =============================================================================
@@ -171,23 +170,17 @@ def _flush(writer, k_index, k_ring, cycle):
 # =============================================================================
 # Protocol
 # =============================================================================
-def run_condition(label, stiffness_pairs):
-    f      = open(_out_path(label), 'w', newline='') if not COLLECTED_DATA else None
-    writer = csv.DictWriter(f, fieldnames=FIELDS) if f else None
-    if writer: writer.writeheader()
-    try:
-        for k_vals, _ in stiffness_pairs:
-            _ramp_stiffness(k_vals)   # gradual stiffness transition
-            controller.get_logger().info(f'[{label}] K={k_vals} — settling {SETTLE_TIME:.0f}s ...')
-            time.sleep(SETTLE_TIME)
-            for cycle in range(1, N_CYCLES + 1):
-                with _lock:      _buf.clear()
-                with _midi_lock: _midi_events.clear()
-                arm.moveL(UR5_POSE_PRESS.tolist(), PRESS_SPEED, UR5_INIT_ACCEL)
-                arm.moveL(UR5_POSE_PIANO.tolist(),  PRESS_SPEED, UR5_INIT_ACCEL)
-                if not COLLECTED_DATA: _flush(writer, k_vals[0], k_vals[1], cycle)
-    finally:
-        if f: f.close()
+def run_task(k_vals, writer):
+    """Ramp to k_vals = [k_index, k_ring], settle, then N_CYCLES press-lift strokes."""
+    _ramp_stiffness(k_vals)   # gradual stiffness transition
+    controller.get_logger().info(f'K={k_vals} — settling {SETTLE_TIME:.0f}s ...')
+    time.sleep(SETTLE_TIME)
+    for cycle in range(1, N_CYCLES + 1):
+        with _lock:      _buf.clear()
+        with _midi_lock: _midi_events.clear()
+        arm.moveL(UR5_POSE_PRESS.tolist(), PRESS_SPEED, UR5_INIT_ACCEL)
+        arm.moveL(UR5_POSE_PIANO.tolist(),  PRESS_SPEED, UR5_INIT_ACCEL)
+        if writer is not None: _flush(writer, k_vals[0], k_vals[1], cycle)
 
 # =============================================================================
 # Ramp helpers (main-thread blocking; control loop runs throughout)
@@ -243,7 +236,17 @@ def _ramp_to_home():
 # =============================================================================
 # Run
 # =============================================================================
-input('Press ENTER to start…')
+# (label, [k_index, k_ring], csv_name, description)
+TASKS = [
+    ('uniform — low K',  [K_SWEEP[0], K_SWEEP[0]], 'uniform',
+     f'Uniform compliance, LOW stiffness  — index & ring both K={K_SWEEP[0]:.0f} N/m'),
+    ('uniform — high K', [K_SWEEP[1], K_SWEEP[1]], 'uniform',
+     f'Uniform compliance, HIGH stiffness — index & ring both K={K_SWEEP[1]:.0f} N/m'),
+    ('heterogeneous',    [K_STIFF, K_SOFT],        'heterogeneous',
+     f'Heterogeneous compliance — index STIFF K={K_STIFF:.0f}, ring SOFT K={K_SOFT:.0f} N/m'),
+]
+
+input('Press ENTER to connect the UR5 and approach the keyboard…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(UR5_POSE_PIANO), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
@@ -252,16 +255,21 @@ ctrl_thread.start()
 
 _ramp_to_press()
 
+writers = {}   # csv_name -> (file_handle, DictWriter)
 try:
-    if CONDITION == 'uniform':
-        run_condition('uniform', [([k, k], None) for k in K_SWEEP])
-    elif CONDITION == 'heterogeneous':
-        run_condition('heterogeneous', [([K_STIFF, K_SOFT], None)])
-    else:
-        raise ValueError(f'Unknown CONDITION: {CONDITION!r}')
+    for i, (label, k_vals, csv_name, desc) in enumerate(TASKS, 1):
+        print(f'\n=== Task {i}/{len(TASKS)}: {label} ===\n    {desc}')
+        input('    Press ENTER to start this task…')
+        controller.get_logger().info(f'[{label}] {desc}')
+        if not COLLECTED_DATA and csv_name not in writers:
+            fh = open(_out_path(csv_name), 'w', newline='')
+            w  = csv.DictWriter(fh, fieldnames=FIELDS); w.writeheader()
+            writers[csv_name] = (fh, w)
+        run_task(k_vals, writers[csv_name][1] if not COLLECTED_DATA else None)
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
+    for fh, _ in writers.values(): fh.close()
     midi_ctrl.close()
     arm.stopScript()
     _ramp_to_home()    # gradual return while control loop is still active
