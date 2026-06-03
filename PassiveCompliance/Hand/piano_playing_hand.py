@@ -89,10 +89,12 @@ vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
 # Non-playing fingers: no spring (K=0), damping only — pure dissipation, no oscillation
-for _hold in ['thumb', 'middle', 'pinky',
+for _hold in ['thumb', 'middle',
               'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
     vmc_joint.damping[_hold][:]   = B_ROT_HOLD
+# Pinky: kept sprung (K_ROT) so it holds a gentle bend, but well damped
+vmc_joint.damping['pinky'][:] = B_ROT_HOLD
 # Wrist keeps its spring so it holds the chosen pitch
 vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
 for _k in ['index', 'middle', 'ring', 'pinky']:
@@ -104,10 +106,11 @@ for _f in PIANO_FINGERS_PLAYING:
 # Playing fingers: soft joint spring toward press pose (task spring dominates)
 vmc_joint.index_target = _PRESS_JOINTS.copy()
 vmc_joint.ring_target  = _PRESS_JOINTS.copy()
-# Unused fingers: targets unused (K=0); damping-only, set above
+# Thumb/middle: targets unused (K=0); damping-only, set above
 vmc_joint.thumb         = np.zeros(4)
 vmc_joint.middle_target = np.zeros(3)
-vmc_joint.pinky_target  = np.zeros(3)
+# Pinky: gently curled and actively held there (K_ROT spring)
+vmc_joint.pinky_target  = np.full(3, np.deg2rad(PINKY_BEND_DEG))
 
 vmc_task = TaskVMC()
 vmc_task.set_stiffness(0.0)
