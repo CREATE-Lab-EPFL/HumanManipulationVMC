@@ -91,9 +91,17 @@ vmc_joint.pinky_target  = np.zeros(3)
 # =============================================================================
 # Microphone  (records continuous intensity during the sweep)
 # =============================================================================
-mic = MicrophoneController(MIC_DEVICE, samplerate=SAMPLE_RATE, channels=AUDIO_CHANNELS,
-                           blocksize=AUDIO_BLOCKSIZE, onset_threshold=ONSET_THRESHOLD,
-                           refractory=ONSET_REFRACTORY)
+try:
+    mic = MicrophoneController(MIC_DEVICE, samplerate=SAMPLE_RATE, channels=AUDIO_CHANNELS,
+                               blocksize=AUDIO_BLOCKSIZE, onset_threshold=ONSET_THRESHOLD,
+                               refractory=ONSET_REFRACTORY)
+    print(f'Microphone: "{mic.device_name}"')
+except Exception as _mic_err:
+    print(f'WARNING: microphone unavailable ({_mic_err}). Logging mic_level = 0.')
+    class _DummyMic:
+        def get_level(self): return 0.0
+        def close(self): pass
+    mic = _DummyMic()
 
 # =============================================================================
 # Control loop
