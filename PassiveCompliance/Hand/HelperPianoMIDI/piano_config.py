@@ -54,6 +54,7 @@ PLAYING_SETTLE_TIME = 3.0                    # [s]
 RAMP_DURATION       = 3.0                    # [s]  gradual approach to / return from press pose
 
 # ── piano_glissando.py ────────────────────────────────────────────────────────
+K_SWEEP_GLISSANDO     = [10.0, 200.0]   # [N/m]  stiffness sweep for the glissando (independent)
 B_CART_GLISSANDO      = 1.0     # [N·s/m]
 N_RUNS                = 3
 GLISSANDO_SETTLE_TIME = 3.0     # [s]

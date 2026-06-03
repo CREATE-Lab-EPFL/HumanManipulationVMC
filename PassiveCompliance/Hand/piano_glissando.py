@@ -33,7 +33,7 @@ from piano_config import (
     GLISSANDO_DEPTH,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PIANO_FINGERS_GLISSANDO,
-    K_SWEEP, K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, N_RUNS,
+    K_SWEEP_GLISSANDO as K_SWEEP, K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, N_RUNS,
     WRIST_PITCH_DEG, WRIST_K_FIX, WRIST_B_FIX, FRICTION_TAU_MAX,
     B_CART_GLISSANDO as B_CART,
     GLISSANDO_SETTLE_TIME as SETTLE_TIME, RAMP_DURATION,
@@ -179,11 +179,15 @@ def _flush(writer, k, run):
 # Ramp helper (main-thread blocking; control loop runs throughout)
 # =============================================================================
 
-def _ramp_targets(end_pos, k_end=None):
-    """Ramp task targets to end_pos; also ramp stiffness to k_end if given."""
+def _ramp_targets(end_pos, k_end=None, joint_target=None):
+    """Ramp task targets to end_pos; optionally ramp task stiffness to k_end and the
+    middle-finger JOINT target to joint_target. Ramping the joint target too lets the
+    finger actually open/close even at low task stiffness (the weak task spring alone
+    cannot overcome the joint press spring)."""
     start_pos = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_GLISSANDO}
     start_k   = {f: float(vmc_task.springs[f].stiffness.flat[0])
                  for f in PIANO_FINGERS_GLISSANDO} if k_end is not None else None
+    start_jt  = vmc_joint.middle_target.copy() if joint_target is not None else None
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
@@ -193,6 +197,35 @@ def _ramp_targets(end_pos, k_end=None):
             if k_end is not None:
                 vmc_task.springs[_f].stiffness = np.full(3,
                     (1 - alpha) * start_k[_f] + alpha * k_end)
+        if joint_target is not None:
+            vmc_joint.middle_target = (1 - alpha) * start_jt + alpha * joint_target
+        if alpha >= 1.0:
+            break
+        time.sleep(dt)
+
+
+def _ramp_to_home():
+    """Open the hand back to home: task targets PRESS→REST with task stiffness→0,
+    the middle-finger and wrist joint targets PRESS→home, and every joint's
+    rotational stiffness ramped up to the proper background K_ROT so the hand
+    returns firmly (the finger/held joints were soft/zero during the slide)."""
+    start_pos   = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_GLISSANDO}
+    start_k     = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_GLISSANDO}
+    start_mid   = vmc_joint.middle_target.copy()
+    start_wrist = vmc_joint.wrist.copy()
+    start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
+    home_joint  = np.zeros(3)
+    dt = 1.0 / CONTROL_FREQUENCY
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        for _f in PIANO_FINGERS_GLISSANDO:
+            vmc_task.targets[_f]           = (1 - alpha) * start_pos[_f] + alpha * REST_POS[_f]
+            vmc_task.springs[_f].stiffness = np.full(3, (1 - alpha) * start_k[_f])
+        vmc_joint.middle_target = (1 - alpha) * start_mid   + alpha * home_joint
+        vmc_joint.wrist         = (1 - alpha) * start_wrist + alpha * np.zeros(2)
+        for g in start_ks:                                   # restore rotational stiffness → K_ROT
+            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
         if alpha >= 1.0:
             break
         time.sleep(dt)
@@ -208,7 +241,7 @@ arm.moveL(list(UR5_POSE_GLISSANDO_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
 ctrl_thread.start()
 
-_ramp_targets(PRESS_POS, k_end=K_SWEEP[0])   # gradual initial approach
+_ramp_targets(PRESS_POS, k_end=K_SWEEP[0], joint_target=_PRESS_JOINTS)   # gradual initial approach
 
 f      = open(_out_path(), 'w', newline='') if not COLLECTED_DATA else None
 writer = csv.DictWriter(f, fieldnames=FIELDS) if f else None
@@ -221,10 +254,10 @@ try:
             input('    Press ENTER to start this run…')
             controller.get_logger().info(f'K={k:.0f} run {run}/{N_RUNS} — settling ...')
             _phase = 'settle'
-            # Ramp stiffness to the new K level during the first lift; subsequent runs are no-ops
-            _ramp_targets(REST_POS, k_end=k if run == 1 else None)
+            # Lift to home (finger open) and set the K level on the first run of each K
+            _ramp_targets(REST_POS, k_end=k if run == 1 else None, joint_target=np.zeros(3))
             time.sleep(SETTLE_TIME)
-            _ramp_targets(PRESS_POS)      # gradual press, stiffness unchanged
+            _ramp_targets(PRESS_POS, joint_target=_PRESS_JOINTS)   # press the finger down
 
             with _lock:      _buf.clear()
             with _midi_lock: _midi_events.clear()
@@ -239,7 +272,7 @@ try:
             _phase = 'lift_up'
             arm.moveL(list(GLISSANDO_END), UR5_INIT_SPEED, UR5_INIT_ACCEL)
             _phase = 'lift'
-            _ramp_targets(REST_POS)
+            _ramp_targets(REST_POS, joint_target=np.zeros(3))   # open the finger fully to home
             _phase = 'return'
             arm.moveL(list(UR5_POSE_GLISSANDO_START), GLISSANDO_SPEED, UR5_INIT_ACCEL)
             # Next run presses the finger down again (top of the loop)
@@ -251,7 +284,7 @@ except KeyboardInterrupt:
 finally:
     midi_ctrl.close()
     arm.stopScript()
-    _ramp_targets(REST_POS, k_end=0.0)   # gradual return home, control loop still active
+    _ramp_to_home()    # gradual return to the hand's home pose, control loop still active
     if f: f.close()
     _running = False
     ctrl_thread.join(timeout=1.0)
