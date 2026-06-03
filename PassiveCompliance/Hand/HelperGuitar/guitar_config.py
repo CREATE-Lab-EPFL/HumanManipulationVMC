@@ -37,6 +37,8 @@ WRIST_K_FIX            = 8.0    # [N·m/rad]  wrist held (near-)rigid
 WRIST_B_FIX            = 0.3    # [N·m·s/rad]
 
 FRICTION_TAU_MAX       = 0.01    # [N·m]  no friction compensation (as in the piano)
+K_WAIT                 = 0.02   # [N·m/rad]  stiffness while waiting for ENTER between runs
+                                 #  (fingers open at home, nearly free)
 
 RAMP_DURATION          = 3.0    # [s]  gradual stiffness / pose transitions
 SETTLE_TIME            = 2.0    # [s]  after stiffness change, before first run

@@ -32,7 +32,7 @@ from guitar_config import (
     FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
     TORSIONAL_SPRINGS, B_ROT, B_ROT_HOLD, K_ROT,
     WRIST_PITCH_DEG, WRIST_K_FIX, WRIST_B_FIX,
-    RAMP_DURATION, SETTLE_TIME, N_RUNS, FRICTION_TAU_MAX,
+    RAMP_DURATION, SETTLE_TIME, N_RUNS, FRICTION_TAU_MAX, K_WAIT,
     SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_BLOCKSIZE, MIC_DEVICE,
     ONSET_THRESHOLD, ONSET_REFRACTORY,
 )
@@ -179,8 +179,10 @@ def _ramp_closed(k_torsional):
 
 
 def _ramp_to_home():
-    """Open fingers back to home and restore background K_ROT on all joints."""
-    starts   = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
+    """Open fingers to home. Closed fingers end at K_WAIT (nearly free) so the hand
+    stays compliant while waiting for the next ENTER; wrist/background DOFs restore
+    to K_ROT as usual. _ramp_closed will bring them back to K_ROT during the approach."""
+    starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
     start_wrist = vmc_joint.wrist.copy()
     start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
     home = np.zeros(3)
@@ -194,7 +196,9 @@ def _ramp_to_home():
         vmc_joint.pinky_target  = (1 - alpha) * starts['pinky']  + alpha * home
         vmc_joint.wrist         = (1 - alpha) * start_wrist + alpha * np.zeros(2)
         for g in start_ks:
-            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
+            # closed fingers → K_WAIT (nearly free while waiting); rest → K_ROT
+            k_end = K_WAIT if g in CLOSED_FINGERS else K_ROT
+            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * k_end
         if alpha >= 1.0:
             break
         time.sleep(dt)
