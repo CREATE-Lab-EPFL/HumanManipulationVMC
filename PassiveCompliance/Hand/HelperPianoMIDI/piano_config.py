@@ -5,7 +5,7 @@ import numpy as np
 # ── Piano playing ──────────────────────────────────────────────────────────────
 # PLACEHOLDER — tune UR5_POSE_PIANO and PRESS_DEPTH to the actual keyboard.
 UR5_POSE_PIANO = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
-PRESS_DEPTH    = 0.025   # [m]  UR5 descends along base-frame Z to press keys
+PRESS_DEPTH    = 0.05    # [m]  UR5 descends along base-frame Z to press keys
 PRESS_SPEED    = 0.05    # [m/s]
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ B_ROT_HOLD  = 0.05   # [N·m·s/rad]  damping for held (non-playing) DOFs — su
 WRIST_PITCH_DEG = 20.0   # [deg]  hand wrist pitch reference (positive tilts up); tune to taste
 
 # ── piano_playing_hand.py ─────────────────────────────────────────────────────
-K_SWEEP             = [5.0, 20.0]           # [N/m]
+K_SWEEP             = [20.0, 100.0]           # [N/m]
 K_STIFF             = 100.0                  # [N/m]
 K_SOFT              = 10.0                   # [N/m]
 B_CART_PLAYING      = 0.5                    # [N·s/m]

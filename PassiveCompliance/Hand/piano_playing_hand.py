@@ -36,7 +36,7 @@ from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
-    K_ROT, K_ROT_PRESS, B_ROT, B_CART_PLAYING as B_CART,
+    K_ROT, K_ROT_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG, B_CART_PLAYING as B_CART,
     PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES, RAMP_DURATION,
 )
 import rtde_control
@@ -87,6 +87,11 @@ recv          = UR5Receiver()
 vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
+# Held (non-playing) DOFs need real damping or they oscillate about their target
+for _hold in ['thumb', 'middle', 'pinky', 'wrist',
+              'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
+    vmc_joint.damping[_hold][:] = B_ROT_HOLD
+vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
 for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 _PRESS_JOINTS = PRESS_POSE.copy()
