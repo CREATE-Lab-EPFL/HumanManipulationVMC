@@ -36,7 +36,7 @@ from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
-    K_ROT, K_ROT_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG, FRICTION_TAU_MAX,
+    K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG, FRICTION_TAU_MAX,
     B_CART_PLAYING as B_CART,
     PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES, RAMP_DURATION,
 )
@@ -99,7 +99,8 @@ for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 _PRESS_JOINTS = PRESS_POSE.copy()
 for _f in PIANO_FINGERS_PLAYING:
-    vmc_joint.stiffness[_f] = np.full(3, K_ROT_PRESS)
+    # [MCP, PIP, DIP]: MCP held firmer (fixed K_MCP_PRESS); PIP/DIP stay soft
+    vmc_joint.stiffness[_f] = np.array([K_MCP_PRESS, K_ROT_PRESS, K_ROT_PRESS])
 # Playing fingers: soft joint spring toward press pose (task spring dominates)
 vmc_joint.index_target = _PRESS_JOINTS.copy()
 vmc_joint.ring_target  = _PRESS_JOINTS.copy()

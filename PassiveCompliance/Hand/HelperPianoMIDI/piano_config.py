@@ -4,8 +4,8 @@ import numpy as np
 
 # ── Piano playing ──────────────────────────────────────────────────────────────
 UR5_POSE_PIANO = np.array([0.12, 0.51, 0.07, -1.45, -0.42, -0.64])
-PRESS_DEPTH    = 0.07    # [m]  UR5 descends along base-frame Z to press keys
-PRESS_SPEED    = 0.10    # [m/s]
+PRESS_DEPTH    = 0.08    # [m]  UR5 descends along base-frame Z to press keys
+PRESS_SPEED    = 0.30    # [m/s]
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
 UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
@@ -19,12 +19,13 @@ UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
 PRESS_POSE              = np.deg2rad([80.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
-SPREAD_ANGLE_DEG        = 10.0           # [deg]  finger abduction/adduction
+SPREAD_ANGLE_DEG        = 20.0           # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
 
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
-K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers (task spring takes over)
+K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers, PIP/DIP (task spring takes over)
+K_MCP_PRESS = 0.20   # [N·m/rad]  playing fingers, MCP — fixed, NOT a function of K_SWEEP
 B_ROT       = 0.01   # [N·m·s/rad]
 B_ROT_HOLD  = 0.05   # [N·m·s/rad]  damping for held (non-playing) DOFs — suppresses oscillation
 
