@@ -10,16 +10,6 @@ PRESS_ACCEL    = 3.0     # [m/s²]  press-stroke acceleration — the real lever
                          #         (speed is capped at 3, but over 0.08 m the move is
                          #         acceleration-limited; raise this for a faster strike)
 
-# ── Glissando ─────────────────────────────────────────────────────────────────
-UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
-GLISSANDO_DIRECTION      = np.array([0.0, -1.0, 0.0, 0.0, 0.0, 0.0])
-GLISSANDO_DISTANCE       = 0.10    # [m]
-GLISSANDO_SPEED          = 0.05    # [m/s]
-GLISSANDO_DEPTH          = 0.01    # [m]  UR5 descends this much after pressing to engage
-                                   #       the keys, and rises back up before returning home
-GLISSANDO_RETURN_LIFT    = 0.05    # [m]  UR5 rises this much to travel the return clear of the
-                                   #       keys, then lowers back down at the start
-
 # ── Shared ─────────────────────────────────────────────────────────────────────
 UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
@@ -28,7 +18,6 @@ UR5_INIT_ACCEL = 0.05    # [m/s²]
 PRESS_POSE              = np.deg2rad([80.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
 SPREAD_ANGLE_DEG        = 10.0           # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
-PIANO_FINGERS_GLISSANDO = ['middle']
 
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
 K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers, PIP/DIP (task spring takes over)
@@ -54,9 +43,3 @@ B_CART_PLAYING      = 0.5                    # [N·s/m]
 N_CYCLES            = 3                      # strokes per stiffness value
 PLAYING_SETTLE_TIME = 3.0                    # [s]
 RAMP_DURATION       = 3.0                    # [s]  gradual approach to / return from press pose
-
-# ── piano_glissando.py ────────────────────────────────────────────────────────
-K_SWEEP_GLISSANDO     = [50.0, 200.0]   # [N/m]  stiffness sweep for the glissando (independent)
-B_CART_GLISSANDO      = 1.0     # [N·s/m]
-N_RUNS                = 3
-GLISSANDO_SETTLE_TIME = 3.0     # [s]
