@@ -30,7 +30,7 @@ from guitar_config import (
     UR5_POSE_GUITAR_START, UR5_POSE_GUITAR_END, SWEEP_SPEED, SWEEP_ACCEL,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
-    TORSIONAL_SPRINGS, B_ROT, B_ROT_HOLD, K_ROT,
+    TORSIONAL_SPRINGS, B_ROT, B_ROT_HOLD, B_HOME, K_ROT,
     WRIST_PITCH_DEG, WRIST_K_FIX, WRIST_B_FIX,
     RAMP_DURATION, SETTLE_TIME, N_RUNS, FRICTION_TAU_MAX,
     SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_BLOCKSIZE, MIC_DEVICE,
@@ -179,9 +179,7 @@ def _ramp_closed(k_torsional):
 
 
 def _ramp_to_home():
-    """Open fingers to home. Closed fingers end at K_WAIT (nearly free) so the hand
-    stays compliant while waiting for the next ENTER; wrist/background DOFs restore
-    to K_ROT as usual. _ramp_closed will bring them back to K_ROT during the approach."""
+    """Open fingers back to home and restore background K_ROT on all joints."""
     starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
     start_wrist = vmc_joint.wrist.copy()
     start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
@@ -196,9 +194,7 @@ def _ramp_to_home():
         vmc_joint.pinky_target  = (1 - alpha) * starts['pinky']  + alpha * home
         vmc_joint.wrist         = (1 - alpha) * start_wrist + alpha * np.zeros(2)
         for g in start_ks:
-            # closed fingers → K_WAIT (nearly free while waiting); rest → K_ROT
-            k_end = K_WAIT if g in CLOSED_FINGERS else K_ROT
-            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * k_end
+            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
         if alpha >= 1.0:
             break
         time.sleep(dt)
@@ -220,9 +216,9 @@ try:
         input('    Press ENTER to start this condition…')
         controller.get_logger().info(f'[{desc}] settling {SETTLE_TIME:.0f}s ...')
 
-        # Open fingers to K_WAIT so the hand is free while the user sets up
+        # Ramp to the new torsional stiffness and close the fingers
         _phase = 'settle'
-        _ramp_to_home()
+        _ramp_closed(ktors)
         time.sleep(SETTLE_TIME)
 
         f      = open(_out_path(ktors), 'w', newline='') if not COLLECTED_DATA else None
@@ -235,24 +231,24 @@ try:
                 input('        Press ENTER to start this run…')
                 controller.get_logger().info(f'K={ktors:.1f}  run {run}/{N_RUNS}')
 
-                # Close fingers firmly then settle at k_torsional (after ENTER so
-                # the hand stays compliant while the user is positioning/waiting)
-                _phase = 'settle'
-                _ramp_closed(ktors)
-
-                # --- sweep (the recorded phase) ---
+                # 1. sweep
                 with _lock: _buf.clear()
                 _phase = 'sweep'
                 arm.moveL(list(UR5_POSE_GUITAR_END), SWEEP_SPEED, SWEEP_ACCEL)
                 if not COLLECTED_DATA: _flush(writer, ktors, run)
 
-                # --- return arm to start ---
+                # 2. open fingers to home (before returning so the hand doesn't drag back)
+                _phase = 'lift'
+                _ramp_to_home()
+
+                # 3. return arm with fingers open
                 _phase = 'return'
                 arm.moveL(list(UR5_POSE_GUITAR_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
-                # --- open fingers to home at K_WAIT; wait for next ENTER ---
-                _phase = 'lift'
-                _ramp_to_home()   # fingers open, K_WAIT (nearly free) until next ENTER
+                # 4. re-close for the next run
+                if run < N_RUNS:
+                    _phase = 'settle'
+                    _ramp_closed(ktors)
         finally:
             if f: f.close()
 
