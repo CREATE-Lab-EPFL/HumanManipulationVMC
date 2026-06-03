@@ -225,8 +225,13 @@ try:
 
             _phase = 'slide_forward'
             arm.moveL(list(GLISSANDO_END), GLISSANDO_SPEED, UR5_INIT_ACCEL)
+            # Lift the finger to home BEFORE retracting, so it does not drag
+            # backward across the keys (that would damage the hand)
+            _phase = 'lift'
+            _ramp_targets(REST_POS)
             _phase = 'return'
             arm.moveL(list(UR5_POSE_GLISSANDO_START), GLISSANDO_SPEED, UR5_INIT_ACCEL)
+            # Next run presses the finger down again (top of the loop)
 
             if not COLLECTED_DATA: _flush(writer, k, run)
 
