@@ -34,7 +34,7 @@ from ModelIDHand.motor_config  import MOTOR_SLICES
 from UR5_codes.UR5_readPose    import UR5Receiver
 from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
-    PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED,
+    PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED, PRESS_ACCEL,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
     K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG, FRICTION_TAU_MAX,
     B_CART_PLAYING as B_CART,
@@ -179,8 +179,8 @@ def run_task(k_vals, writer):
     for cycle in range(1, N_CYCLES + 1):
         with _lock:      _buf.clear()
         with _midi_lock: _midi_events.clear()
-        arm.moveL(UR5_POSE_PRESS.tolist(), PRESS_SPEED, UR5_INIT_ACCEL)
-        arm.moveL(UR5_POSE_PIANO.tolist(),  PRESS_SPEED, UR5_INIT_ACCEL)
+        arm.moveL(UR5_POSE_PRESS.tolist(), PRESS_SPEED, PRESS_ACCEL)
+        arm.moveL(UR5_POSE_PIANO.tolist(),  PRESS_SPEED, PRESS_ACCEL)
         if writer is not None: _flush(writer, k_vals[0], k_vals[1], cycle)
 
 # =============================================================================

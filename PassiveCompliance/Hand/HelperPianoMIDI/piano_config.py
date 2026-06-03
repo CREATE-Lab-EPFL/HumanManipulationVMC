@@ -6,6 +6,9 @@ import numpy as np
 UR5_POSE_PIANO = np.array([0.12, 0.51, 0.07, -1.45, -0.42, -0.64])
 PRESS_DEPTH    = 0.08    # [m]  UR5 descends along base-frame Z to press keys
 PRESS_SPEED    = 3.0     # [m/s]  UR5 moveL caps TCP speed at 3 m/s (must be in [0, 3])
+PRESS_ACCEL    = 2.0     # [m/s²]  press-stroke acceleration — the real lever for strike speed
+                         #         (speed is capped at 3, but over 0.08 m the move is
+                         #         acceleration-limited; raise this for a faster strike)
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
 UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
