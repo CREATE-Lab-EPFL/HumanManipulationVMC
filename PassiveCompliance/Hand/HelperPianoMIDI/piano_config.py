@@ -4,13 +4,13 @@ import numpy as np
 
 # ── Piano playing ──────────────────────────────────────────────────────────────
 # PLACEHOLDER — tune UR5_POSE_PIANO and PRESS_DEPTH to the actual keyboard.
-UR5_POSE_PIANO = np.array([-0.15, 0.68, 0.14, -0.85, -1.19, 0.29])
+UR5_POSE_PIANO = np.array([0.13, 0.51, 0.08, -1.45, -0.42, -0.64])
 PRESS_DEPTH    = 0.025   # [m]  UR5 descends along base-frame Z to press keys
 PRESS_SPEED    = 0.05    # [m/s]
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
 # PLACEHOLDER — tune UR5_POSE_GLISSANDO_START to the actual keyboard.
-UR5_POSE_GLISSANDO_START = np.array([-0.15, 0.68, 0.14, -0.85, -1.19, 0.29])
+UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.08, -1.45, -0.42, -0.64])
 GLISSANDO_DIRECTION      = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
 GLISSANDO_DISTANCE       = 0.23    # [m]
 GLISSANDO_SPEED          = 0.05    # [m/s]
