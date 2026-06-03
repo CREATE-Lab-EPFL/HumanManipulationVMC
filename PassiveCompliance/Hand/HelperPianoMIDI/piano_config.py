@@ -15,6 +15,8 @@ UR5_POSE_GLISSANDO_START = np.array([0.13, 0.51, 0.07, -1.45, -0.42, -0.64])
 GLISSANDO_DIRECTION      = np.array([0.0, -1.0, 0.0, 0.0, 0.0, 0.0])
 GLISSANDO_DISTANCE       = 0.10    # [m]
 GLISSANDO_SPEED          = 0.05    # [m/s]
+GLISSANDO_DEPTH          = 0.01    # [m]  UR5 descends this much after pressing to engage
+                                   #       the keys, and rises back up before returning home
 
 # ── Shared ─────────────────────────────────────────────────────────────────────
 UR5_IP         = "192.168.1.10"
