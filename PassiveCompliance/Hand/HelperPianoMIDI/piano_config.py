@@ -24,7 +24,7 @@ UR5_INIT_ACCEL = 0.05    # [m/s²]
 PRESS_POSE              = np.deg2rad([80.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
 SPREAD_ANGLE_DEG        = 10.0           # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
-PIANO_FINGERS_GLISSANDO = ['index', 'middle']
+PIANO_FINGERS_GLISSANDO = ['middle']
 
 K_ROT       = 0.4    # [N·m/rad]  background (non-playing fingers)
 K_ROT_PRESS = 0.05   # [N·m/rad]  playing fingers, PIP/DIP (task spring takes over)
