@@ -4,7 +4,7 @@ import numpy as np
 
 # ── Piano playing ──────────────────────────────────────────────────────────────
 UR5_POSE_PIANO = np.array([0.12, 0.51, 0.07, -1.45, -0.42, -0.64])
-PRESS_DEPTH    = 0.06    # [m]  UR5 descends along base-frame Z to press keys
+PRESS_DEPTH    = 0.07    # [m]  UR5 descends along base-frame Z to press keys
 PRESS_SPEED    = 0.10    # [m/s]
 
 # ── Glissando ─────────────────────────────────────────────────────────────────
@@ -18,8 +18,8 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
-PRESS_POSE              = np.deg2rad([80.0, 50.0, 50.0])  # [MCP, PIP, DIP] flexion [rad]
-SPREAD_ANGLE_DEG        = 3.0            # [deg]  finger abduction/adduction
+PRESS_POSE              = np.deg2rad([80.0, 80.0, 80.0])  # [MCP, PIP, DIP] flexion [rad]
+SPREAD_ANGLE_DEG        = 10.0           # [deg]  finger abduction/adduction
 PIANO_FINGERS_PLAYING   = ['index', 'ring']
 PIANO_FINGERS_GLISSANDO = ['index', 'middle']
 
