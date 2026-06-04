@@ -499,15 +499,12 @@ def control_callback():
 
     if state == STATE_APPROACH:
         if not _arm_moving:
-            print(f'\n=== Grasp adaptation: {OBJECT_NAME} ===')
-            print(f'[1] Approaching above object …')
             controller.get_logger().info(
                 f'Approaching above {OBJECT_NAME} …')
             _move_arm_async(ABOVE_POSE, UR5_INIT_SPEED, STATE_DESCEND)
 
     elif state == STATE_DESCEND:
         if not _arm_moving:
-            print('[2] Descending to grasp pose …')
             controller.get_logger().info('Descending to grasp pose …')
             _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_SETTLE_ARM)
 
@@ -675,6 +672,7 @@ def control_callback():
                 _converged   = True
                 _log_tick    = 0
                 _state_start = now
+                print(f'[7] Lifting object (k_applied = {_k_applied:.1f} N/m) …')
                 controller.get_logger().info(
                     f'Adapted grasp converged at {elapsed:.1f} s. Lifting …')
                 _move_arm_async(LIFT_POSE, UR5_INIT_SPEED, STATE_HOLD)
@@ -696,6 +694,7 @@ def control_callback():
         if elapsed >= HOLD_TIME:
             if not COLLECTED_DATA:
                 _csv_file.flush()
+            print('[8] Placing object back …')
             controller.get_logger().info('Placing back …')
             _log_tick = 0
             _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_UNLOAD)
@@ -717,6 +716,7 @@ def control_callback():
 
     elif state == STATE_RAMP_HOME:
         if elapsed >= CONVERGE_HOLD:
+            print('[9] Returning hand to home …')
             controller.get_logger().info(
                 f'Contact released. Ramping PC1 → HOME over {RAMP_DURATION:.1f} s …')
             vmc_joint.wrist             = FK_motor2wrist(q)
@@ -734,6 +734,7 @@ def control_callback():
     elif state == STATE_RETURN:
         if _step_ramp(now):
             state = STATE_DONE
+            print('=== Experiment complete. ===\n')
             controller.get_logger().info('Home reached. Experiment complete.')
 
     elif state == STATE_DONE:
