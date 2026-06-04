@@ -36,6 +36,8 @@ def _load(module_alias, relative_path):
 
 _piano    = _load("piano_config_hand",
                   "PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py")
+_guitar   = _load("guitar_config_hand",
+                  "PassiveCompliance/Hand/HelperGuitar/guitar_config.py")
 _tunable  = _load("tunable_hand_config",
                   "TunableCompliance/Hand/hand_config.py")
 _proprio  = _load("proprio_hand_config",
@@ -49,8 +51,8 @@ _adapt    = _load("adapt_hand_config",
 HAND_POSES = {
     # PassiveCompliance/Hand/piano_playing_hand.py
     "piano_playing_hand":     _piano.UR5_POSE_PIANO,
-    # PassiveCompliance/Hand/piano_glissando.py
-    "piano_glissando":        _piano.UR5_POSE_GLISSANDO_START,
+    # PassiveCompliance/Hand/guitar_playing_hand.py
+    "guitar_playing_hand":    _guitar.UR5_POSE_GUITAR,
     # TunableCompliance/Hand/inhand_manipulation.py
     "inhand_manipulation":    _tunable.UR5_POSE_INHAND,
     # TunableCompliance/Hand/dynamic_grasp.py
