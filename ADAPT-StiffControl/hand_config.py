@@ -8,7 +8,7 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.1405, 0.6833, 0.2594, -0.1861, -0.027, -2.7656]),
+    'hard_obj': np.array([-0.07, 0.65, 0.12, -1.77, 0.36, -1.34]),
     'soft_obj': np.array([-0.1405, 0.5500, 0.2594, -0.1861, -0.027, -2.7656]),
 }
 
