@@ -40,6 +40,7 @@ FRICTION_TAU_MAX   = 0.0    # no friction compensation (as in piano)
 
 RAMP_DURATION  = 3.0    # [s]  stiffness / pose ramp duration
 SETTLE_TIME    = 2.0    # [s]  settle after initial close, before first run
+K_RETURN       = 0.8    # [N·m/rad]  stiffness used during return-to-home ramp
 N_RUNS         = 3      # strums per stiffness condition
 
 # ── Microphone / audio ──────────────────────────────────────────────────────────
