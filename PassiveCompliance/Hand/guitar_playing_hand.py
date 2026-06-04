@@ -234,6 +234,7 @@ except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
     arm.stopScript()
+    print('Returning to home…')
     _ramp_to_home()
     mic.close()
     _running = False
