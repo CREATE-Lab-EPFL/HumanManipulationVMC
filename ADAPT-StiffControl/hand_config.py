@@ -14,17 +14,17 @@ UR5_POSE_GRASP_OBJ = {
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
 PC1_WRIST  = np.deg2rad([0.0,  0.0])
-PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
+PC1_THUMB  = np.deg2rad([70.0, 0.0, 90.0, 90.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
-PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
-PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
-PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
+PC1_INDEX  = np.deg2rad([65.0, 80.0, 80.0])
+PC1_MIDDLE = np.deg2rad([65.0, 80.0, 80.0])
+PC1_RING   = np.deg2rad([65.0, 80.0, 80.0])
+PC1_PINKY  = np.deg2rad([65.0, 80.0, 80.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_WRIST  = np.zeros(2)
