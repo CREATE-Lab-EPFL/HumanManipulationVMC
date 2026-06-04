@@ -2,11 +2,11 @@
 Passive compliance — guitar playing with the ADAPT Hand.
 
 All fingers except the thumb are held closed at FINGER_CLOSED_POSE by a torsional
-(joint-space) spring. The experiment compares three spring stiffnesses
-(TORSIONAL_SPRINGS). For each stiffness, N_RUNS sweeps are recorded: the UR5 moves
-linearly from UR5_POSE_GUITAR_START to UR5_POSE_GUITAR_END while a microphone
-records the sound intensity. Between runs, the fingers are returned to the open
-(home) pose, the arm is repositioned at the start, and the fingers are closed again.
+(joint-space) spring. The experiment compares TORSIONAL_SPRINGS values. For each
+stiffness, N_RUNS strums are recorded: the UR5 sweeps SWEEP_VECTOR on the XY plane,
+lifts by LIFT, returns to the start position at height, then descends — fingers
+stay closed throughout. Stiffness is changed online between conditions. A manual
+ENTER is required only between stiffness conditions.
 
 Prerequisite — verify the microphone:
     python3 HelperGuitar/mic_controller.py
@@ -27,7 +27,8 @@ from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from UR5_codes.UR5_readPose    import UR5Receiver
 from guitar_config import (
-    UR5_POSE_GUITAR_START, UR5_POSE_GUITAR_END, SWEEP_SPEED, SWEEP_ACCEL,
+    UR5_POSE_GUITAR, SWEEP_VECTOR, LIFT,
+    SWEEP_SPEED, SWEEP_ACCEL, RETURN_SPEED, RETURN_ACCEL,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
     TORSIONAL_SPRINGS, B_ROT, K_ROT,
@@ -39,10 +40,14 @@ from guitar_config import (
 from mic_controller import MicrophoneController
 import rtde_control
 
-COLLECTED_DATA = False
+# Pre-compute the four UR5 waypoints used every run
+START        = UR5_POSE_GUITAR.copy()
+END          = UR5_POSE_GUITAR.copy(); END[:3]          += SWEEP_VECTOR
+START_LIFTED = UR5_POSE_GUITAR.copy(); START_LIFTED[2]  += LIFT
+END_LIFTED   = END.copy();             END_LIFTED[2]    += LIFT
 
 # =============================================================================
-# CSV schema  (mic_level = continuous audio RMS — the recorded output)
+# CSV schema
 # =============================================================================
 _S_COLS = ([f'q_{i}'    for i in range(15)] +
            [f'qdot_{i}' for i in range(15)] +
@@ -60,27 +65,23 @@ def _out_path(ktors):
 rclpy.init()
 controller    = HandController()
 grav_fric_lim = GravFricLim()
-grav_fric_lim.friction_max = FRICTION_TAU_MAX   # no friction compensation
+grav_fric_lim.friction_max = FRICTION_TAU_MAX
 recv          = UR5Receiver()
 
 vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
 
-# Thumb + spreads: K=0, damping only
 for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
 
-# Wrist: held (near-)rigid so it does not contribute to the measured compliance
-vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
+vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])
 vmc_joint.stiffness['wrist'][:] = WRIST_K_FIX
 vmc_joint.damping['wrist'][:]   = WRIST_B_FIX
 
-for _k in ['index', 'middle', 'ring', 'pinky']:
+for _k in CLOSED_FINGERS:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 
-# Playing fingers: closed at FINGER_CLOSED_POSE; stiffness set per condition
-# Start with fingers at home (zeros); they will be ramped to the closed pose.
 vmc_joint.thumb         = np.zeros(4)
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
@@ -88,7 +89,7 @@ vmc_joint.ring_target   = np.zeros(3)
 vmc_joint.pinky_target  = np.zeros(3)
 
 # =============================================================================
-# Microphone  (records continuous intensity during the sweep)
+# Microphone
 # =============================================================================
 try:
     mic = MicrophoneController(MIC_DEVICE, samplerate=SAMPLE_RATE, channels=AUDIO_CHANNELS,
@@ -103,13 +104,13 @@ except Exception as _mic_err:
     mic = _DummyMic()
 
 # =============================================================================
-# Control loop
+# Control loop  (background thread — runs throughout the experiment)
 # =============================================================================
-_lock    = threading.Lock()
-_running = True
-_buf     = []
-_t0      = time.time()
-_phase   = 'idle'
+_lock     = threading.Lock()
+_running  = True
+_buf      = []
+_t0       = time.time()
+_phase    = 'idle'
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 50))
 
 def _control_loop():
@@ -121,7 +122,7 @@ def _control_loop():
         tau  += grav_fric_lim.compute_compensation_torques(q, qd, tau,
                                                            recv.get_tcp_rotation_matrix())
         controller.publish_torques(tau)
-        if not COLLECTED_DATA and step % LOG_EVERY == 0:
+        if step % LOG_EVERY == 0:
             with _lock:
                 _buf.append([f'{time.time()-_t0:.4f}', _phase]
                             + list(q) + list(qd) + list(tau)
@@ -137,22 +138,14 @@ def _flush(writer, ktors, run):
                          **dict(zip(_S_COLS, r[2:-1])), 'mic_level': r[-1]})
 
 # =============================================================================
-# Ramp helpers  (main-thread blocking; control loop runs throughout)
+# Ramp helpers
 # =============================================================================
-
 def _ramp_closed(k_torsional):
-    """Close the fingers to FINGER_CLOSED_POSE then settle at k_torsional.
-
-    Two phases so the fingers actually reach the target even when k_torsional
-    is very soft (e.g. 0.1 N·m/rad which alone can't overcome gravity):
-      Phase 1 — approach: move targets 0°→FINGER_CLOSED_POSE at full K_ROT stiffness.
-      Phase 2 — soften:   reduce stiffness K_ROT→k_torsional with targets fixed.
-    """
+    """Two-phase close: approach FINGER_CLOSED_POSE at K_ROT, then soften to k_torsional.
+    Two phases are needed so that soft springs can still reach the target pose."""
     dt = 1.0 / CONTROL_FREQUENCY
-
-    # Phase 1: ramp targets 0°→FINGER_CLOSED_POSE and stiffness → K_ROT together
     start_tgt = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
-    start_k   = {f: float(vmc_joint.stiffness[f].flat[0]) for f in CLOSED_FINGERS}
+    # Phase 1: ramp targets to FINGER_CLOSED_POSE at full K_ROT
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
@@ -160,43 +153,28 @@ def _ramp_closed(k_torsional):
         vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*FINGER_CLOSED_POSE
         vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*FINGER_CLOSED_POSE
         vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*FINGER_CLOSED_POSE
-        for _f in CLOSED_FINGERS:
-            vmc_joint.stiffness[_f][:] = (1-alpha)*start_k[_f] + alpha*K_ROT
-        if alpha >= 1.0:
-            break
+        for f in CLOSED_FINGERS: vmc_joint.stiffness[f][:] = K_ROT
+        if alpha >= 1.0: break
         time.sleep(dt)
-
-    # Phase 2: ramp stiffness K_ROT → k_torsional with targets fixed
+    # Phase 2: soften K_ROT → k_torsional, targets unchanged
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
-        for _f in CLOSED_FINGERS:
-            vmc_joint.stiffness[_f][:] = (1-alpha)*K_ROT + alpha*k_torsional
-        if alpha >= 1.0:
-            break
+        for f in CLOSED_FINGERS:
+            vmc_joint.stiffness[f][:] = (1-alpha)*K_ROT + alpha*k_torsional
+        if alpha >= 1.0: break
         time.sleep(dt)
 
-
-def _ramp_to_home():
-    """Open fingers back to home, ramping targets and stiffness → K_ROT (0.4).
-    Damping stays at B_ROT (0.001) throughout."""
-    starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
-    start_wrist = vmc_joint.wrist.copy()
-    start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
-    home = np.zeros(3)
+def _ramp_stiffness(k_new):
+    """Ramp finger stiffness to k_new without moving targets (fingers already closed)."""
+    start_ks = {f: float(vmc_joint.stiffness[f].flat[0]) for f in CLOSED_FINGERS}
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
-        vmc_joint.index_target  = (1 - alpha) * starts['index']  + alpha * home
-        vmc_joint.middle_target = (1 - alpha) * starts['middle'] + alpha * home
-        vmc_joint.ring_target   = (1 - alpha) * starts['ring']   + alpha * home
-        vmc_joint.pinky_target  = (1 - alpha) * starts['pinky']  + alpha * home
-        vmc_joint.wrist         = (1 - alpha) * start_wrist + alpha * np.zeros(2)
-        for g in start_ks:
-            vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
-        if alpha >= 1.0:
-            break
+        for f in CLOSED_FINGERS:
+            vmc_joint.stiffness[f][:] = (1-alpha)*start_ks[f] + alpha*k_new
+        if alpha >= 1.0: break
         time.sleep(dt)
 
 # =============================================================================
@@ -204,60 +182,40 @@ def _ramp_to_home():
 # =============================================================================
 input('Press ENTER to connect the UR5 and approach the guitar…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
-arm.moveL(list(UR5_POSE_GUITAR_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
+arm.moveL(list(START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
 ctrl_thread.start()
 
+_ramp_closed(TORSIONAL_SPRINGS[0])
+time.sleep(SETTLE_TIME)
+
 try:
-    for ktors in TORSIONAL_SPRINGS:
-        desc = f'Torsional spring  K = {ktors:.1f} N·m/rad'
-        print(f'\n=== {desc} ===')
-        input('    Press ENTER to start this condition…')
-        controller.get_logger().info(f'[{desc}] settling {SETTLE_TIME:.0f}s ...')
+    for i, ktors in enumerate(TORSIONAL_SPRINGS):
+        if i > 0:
+            _ramp_stiffness(ktors)
+        input(f'\n=== K = {ktors:.1f} N·m/rad — Press ENTER to start {N_RUNS} runs ===')
 
-        # Ramp to the new torsional stiffness and close the fingers
-        _phase = 'settle'
-        _ramp_closed(ktors)
-        time.sleep(SETTLE_TIME)
+        f      = open(_out_path(ktors), 'w', newline='')
+        writer = csv.DictWriter(f, fieldnames=FIELDS)
+        writer.writeheader()
 
-        f      = open(_out_path(ktors), 'w', newline='') if not COLLECTED_DATA else None
-        writer = csv.DictWriter(f, fieldnames=FIELDS) if f else None
-        if writer: writer.writeheader()
+        for run in range(1, N_RUNS + 1):
+            print(f'  Run {run}/{N_RUNS}')
+            with _lock: _buf.clear()
+            _phase = 'sweep';   arm.moveL(list(END),          SWEEP_SPEED,  SWEEP_ACCEL)
+            _phase = 'lift';    arm.moveL(list(END_LIFTED),   RETURN_SPEED, RETURN_ACCEL)
+            _phase = 'return';  arm.moveL(list(START_LIFTED), RETURN_SPEED, RETURN_ACCEL)
+            _phase = 'descend'; arm.moveL(list(START),        RETURN_SPEED, RETURN_ACCEL)
+            _flush(writer, ktors, run)
 
-        try:
-            for run in range(1, N_RUNS + 1):
-                print(f'\n    Run {run}/{N_RUNS} — K = {ktors:.1f}')
-                input('        Press ENTER to start this run…')
-                controller.get_logger().info(f'K={ktors:.1f}  run {run}/{N_RUNS}')
-
-                # 1. sweep
-                with _lock: _buf.clear()
-                _phase = 'sweep'
-                arm.moveL(list(UR5_POSE_GUITAR_END), SWEEP_SPEED, SWEEP_ACCEL)
-                if not COLLECTED_DATA: _flush(writer, ktors, run)
-
-                # 2. open fingers to home (before returning so the hand doesn't drag back)
-                _phase = 'lift'
-                _ramp_to_home()
-
-                # 3. return arm with fingers open
-                _phase = 'return'
-                arm.moveL(list(UR5_POSE_GUITAR_START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
-
-                # 4. re-close for the next run
-                if run < N_RUNS:
-                    _phase = 'settle'
-                    _ramp_closed(ktors)
-        finally:
-            if f: f.close()
+        f.close()
 
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
     mic.close()
     arm.stopScript()
-    _ramp_to_home()    # open the hand while the control loop is still active
     _running = False
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)
