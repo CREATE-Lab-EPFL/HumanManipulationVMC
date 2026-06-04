@@ -55,7 +55,7 @@ B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes 
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
 APPROACH_HEIGHT = 0.10   # [m] Z offset above grasp pose for safe approach
-LIFT_HEIGHT     = 0.08   # [m] Z lift after adaptation
+LIFT_HEIGHT     = 0.20   # [m] Z lift after adaptation
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose

@@ -358,7 +358,8 @@ STATE_PLACE       = 13
 STATE_UNLOAD      = 14
 STATE_RAMP_HOME   = 15
 STATE_RETURN      = 16
-STATE_DONE        = 17
+STATE_LIFT_AWAY   = 17
+STATE_DONE        = 18
 
 state             = STATE_APPROACH
 _state_start      = time.time()
@@ -527,7 +528,6 @@ def control_callback():
             _converged      = False
             _state_start    = now
             state           = STATE_SENSE_CONV
-            print(f'[3] Closing hand — K = {K_TIP_GENTLE} N/m …')
             controller.get_logger().info(
                 f'Closing at K_TIP_GENTLE = {K_TIP_GENTLE} N/m for sensing …')
 
@@ -546,7 +546,6 @@ def control_callback():
                     _force_gentle_sum[_f] = np.zeros(3)
                 _state_start = now
                 state        = STATE_SENSE_REC
-                print(f'[4] Recording gentle baseline (K = {K_TIP_GENTLE} N/m, {SENSE_DURATION:.0f} s) …')
                 controller.get_logger().info(
                     f'Sensing converged at {elapsed:.1f} s. '
                     f'Recording gentle-point ({K_TIP_GENTLE} N/m) for '
@@ -599,7 +598,6 @@ def control_callback():
                     _force_probe_sum[_f] = np.zeros(3)
                 _state_start = now
                 state        = STATE_PROBE_REC
-                print(f'[5] Recording probe point (K = {K_TIP_PROBE} N/m, {SENSE_DURATION:.0f} s) …')
                 controller.get_logger().info(
                     f'Probe converged at {elapsed:.1f} s. '
                     f'Recording probe-point ({K_TIP_PROBE} N/m) for '
@@ -636,7 +634,6 @@ def control_callback():
                 _C_O_mean = 0.0
                 k_raw     = K_MIN
             _k_applied = float(np.clip(k_raw, K_MIN, K_MAX))
-            print(f'[6] C_O = {_C_O_mean * 1e3:.3f} mm/N  →  k_applied = {_k_applied:.1f} N/m')
             controller.get_logger().info(
                 f'C_O_mean = {_C_O_mean * 1e3:.3f} mm/N '
                 f'(K_O ≈ {1.0 / _C_O_mean if _C_O_mean > 1e-12 else float("inf"):.1f} N/m) → '
@@ -672,7 +669,6 @@ def control_callback():
                 _converged   = True
                 _log_tick    = 0
                 _state_start = now
-                print(f'[7] Lifting object (k_applied = {_k_applied:.1f} N/m) …')
                 controller.get_logger().info(
                     f'Adapted grasp converged at {elapsed:.1f} s. Lifting …')
                 _move_arm_async(LIFT_POSE, UR5_INIT_SPEED, STATE_HOLD)
@@ -694,7 +690,6 @@ def control_callback():
         if elapsed >= HOLD_TIME:
             if not COLLECTED_DATA:
                 _csv_file.flush()
-            print('[8] Placing object back …')
             controller.get_logger().info('Placing back …')
             _log_tick = 0
             _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_UNLOAD)
@@ -716,7 +711,6 @@ def control_callback():
 
     elif state == STATE_RAMP_HOME:
         if elapsed >= CONVERGE_HOLD:
-            print('[9] Returning hand to home …')
             controller.get_logger().info(
                 f'Contact released. Ramping PC1 → HOME over {RAMP_DURATION:.1f} s …')
             vmc_joint.wrist             = FK_motor2wrist(q)
@@ -733,9 +727,12 @@ def control_callback():
 
     elif state == STATE_RETURN:
         if _step_ramp(now):
-            state = STATE_DONE
-            print('=== Experiment complete. ===\n')
-            controller.get_logger().info('Home reached. Experiment complete.')
+            controller.get_logger().info('Hand home. Lifting arm clear …')
+            _move_arm_async(LIFT_POSE, UR5_INIT_SPEED, STATE_DONE)
+            state = STATE_LIFT_AWAY
+
+    elif state == STATE_LIFT_AWAY:
+        pass
 
     elif state == STATE_DONE:
         pass
