@@ -9,7 +9,7 @@ import numpy as np
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
     'hard_obj': np.array([-0.07, 0.65, 0.12, -1.77, 0.36, -1.34]),
-    'soft_obj': np.array([-0.1405, 0.5500, 0.2594, -0.1861, -0.027, -2.7656]),
+    'soft_obj': np.array([-0.22, 0.65, 0.13, -1.77, 0.36, -1.34]),
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
