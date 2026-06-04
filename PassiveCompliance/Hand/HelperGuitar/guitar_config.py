@@ -25,7 +25,7 @@ UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
 # ── Hand pose / compliance ──────────────────────────────────────────────────────
-FINGER_CLOSED_POSE = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
+FINGER_CLOSED_POSE = np.deg2rad([20.0, 20.0, 20.0])   # [MCP, PIP, DIP]
 CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 SPREAD_ANGLE_DEG   = 0.0
 
