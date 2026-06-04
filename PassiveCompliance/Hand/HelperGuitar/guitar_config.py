@@ -12,7 +12,7 @@ import numpy as np
 
 # ── UR5 reference pose ──────────────────────────────────────────────────────────
 UR5_POSE_GUITAR = np.array([0.0, 0.61, 0.22, -1.66, -0.61, -0.54])  # [x,y,z,rx,ry,rz]
-SWEEP_VECTOR    = np.array([0.0, 0.08, 0.0])   # XYZ displacement per strum [m]
+SWEEP_VECTOR    = np.array([0.0, -0.10, 0.0])   # XYZ displacement per strum [m]
 LIFT            = 0.05   # [m]  Z clearance added for the return trip
 
 SWEEP_SPEED   = 0.05    # [m/s]  strum speed (no contact after this speed)
