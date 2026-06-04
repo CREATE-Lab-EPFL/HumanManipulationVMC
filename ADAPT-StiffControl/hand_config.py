@@ -58,7 +58,7 @@ APPROACH_HEIGHT = 0.10   # [m] Z offset above grasp pose for safe approach
 LIFT_HEIGHT     = 0.08   # [m] Z lift after adaptation
 
 # ── Timing ────────────────────────────────────────────────────────────────────
-SETTLE_TIME      = 2.0   # [s]      wait after UR5 reaches pose
+SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
 RAMP_DURATION    = 5.0   # [s]      joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]  velocity threshold for "converged"
 CONVERGE_HOLD    = 1.0   # [s]      time below threshold to declare convergence
