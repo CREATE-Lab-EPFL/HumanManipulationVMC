@@ -49,6 +49,8 @@ _adapt    = _load("adapt_hand_config",
 # ── Hand-experiment initial poses (imported from source configs) ─────────────
 # Key = experiment script name; value = pose used by that experiment.
 HAND_POSES = {
+    # PoseControl/position_tracker.py (UR5 stays still; arm parked at squeezing pose)
+    "position_tracking":      _proprio.UR5_POSE_SQUEEZING,
     # PassiveCompliance/Hand/piano_playing_hand.py
     "piano_playing_hand":     _piano.UR5_POSE_PIANO,
     # PassiveCompliance/Hand/guitar_playing_hand.py
@@ -62,8 +64,6 @@ HAND_POSES = {
     # ADAPT-StiffControl/grasp_adaptation.py (per-object grasp pose)
     "grasp_adaptation_hard":  _adapt.UR5_POSE_GRASP_OBJ["hard_obj"],
     "grasp_adaptation_soft":  _adapt.UR5_POSE_GRASP_OBJ["soft_obj"],
-    # PoseControl/position_tracker.py (UR5 stays still; arm parked at squeezing pose)
-    "position_tracking":      _proprio.UR5_POSE_SQUEEZING,
 }
 
 
