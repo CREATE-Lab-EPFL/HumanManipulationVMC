@@ -11,7 +11,6 @@ No friction compensation, as in the piano experiment.
 import numpy as np
 
 # ── UR5 sweep: linear move from START to END ────────────────────────────────────
-# PLACEHOLDER — tune to the actual guitar mounting.
 UR5_POSE_GUITAR_START = np.array([0.0, 0.61, 0.22, -1.66, -0.61, -0.54])
 UR5_POSE_GUITAR_END   = np.array([0.0, 0.52, 0.22, -1.66, -0.61, -0.54])
 SWEEP_SPEED           = 0.05    # [m/s]  linear sweep speed (must be in [0, 3])
