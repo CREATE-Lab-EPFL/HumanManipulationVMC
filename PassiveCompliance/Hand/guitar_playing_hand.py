@@ -177,6 +177,25 @@ def _ramp_stiffness(k_new):
         if alpha >= 1.0: break
         time.sleep(dt)
 
+def _ramp_to_home():
+    """Ramp all finger targets and wrist back to zero, stiffness back to K_ROT."""
+    starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
+    start_wrist = vmc_joint.wrist.copy()
+    start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
+    dt = 1.0 / CONTROL_FREQUENCY
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
+        vmc_joint.index_target  = (1-alpha)*starts['index']  + alpha*np.zeros(3)
+        vmc_joint.middle_target = (1-alpha)*starts['middle'] + alpha*np.zeros(3)
+        vmc_joint.ring_target   = (1-alpha)*starts['ring']   + alpha*np.zeros(3)
+        vmc_joint.pinky_target  = (1-alpha)*starts['pinky']  + alpha*np.zeros(3)
+        vmc_joint.wrist         = (1-alpha)*start_wrist      + alpha*np.zeros(2)
+        for g in start_ks:
+            vmc_joint.stiffness[g][:] = (1-alpha)*start_ks[g] + alpha*K_ROT
+        if alpha >= 1.0: break
+        time.sleep(dt)
+
 # =============================================================================
 # Run
 # =============================================================================
@@ -214,8 +233,9 @@ try:
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
 finally:
-    mic.close()
     arm.stopScript()
+    _ramp_to_home()
+    mic.close()
     _running = False
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)
