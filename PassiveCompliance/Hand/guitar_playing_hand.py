@@ -192,7 +192,7 @@ def _ramp_to_home():
         vmc_joint.pinky_target  = (1-alpha)*starts['pinky']  + alpha*np.zeros(3)
         vmc_joint.wrist         = (1-alpha)*start_wrist      + alpha*np.zeros(2)
         for g in start_ks:
-            vmc_joint.stiffness[g][:] = (1-alpha)*start_ks[g] + alpha*K_ROT
+            vmc_joint.stiffness[g][:] = (1-alpha)*start_ks[g] + alpha*K_RETURN
         if alpha >= 1.0: break
         time.sleep(dt)
 
