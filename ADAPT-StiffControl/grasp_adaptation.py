@@ -499,12 +499,15 @@ def control_callback():
 
     if state == STATE_APPROACH:
         if not _arm_moving:
+            print(f'\n=== Grasp adaptation: {OBJECT_NAME} ===')
+            print(f'[1] Approaching above object …')
             controller.get_logger().info(
                 f'Approaching above {OBJECT_NAME} …')
             _move_arm_async(ABOVE_POSE, UR5_INIT_SPEED, STATE_DESCEND)
 
     elif state == STATE_DESCEND:
         if not _arm_moving:
+            print('[2] Descending to grasp pose …')
             controller.get_logger().info('Descending to grasp pose …')
             _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_SETTLE_ARM)
 
@@ -527,6 +530,7 @@ def control_callback():
             _converged      = False
             _state_start    = now
             state           = STATE_SENSE_CONV
+            print(f'[3] Closing hand — K = {K_TIP_GENTLE} N/m …')
             controller.get_logger().info(
                 f'Closing at K_TIP_GENTLE = {K_TIP_GENTLE} N/m for sensing …')
 
@@ -545,6 +549,7 @@ def control_callback():
                     _force_gentle_sum[_f] = np.zeros(3)
                 _state_start = now
                 state        = STATE_SENSE_REC
+                print(f'[4] Recording gentle baseline (K = {K_TIP_GENTLE} N/m, {SENSE_DURATION:.0f} s) …')
                 controller.get_logger().info(
                     f'Sensing converged at {elapsed:.1f} s. '
                     f'Recording gentle-point ({K_TIP_GENTLE} N/m) for '
@@ -597,6 +602,7 @@ def control_callback():
                     _force_probe_sum[_f] = np.zeros(3)
                 _state_start = now
                 state        = STATE_PROBE_REC
+                print(f'[5] Recording probe point (K = {K_TIP_PROBE} N/m, {SENSE_DURATION:.0f} s) …')
                 controller.get_logger().info(
                     f'Probe converged at {elapsed:.1f} s. '
                     f'Recording probe-point ({K_TIP_PROBE} N/m) for '
@@ -633,6 +639,7 @@ def control_callback():
                 _C_O_mean = 0.0
                 k_raw     = K_MIN
             _k_applied = float(np.clip(k_raw, K_MIN, K_MAX))
+            print(f'[6] C_O = {_C_O_mean * 1e3:.3f} mm/N  →  k_applied = {_k_applied:.1f} N/m')
             controller.get_logger().info(
                 f'C_O_mean = {_C_O_mean * 1e3:.3f} mm/N '
                 f'(K_O ≈ {1.0 / _C_O_mean if _C_O_mean > 1e-12 else float("inf"):.1f} N/m) → '
