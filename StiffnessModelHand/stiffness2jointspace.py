@@ -27,7 +27,6 @@ class tip_stiffness_JointSpace:
     fingertip is derived on the fly from FK — no fixed n is assumed.
 
     K_dict keys and dimensions:
-        'wrist':         (2,2)   — [pitch, yaw]
         'thumb':         (4,4)   — [CMC1, CMC2, MCP, IP]
         'spread_index':  (1,1)
         'spread_middle': (1,1)
@@ -39,7 +38,7 @@ class tip_stiffness_JointSpace:
         'pinky':         (3,3)
 
     Uses constant efficiency model:
-        η = diag([η_wrist1, η_wrist2, η_CMC1, η_CMC2, η_MCP_thumb, η_IP,
+        η = diag([η_CMC1, η_CMC2, η_MCP_thumb, η_IP,
                   η_spread, η_MCP_idx, η_PIP_idx, η_MCP_mid, η_PIP_mid,
                   η_MCP_rng, η_PIP_rng, η_MCP_pnk, η_PIP_pnk])
     """
@@ -54,7 +53,7 @@ class tip_stiffness_JointSpace:
                    'full'   — P = I₃   (full 3-D force and stiffness).
         """
         self.rtips = {**DEFAULT_RTIPS, **(rtips or {})}
-        self.eta   = np.asarray(eta) if eta is not None else np.ones(15)
+        self.eta   = np.asarray(eta) if eta is not None else np.ones(13)
         self.mode  = mode
 
         self.jac = HandJacobians()
@@ -102,9 +101,7 @@ class tip_stiffness_JointSpace:
     # ------------------------------------------------------------------
 
     def _J_angle(self, group, q):
-        """(n,15) Jacobian of joint angles for group wrt all motor angles."""
-        if group == 'wrist':
-            return np.array(self.jac.get_wrist_motor_jacobian(q))
+        """(n,13) Jacobian of joint angles for group wrt all motor angles."""
         if group == 'thumb':
             return np.array(self.jac.get_angles_jacobian('thumb', q))
         if group.startswith('spread_'):
@@ -112,9 +109,7 @@ class tip_stiffness_JointSpace:
         return np.array(self.jac.get_angles_jacobian(group, q))
 
     def _H_angle(self, group, q):
-        """(n,15,15) Hessian of joint angles for group wrt all motor angles."""
-        if group == 'wrist':
-            return np.array(self.hes.get_wrist_motor_hessian(q))
+        """(n,13,13) Hessian of joint angles for group wrt all motor angles."""
         if group == 'thumb':
             return np.array(self.hes.get_angles_hessian('thumb', q))
         if group.startswith('spread_'):
@@ -123,8 +118,6 @@ class tip_stiffness_JointSpace:
 
     def _group_theta(self, group, q):
         """Current joint angles for one group."""
-        if group == 'wrist':
-            return np.asarray(FK_motor2wrist(q))
         if group == 'thumb':
             return np.asarray(FK_motor2thumb(q))
         if group.startswith('spread_'):
@@ -144,7 +137,7 @@ class tip_stiffness_JointSpace:
         Convert motor angles to concatenated joint-space reference in degrees (K_dict ordering).
 
         Args:
-            q:      (15,) motor angles [rad]
+            q:      (13,) motor angles [rad]
             K_dict: dict whose key order defines the concatenation order
 
         Returns:
@@ -154,19 +147,19 @@ class tip_stiffness_JointSpace:
 
     def motor_stiffness(self, q, K_dict):
         """
-        (15,15) 1st-order motor stiffness from all joint-space springs.
+        (13,13) 1st-order motor stiffness from all joint-space springs.
 
             K_motor = η · Σ_g  J_θg^T · K_θg · J_θg
 
         Args:
-            q:      (15,) current motor angles [rad]
+            q:      (13,) current motor angles [rad]
             K_dict: dict of per-group stiffness matrices
 
         Returns:
-            K_motor: (15,15)
+            K_motor: (13,13)
         """
         eta = np.diag(self.eta)
-        S = np.zeros((15, 15))
+        S = np.zeros((13, 13))
         for group, K in K_dict.items():
             J = self._J_angle(group, q)
             S += J.T @ np.atleast_2d(K) @ J
@@ -178,7 +171,7 @@ class tip_stiffness_JointSpace:
 
         Args:
             finger:        'thumb', 'index', 'middle', 'ring', or 'pinky'
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             K_dict:        dict of per-group stiffness matrices
             f_ext:         (3,)  contact force for 2nd-order CCT correction [N].
             theta_ref_deg: (n_total,) concatenated joint-space reference [deg] (K_dict ordering);
@@ -226,7 +219,7 @@ class tip_stiffness_JointSpace:
 
         Args:
             finger:        'thumb', 'index', 'middle', 'ring', or 'pinky'
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             theta_ref_deg: (n_total,) concatenated joint-space reference [deg] (K_dict ordering)
             K_dict:        dict of per-group stiffness matrices
 
@@ -251,7 +244,7 @@ class tip_stiffness_JointSpace:
         Dict of (3,3) stiffness matrices, one per fingertip.
 
         Args:
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             K_dict:        dict of per-group stiffness matrices
             f_ext_dict:    dict of (3,) contact forces per finger for 2nd-order CCT correction
             theta_ref_deg: (n_total,) concatenated joint-space reference [deg] (K_dict ordering)
@@ -387,7 +380,7 @@ class tip_stiffness_JointSpace:
 
         Args:
             finger:        output fingertip
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             theta_ref_deg: (n_total,) concatenated joint-reference vector [deg]
             K_dict:        dict of per-group stiffness matrices (ordering defines theta_ref)
             f_meas:        (3,) measured tip force [N]

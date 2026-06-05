@@ -31,7 +31,6 @@ class tip_stiffness_MixedSpace:
     fingertip is derived on the fly from FK — no fixed n is assumed.
 
     K_joint_dict keys and dimensions:
-        'wrist':         (2,2)   — [pitch, yaw]
         'thumb':         (4,4)   — [CMC1, CMC2, MCP, IP]
         'spread_index':  (1,1)
         'spread_middle': (1,1)
@@ -51,7 +50,7 @@ class tip_stiffness_MixedSpace:
         'palm':   (3,3)  — Cartesian stiffness at palm point [N/m]
 
     Uses constant efficiency model:
-        η = diag([η_wrist1, η_wrist2, η_CMC1, η_CMC2, η_MCP_thumb, η_IP,
+        η = diag([η_CMC1, η_CMC2, η_MCP_thumb, η_IP,
                   η_spread, η_MCP_idx, η_PIP_idx, η_MCP_mid, η_PIP_mid,
                   η_MCP_rng, η_PIP_rng, η_MCP_pnk, η_PIP_pnk])
     """
@@ -69,7 +68,7 @@ class tip_stiffness_MixedSpace:
         """
         self.rtips        = {**DEFAULT_RTIPS,        **(rtips or {})}
         self.rattachments = {**DEFAULT_RATTACHMENTS, **(rattachments or {})}
-        self.eta          = np.asarray(eta) if eta is not None else np.ones(15)
+        self.eta          = np.asarray(eta) if eta is not None else np.ones(13)
         self.mode         = mode
 
         self.jac = HandJacobians()
@@ -114,8 +113,6 @@ class tip_stiffness_MixedSpace:
     # ------------------------------------------------------------------
 
     def _J_angle(self, group, q):
-        if group == 'wrist':
-            return np.array(self.jac.get_wrist_motor_jacobian(q))
         if group == 'thumb':
             return np.array(self.jac.get_angles_jacobian('thumb', q))
         if group.startswith('spread_'):
@@ -124,8 +121,6 @@ class tip_stiffness_MixedSpace:
 
     def _group_angles(self, group, q):
         """Current joint angles for a group [rad]."""
-        if group == 'wrist':
-            return FK_motor2wrist(q)
         if group == 'thumb':
             return FK_motor2thumb(q)
         if group.startswith('spread_'):
@@ -145,7 +140,7 @@ class tip_stiffness_MixedSpace:
         if point == 'thumb':
             return FK_motor2thumbPos(q, 'IP', r)
         if point == 'palm':
-            return FK_motor2palm(q, r)[1]
+            return FK_motor2palm(r)[1]
         return FK_motor2fingerPos(q, point, 'DIP', r)
 
     def _J_pos(self, point, q):
@@ -170,20 +165,20 @@ class tip_stiffness_MixedSpace:
 
     def motor_stiffness(self, q, K_joint_dict, K_task_dict):
         """
-        15×15 1st-order motor stiffness from all virtual elements.
+        13×13 1st-order motor stiffness from all virtual elements.
 
             K_motor = η · (Σ_g J_θg^T·K_θg·J_θg  +  Σ_p J_xp^T·K_p·J_xp)
 
         Args:
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             K_joint_dict:  dict of per-group joint-space stiffness matrices
             K_task_dict:   dict of per-point (3,3) task-space stiffness matrices
 
         Returns:
-            K_motor: (15,15)
+            K_motor: (13,13)
         """
         eta = np.diag(self.eta)
-        S   = np.zeros((15, 15))
+        S   = np.zeros((13, 13))
         for group, K in K_joint_dict.items():
             J  = self._J_angle(group, q)
             S += J.T @ np.atleast_2d(K) @ J
@@ -199,7 +194,7 @@ class tip_stiffness_MixedSpace:
 
         Args:
             finger:        'thumb', 'index', 'middle', 'ring', or 'pinky'
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             K_joint_dict:  dict of per-group joint-space stiffness matrices
             K_task_dict:   dict of per-point (3,3) task-space stiffness matrices
             d_ref_dict:    dict of (3,) reference positions [m]   (for 2nd order)
@@ -246,7 +241,7 @@ class tip_stiffness_MixedSpace:
 
         Args:
             finger:        'thumb', 'index', 'middle', 'ring', or 'pinky'
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             theta_ref_deg: (n_total,) concatenated joint-space reference [deg],
                            ordered to match K_joint_dict iteration order
             d_ref_dict:    dict of (3,) reference positions [m]
@@ -443,7 +438,7 @@ class tip_stiffness_MixedSpace:
 
         Args:
             finger:        output fingertip
-            q:             (15,) current motor angles [rad]
+            q:             (13,) current motor angles [rad]
             K_joint_dict:  dict of joint-space stiffness matrices
             K_task_dict:   dict of task-space stiffness matrices
             K_des:         (3,3) desired tip stiffness [N/m]
@@ -498,19 +493,18 @@ if __name__ == "__main__":
 
     np.random.seed(42)
 
-    # Thumb and index flexed
-    q_ref  = np.zeros(15)
-    q_base = np.zeros(15)
-    q_base[4] = np.deg2rad(30.0)   # thumb MCP
-    q_base[5] = np.deg2rad(20.0)   # thumb IP
-    q_base[7] = np.deg2rad(30.0)   # index MCP
-    q_base[8] = np.deg2rad(20.0)   # index PIP
+    # Thumb and index flexed (13 motors, wrist rigid)
+    q_ref  = np.zeros(13)
+    q_base = np.zeros(13)
+    q_base[2] = np.deg2rad(30.0)   # thumb MCP
+    q_base[3] = np.deg2rad(20.0)   # thumb IP
+    q_base[5] = np.deg2rad(30.0)   # index MCP
+    q_base[6] = np.deg2rad(20.0)   # index PIP
 
     k_joint = 0.4    # [N·m/rad]
     k_task  = 100.0  # [N/m]
 
     K_joint_dict = {
-        'wrist':         k_joint * np.eye(2),
         'thumb':         k_joint * np.eye(4),
         'spread_index':  k_joint * np.eye(1),
         'spread_middle': k_joint * np.eye(1),
@@ -536,9 +530,7 @@ if __name__ == "__main__":
     def _build_theta_ref_deg(q, K_jd):
         parts = []
         for group in K_jd.keys():
-            if group == 'wrist':
-                parts.append(FK_motor2wrist(q))
-            elif group == 'thumb':
+            if group == 'thumb':
                 parts.append(FK_motor2thumb(q))
             elif group.startswith('spread_'):
                 parts.append(np.array([FK_motor2spread(q, group[7:])]))

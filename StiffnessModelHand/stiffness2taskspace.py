@@ -49,12 +49,12 @@ class tip_stiffness_TaskSpace:
         Args:
             rattachments: dict of attachment offsets in each link's local frame [m].
                           Defaults to DEFAULT_RATTACHMENTS.
-            eta:          (15,) motor efficiency vector. Defaults to ones (no efficiency loss).
+            eta:          (13,) motor efficiency vector. Defaults to ones (no efficiency loss).
             mode:         'normal' — P = n nᵀ (rank-1, force/stiffness along contact normal only);
                           'full'   — P = I₃   (full 3-D force and stiffness).
         """
         self.rattachments = {**DEFAULT_RATTACHMENTS, **(rattachments or {})}
-        self.eta          = np.asarray(eta) if eta is not None else np.ones(15)
+        self.eta          = np.asarray(eta) if eta is not None else np.ones(13)
         self.mode         = mode
 
         self.jac = HandJacobians()
@@ -100,7 +100,7 @@ class tip_stiffness_TaskSpace:
 
     def _H_tip(self, finger, q):
         """
-        (3,15,15) Hessian of (specific) fingertip position wrt motor angles.
+        (3,13,13) Hessian of (specific) fingertip position wrt motor angles.
         """
         r = self.rattachments[finger]
         if finger == 'thumb':
@@ -119,12 +119,12 @@ class tip_stiffness_TaskSpace:
         if point == 'thumb':
             return FK_motor2thumbPos(q, 'IP', r)
         if point == 'palm':
-            return FK_motor2palm(q, r)[1]
+            return FK_motor2palm(r)[1]
         return FK_motor2fingerPos(q, point, 'DIP', r)
 
     def _J_pos(self, point, q):
         """
-        (3,15) position Jacobian of attachment point wrt motor angles.
+        (3,13) position Jacobian of attachment point wrt motor angles.
         """
         r = self.rattachments[point]
         if point == 'thumb':
@@ -135,7 +135,7 @@ class tip_stiffness_TaskSpace:
 
     def _H_pos(self, point, q):
         """
-        (3,15,15) Hessian of attachment point position wrt motor angles.
+        (3,13,13) Hessian of attachment point position wrt motor angles.
         """
         r = self.rattachments[point]
         if point == 'thumb':
@@ -150,19 +150,19 @@ class tip_stiffness_TaskSpace:
 
     def motor_stiffness(self, q, K_dict):
         """
-        (15,15) 1st-order motor stiffness from all task-space springs.
+        (13,13) 1st-order motor stiffness from all task-space springs.
 
             K_motor = η · Σ_p  J_xp^T · K_p · J_xp
 
         Args:
-            q:      (15,) current motor angles [rad]
+            q:      (13,) current motor angles [rad]
             K_dict: dict of per-point (3,3) stiffness matrices
 
         Returns:
-            K_motor: (15,15)
+            K_motor: (13,13)
         """
         eta = np.diag(self.eta)
-        S = np.zeros((15, 15))
+        S = np.zeros((13, 13))
         for point, K in K_dict.items():
             J = self._J_pos(point, q)
             S += J.T @ K @ J
@@ -174,7 +174,7 @@ class tip_stiffness_TaskSpace:
 
         Args:
             finger:      'thumb', 'index', 'middle', 'ring', or 'pinky'
-            q:           (15,) current motor angles [rad]
+            q:           (13,) current motor angles [rad]
             K_dict:      dict of per-point (3,3) stiffness matrices
             d_ref_dict:  dict of (3,) reference positions [m] (required for f_ext)
             f_ext:       (3,) contact force for 2nd-order CCT correction [N]
@@ -186,9 +186,9 @@ class tip_stiffness_TaskSpace:
 
         if f_ext is not None and d_ref_dict is not None:
             P    = self._P(finger, q)
-            H_xf = self._H_tip(finger, q)                          # (3,15,15)
-            H_xf_P = np.tensordot(P, H_xf, axes=([1], [0]))        # (3,15,15)
-            K_g_out = np.tensordot(f_ext, H_xf_P, axes=([0], [0])) # (15,15)
+            H_xf = self._H_tip(finger, q)                          # (3,13,13)
+            H_xf_P = np.tensordot(P, H_xf, axes=([1], [0]))        # (3,13,13)
+            K_g_out = np.tensordot(f_ext, H_xf_P, axes=([0], [0])) # (13,13)
 
             # Inward CCT term: virtual forces from all springs weighted by H_xp
             tau_d = []
@@ -215,7 +215,7 @@ class tip_stiffness_TaskSpace:
 
         Args:
             finger:     'thumb', 'index', 'middle', 'ring', or 'pinky'
-            q:          (15,) current motor angles [rad]
+            q:          (13,) current motor angles [rad]
             d_ref_dict: dict of (3,) reference positions [m]
             K_dict:     dict of per-point (3,3) stiffness matrices
 
@@ -223,7 +223,7 @@ class tip_stiffness_TaskSpace:
             f: (3,) tip force [N]
         """
         eta = np.diag(self.eta)
-        tau = np.zeros(15)
+        tau = np.zeros(13)
         for point, K in K_dict.items():
             J       = self._J_pos(point, q)
             delta_x = d_ref_dict[point] - self._pos(point, q)
@@ -236,7 +236,7 @@ class tip_stiffness_TaskSpace:
         Dict of (3,3) stiffness matrices, one per fingertip.
 
         Args:
-            q:           (15,) current motor angles [rad]
+            q:           (13,) current motor angles [rad]
             K_dict:      dict of per-point (3,3) stiffness matrices
             d_ref_dict:  dict of (3,) reference positions (required for f_ext_dict)
             f_ext_dict:  dict of (3,) contact forces per finger for 2nd-order correction
@@ -270,15 +270,15 @@ class tip_stiffness_TaskSpace:
         Args:
             finger:  output fingertip
             point:   spring attachment point
-            q:       (15,) current motor angles [rad]
+            q:       (13,) current motor angles [rad]
             K_des:   (3,3) desired tip stiffness [N/m]
 
         Returns:
             K_ff: (3,3) minimum-norm point stiffness that best produces K_des
         """
         eta_mat = np.diag(self.eta)
-        J_pinv  = self._J_tip_P_pinv(finger, q)   # (15,3)
-        J_p     = self._J_pos(point, q)            # (3,15)
+        J_pinv  = self._J_tip_P_pinv(finger, q)   # (13,3)
+        J_p     = self._J_pos(point, q)            # (3,13)
         L = J_pinv.T @ eta_mat @ J_p.T             # (3,3)
         R = J_p @ J_pinv                            # (3,3)
         M = np.kron(R.T, L)                         # (9,9)
@@ -293,7 +293,7 @@ class tip_stiffness_TaskSpace:
 
         Args:
             finger:  output fingertip
-            q:       (15,) current motor angles [rad]
+            q:       (13,) current motor angles [rad]
             K_dict:  dict of per-point stiffness matrices (ordering defines vec stack)
             K_des:   (3,3) desired tip stiffness [N/m]
 
@@ -334,7 +334,7 @@ class tip_stiffness_TaskSpace:
 
         Args:
             finger:         output fingertip
-            q:              (15,) current motor angles [rad]
+            q:              (13,) current motor angles [rad]
             d_ref_dict:     dict of (3,) reference positions [m]
             K_dict:         dict of per-point (3,3) stiffness matrices
             f_meas, f_des:  (3,) measured and desired tip forces [N]
@@ -365,7 +365,7 @@ class tip_stiffness_TaskSpace:
 
         Args:
             finger:         output fingertip
-            q:              (15,) current motor angles [rad]
+            q:              (13,) current motor angles [rad]
             d_ref_dict:     dict of (3,) reference positions [m]
             K_dict:         dict of per-point (3,3) stiffness matrices
             f_meas, f_des:  (3,) measured and desired tip forces [N]
@@ -394,8 +394,8 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Thumb and index flexed
-    q_ref  = np.zeros(15)
-    q_base = np.zeros(15)
+    q_ref  = np.zeros(13)
+    q_base = np.zeros(13)
     q_base[4] = np.deg2rad(30.0)   # thumb MCP
     q_base[5] = np.deg2rad(20.0)   # thumb IP
     q_base[7] = np.deg2rad(30.0)   # index MCP
