@@ -5,8 +5,8 @@ Hand configuration for PoseControl experiments.
 import numpy as np
 
 # ── VMC parameters ─────────────────────────────────────────────────────────────
-STIFFNESS = 0.6    # [N·m/rad]
-DAMPING   = 0.03   # [N·m·s/rad]
+STIFFNESS = 0.3    # [N·m/rad]
+DAMPING   = 0.0001 # [N·m·s/rad]
 
 # Lower gains used when ramping back to home (smoother, less overshoot)
 RETURN_STIFFNESS = 0.15  # [N·m/rad]
@@ -24,7 +24,7 @@ POSES = [
     {   # PC1: power grasp (~50% variance) — global flexion, thumb opposition
         "label":      "PC1",
         "wrist":      np.deg2rad([-5.0,  0.0]),
-        "thumb":      np.deg2rad([ 65.0,  0.0,  60.0, 45.0]),
+        "thumb":      np.deg2rad([ 65.0,  0.0,  50.0, 40.0]),
         "spread":     {"index":  np.array([np.deg2rad( -2.0)]),
                        "middle": np.array([0.0]),
                        "ring":   np.array([np.deg2rad(  2.0)]),
