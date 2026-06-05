@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from KinematicsHand.FK_Hand import (
-    FK_motor2palm, FK_motor2fingerPos, FK_motor2thumbPos, FK_motor2wrist, rot_axis,
+    FK_motor2palm, FK_motor2fingerPos, FK_motor2thumbPos,
 )
 from ModelIDHand.hand_params import (
     WRIST, FINGER_BASE_ORIGINS, JOINT_LIMITS, FINGER_TRANSMISSIONS,
@@ -31,14 +31,19 @@ STYLES = {
     "minimal":   dict(linestyle="-",  linewidth=1.0),
 }
 
+# Fixed wrist chain points (wrist is rigid at zero — always the same)
+_WRIST_PTS = np.array([
+    _Z3,
+    WRIST["yaw_origin"].copy(),
+    WRIST["yaw_origin"] + WRIST["pitch_origin"],  # = palm origin
+])
+
 
 def _build_motor_limits():
     T, F = THUMB_TRANSMISSION, FINGER_TRANSMISSIONS
-    mp   = JOINT_LIMITS["wrist_pitch"][1] / WRIST["spur_ratio"]
     smax = JOINT_LIMITS["pinky_spread"][1] / (abs(SPREAD_ANGLE_CORRECTION) * 1.5)
     lim  = lambda j, r: [JOINT_LIMITS[j][0] * r, JOINT_LIMITS[j][1] * r]
     rows = [
-        [-mp, mp], [-mp, mp],
         lim("thumb_CMC1", T["CMC1_pulley"] / T["r_motor"]),
         lim("thumb_CMC2", T["CMC2_pulley"] / T["r_motor"]),
         lim("thumb_MCP",  T["MCP_c"]       / T["r_motor"]),
@@ -54,10 +59,10 @@ MOTOR_LIMITS = _build_motor_limits()
 
 
 def random_trajectory(n_waypoints: int, duration: float, seed=None):
-    """Return callable q(t) → (15,) with cosine-eased interpolation."""
+    """Return callable q(t) → (13,) with cosine-eased interpolation."""
     rng = np.random.default_rng(seed)
     lo, hi = MOTOR_LIMITS[:, 0], MOTOR_LIMITS[:, 1]
-    wps = rng.uniform(lo, hi, size=(n_waypoints, 15))
+    wps = rng.uniform(lo, hi, size=(n_waypoints, 13))
     sd  = duration / (n_waypoints - 1)
     def q_at_t(t):
         t   = float(np.clip(t, 0.0, duration))
@@ -67,21 +72,14 @@ def random_trajectory(n_waypoints: int, duration: float, seed=None):
     return q_at_t
 
 
-def _wrist_pts(q):
-    _, yaw = FK_motor2wrist(q)
-    R = rot_axis(WRIST["yaw_axis"], yaw)
-    return np.array([_Z3, WRIST["yaw_origin"].copy(),
-                     WRIST["yaw_origin"] + R @ WRIST["pitch_origin"],
-                     FK_motor2palm(q, _Z3)[1]])
-
 def _thumb_pts(q):
     p = lambda j, o=_Z3: FK_motor2thumbPos(q, j, o)
-    return np.array([FK_motor2palm(q, FINGER_BASE_ORIGINS["thumb"])[1],
+    return np.array([FK_motor2palm(FINGER_BASE_ORIGINS["thumb"])[1],
                      p("CMC1"), p("CMC2"), p("MCP"), p("IP"), p("IP", _TTIP)])
 
 def _finger_pts(q, n):
     p = lambda j, o=_Z3: FK_motor2fingerPos(q, n, j, o)
-    return np.array([FK_motor2palm(q, FINGER_BASE_ORIGINS[n])[1],
+    return np.array([FK_motor2palm(FINGER_BASE_ORIGINS[n])[1],
                      p("Spread"), p("MCP"), p("PIP"), p("DIP"), p("DIP", _FTIP)])
 
 
@@ -91,7 +89,6 @@ def _equal_aspect(ax):
     ax.set_xlim3d(c[0]-r, c[0]+r); ax.set_ylim3d(c[1]-r, c[1]+r); ax.set_zlim3d(c[2]-r, c[2]+r)
 
 def _resolve(style):
-    """Resolve style name or dict to plot kwargs."""
     return STYLES[style] if isinstance(style, str) else (style or STYLES["default"])
 
 def _seg(ax, a, b):
@@ -104,15 +101,13 @@ def plot_hand(q_motor, ax=None, title=None, style="default"):
 
     Parameters
     ----------
-    q_motor : array-like, shape (15,)
+    q_motor : array-like, shape (13,)
     ax      : Axes3D, optional
     title   : str, optional
     style   : str or dict
-        Named preset (see STYLES) or a dict of matplotlib line kwargs.
-        Applies to finger/thumb chains only.
     """
     q = np.asarray(q_motor, dtype=np.float64)
-    assert q.shape == (15,)
+    assert q.shape == (13,)
     if ax is None:
         fig = plt.figure(figsize=(8, 9)); ax = fig.add_subplot(111, projection="3d")
     else:
@@ -121,7 +116,7 @@ def plot_hand(q_motor, ax=None, title=None, style="default"):
     kw  = _resolve(style)
     drw = lambda pts, c: ax.plot(pts[:,0], pts[:,1], pts[:,2], color=c, zorder=3, **kw)
 
-    wp = _wrist_pts(q); tp = _thumb_pts(q)
+    wp = _WRIST_PTS; tp = _thumb_pts(q)
     fp = {n: _finger_pts(q, n) for n in _NAMES}
 
     ax.plot(wp[:,0], wp[:,1], wp[:,2], "-", color="dimgray", linewidth=1.5, zorder=3)
@@ -158,7 +153,7 @@ class HandVisualizer:
         self._ax  = self._fig.add_subplot(111, projection="3d")
         self._ax.set_xlabel("X [m]"); self._ax.set_ylabel("Y [m]"); self._ax.set_zlabel("Z [m]")
         self._fig.suptitle(title)
-        self._build(np.zeros(15))
+        self._build(np.zeros(13))
         _equal_aspect(self._ax)
         plt.tight_layout(); plt.ion(); plt.show()
 
@@ -167,7 +162,7 @@ class HandVisualizer:
         return ln
 
     def _build(self, q):
-        wp = _wrist_pts(q); tp = _thumb_pts(q)
+        wp = _WRIST_PTS; tp = _thumb_pts(q)
         fp = {n: _finger_pts(q, n) for n in _NAMES}
         po = wp[-1]
         _sk = dict(color="dimgray", linestyle="-", linewidth=1.5, zorder=2)
@@ -193,13 +188,13 @@ class HandVisualizer:
         ln.set_data([a[0],b[0]], [a[1],b[1]]); ln.set_3d_properties([a[2],b[2]])
 
     def update(self, q_motor):
-        """Push a new motor configuration (15,) and redraw if render period elapsed."""
+        """Push a new motor configuration (13,) and redraw if render period elapsed."""
         q  = np.asarray(q_motor, dtype=np.float64)
-        wp = _wrist_pts(q); tp = _thumb_pts(q)
+        po = _WRIST_PTS[-1]
+        tp = _thumb_pts(q)
         fp = {n: _finger_pts(q, n) for n in _NAMES}
-        po = wp[-1]
 
-        self._upd(self._ln_w, wp); self._upd(self._ln_t, tp)
+        self._upd(self._ln_t, tp)
         for i, n in enumerate(_NAMES):
             self._upd(self._ln_f[n], fp[n]); self._upd2(self._ln_sp[i], po, fp[n][0])
         self._upd2(self._ln_tsp, po, tp[0])
@@ -234,7 +229,7 @@ if __name__ == "__main__":
 
     lo, hi = MOTOR_LIMITS[:, 0], MOTOR_LIMITS[:, 1]
     c, a   = (lo+hi)/2, (hi-lo)/2
-    phase  = np.linspace(0, np.pi, 15)
+    phase  = np.linspace(0, np.pi, 13)
     viz2 = HandVisualizer(render_hz=HZ, title="Live source demo")
     viz2.run(lambda t: c + a * np.sin(2*np.pi/4.0*t + phase), duration=8.0)
     plt.close("all")
