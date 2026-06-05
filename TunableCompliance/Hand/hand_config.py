@@ -23,14 +23,14 @@ INHAND_PC1_SPREAD = {
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-INHAND_PC1_INDEX  = np.deg2rad([80.0, 85.0, 85.0])
-INHAND_PC1_MIDDLE = np.deg2rad([80.0, 85.0, 85.0])
-INHAND_PC1_RING   = np.deg2rad([80.0, 85.0, 85.0])
-INHAND_PC1_PINKY  = np.deg2rad([80.0, 85.0, 85.0])
+INHAND_PC1_INDEX  = np.deg2rad([40.0, 40.0, 40.0])
+INHAND_PC1_MIDDLE = np.deg2rad([40.0, 40.0, 40.0])
+INHAND_PC1_RING   = np.deg2rad([40.0, 40.0, 40.0])
+INHAND_PC1_PINKY  = np.deg2rad([40.0, 40.0, 40.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
 GRASP_PC1_WRIST  = np.deg2rad([0.0,  0.0])
-GRASP_PC1_THUMB  = np.deg2rad([70.0, 0.0, 80.0, 80.0])
+GRASP_PC1_THUMB  = np.deg2rad([40.0, 0.0, 40.0, 40.0])
 GRASP_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
@@ -80,8 +80,8 @@ CONVERGE_TIMEOUT = 12.0  # [s]
 RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
-K_SOFT        = 5.0    # [N/m]  very compliant tip spring
-K_STIFF       = 200.0  # [N/m]  very stiff tip spring
+K_SOFT        = 1.0    # [N/m]  very compliant tip spring
+K_STIFF       = 50.0  # [N/m]  very stiff tip spring
 SOFT_DURATION    = 2.0    # [s]    (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
 HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
