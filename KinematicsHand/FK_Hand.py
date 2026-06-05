@@ -73,7 +73,7 @@ def FK_motor2finger(q_motor, finger_name):
     q_MCP, q_PIP = q_motor[motor_indices]
     trans = FINGER_TRANSMISSIONS[finger_name]
     theta_MCP = trans["r_pulley"] / trans["r_motor"] * q_MCP
-    theta_PIP = trans["r_motor"] / trans["c_param"] * q_PIP
+    theta_PIP = -trans["r_motor"] / trans["c_param"] * q_PIP
     theta_DIP = theta_PIP
 
     return np.array([theta_MCP, theta_PIP, theta_DIP])
@@ -93,8 +93,8 @@ def FK_motor2thumb(q_motor):
 
     theta_CMC1 = THUMB_TRANSMISSION["r_motor"] / THUMB_TRANSMISSION["CMC1_pulley"] * q_CMC1
     theta_CMC2 = THUMB_TRANSMISSION["r_motor"] / THUMB_TRANSMISSION["CMC2_pulley"] * q_CMC2
-    theta_MCP = THUMB_TRANSMISSION["r_motor"] / THUMB_TRANSMISSION["MCP_c"] * q_MCP
-    theta_IP = THUMB_TRANSMISSION["r_motor"] / THUMB_TRANSMISSION["IP_c"] * q_IP
+    theta_MCP = -THUMB_TRANSMISSION["r_motor"] / THUMB_TRANSMISSION["MCP_c"] * q_MCP
+    theta_IP = -THUMB_TRANSMISSION["r_motor"] / THUMB_TRANSMISSION["IP_c"] * q_IP
 
     return np.array([theta_CMC1, theta_CMC2, theta_MCP, theta_IP])
 
@@ -157,8 +157,8 @@ def joint2motor_thumb(theta_thumb):
     return np.array([
         theta_thumb[0] * T["CMC1_pulley"] / T["r_motor"],
         theta_thumb[1] * T["CMC2_pulley"] / T["r_motor"],
-        theta_thumb[2] * T["MCP_c"]       / T["r_motor"],
-        theta_thumb[3] * T["IP_c"]        / T["r_motor"],
+        -theta_thumb[2] * T["MCP_c"]       / T["r_motor"],
+        -theta_thumb[3] * T["IP_c"]        / T["r_motor"],
     ])
 
 
@@ -185,7 +185,7 @@ def joint2motor_finger(theta_finger, finger_name):
     trans = FINGER_TRANSMISSIONS[finger_name]
     return np.array([
         theta_finger[0] * trans["r_motor"] / trans["r_pulley"],
-        theta_finger[1] * trans["c_param"] / trans["r_motor"],
+        -theta_finger[1] * trans["c_param"] / trans["r_motor"],
     ])
 
 

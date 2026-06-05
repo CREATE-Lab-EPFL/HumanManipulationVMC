@@ -39,8 +39,8 @@ def Hessian_motor2finger(finger_name):
     rm, rp, cp = FINGER_TRANSMISSIONS[finger_name].values()
     theta = Matrix([
         (rp / rm) * q[idx[0]],
-        (rm / cp) * q[idx[1]],
-        (rm / cp) * q[idx[1]],
+        -(rm / cp) * q[idx[1]],
+        -(rm / cp) * q[idx[1]],
     ])
     J = theta.jacobian(Matrix(q))
     H_rows = [J.row(i).jacobian(Matrix(q)) for i in range(J.rows)]
@@ -65,8 +65,8 @@ def Hessian_motor2thumb():
     theta = Matrix([
         (r_motor / CMC1_pulley) * q[2],
         (r_motor / CMC2_pulley) * q[3],
-        (r_motor / MCP_c) * q[4],
-        (r_motor / IP_c) * q[5],
+        -(r_motor / MCP_c) * q[4],
+        -(r_motor / IP_c) * q[5],
     ])
     J = theta.jacobian(Matrix(q))
     H_rows = [J.row(i).jacobian(Matrix(q)) for i in range(J.rows)]
@@ -180,8 +180,8 @@ def Hessian_motor2thumbPos(link):
     thetas = [
         (rm / THUMB_TRANSMISSION["CMC1_pulley"]) * q[2],
         (rm / THUMB_TRANSMISSION["CMC2_pulley"]) * q[3],
-        (rm / THUMB_TRANSMISSION["MCP_c"]) * q[4],
-        (rm / THUMB_TRANSMISSION["IP_c"]) * q[5]
+        -(rm / THUMB_TRANSMISSION["MCP_c"]) * q[4],
+        -(rm / THUMB_TRANSMISSION["IP_c"]) * q[5]
     ]
     chain = ["CMC1", "CMC2", "MCP", "IP"]
 
@@ -236,7 +236,7 @@ def Hessian_motor2fingerPos(finger_name, link):
     cp = FINGER_TRANSMISSIONS[finger_name]["c_param"]
     theta_spread = q[6] * SPREAD_ANGLE_CORRECTION * SPREAD_MOTION_RATIO[finger_name]
     theta_mcp = (rp / rm) * q[idx_mcp]
-    theta_pip = (rm / cp) * q[idx_pip]
+    theta_pip = -(rm / cp) * q[idx_pip]
     theta_dip = theta_pip
 
     thetas = [theta_spread, theta_mcp, theta_pip, theta_dip]
