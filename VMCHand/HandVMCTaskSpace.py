@@ -132,7 +132,7 @@ class VMC:
         Returns:
             tau: [15] motor torques (N·m)
         """
-        tau = np.zeros(15)
+        tau = np.zeros(13)
 
         # Thumb fingertip (IP link)
         pos, vel, J = self._thumb(q_motor, q_dot_motor)
@@ -145,7 +145,7 @@ class VMC:
             tau += J.T @ (self.springs[finger].compute_force(pos, self.targets[finger])
                         + self.dampers[finger].compute_force(vel))
 
-        # Palm center
+        # Palm center (J is always zero with rigid wrist — contribution is zero)
         pos, vel, J = self._palm(q_motor, q_dot_motor)
         tau += J.T @ (self.springs['palm'].compute_force(pos, self.targets['palm'])
                     + self.dampers['palm'].compute_force(vel))

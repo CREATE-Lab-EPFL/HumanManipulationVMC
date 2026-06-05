@@ -48,7 +48,7 @@ class GravFricLim:
 
         self.R_world2hand = np.eye(3) if R_world2hand is None else np.asarray(R_world2hand)
 
-        # Max static-friction compensation torque [N·m]. Scalar or [15] per-motor array.
+        # Max static-friction compensation torque [N·m]. Scalar or [13] per-motor array.
         # Override per-task (e.g. lower/zero it to kill stiction limit-cycles on
         # unsprung fingers). Defaults to the model value from hand_params.
         self.friction_max = friction_max
@@ -85,20 +85,21 @@ class GravFricLim:
         Compute gravity compensation torques for the entire hand.
 
         Args:
-            q_motor: [15] motor angles (radians).
+            q_motor: [13] motor angles (radians).
 
         Returns:
-            tau_gravity: [15] gravity compensation motor torques (N·m).
+            tau_gravity: [13] gravity compensation motor torques (N·m).
         """
 
-        tau = np.zeros(15)
+        tau = np.zeros(13)
 
-        THUMB_MAP = {'base': 'CMC1', '2dof_joint': 'CMC1', 'proximal': 'CMC2', 'middle': 'MCP', 'distal': 'IP'}
+        # wrist_joint and palm have zero Jacobian (rigid wrist) → skip them
+        THUMB_MAP  = {'base': 'CMC1', '2dof_joint': 'CMC1', 'proximal': 'CMC2', 'middle': 'MCP', 'distal': 'IP'}
         FINGER_MAP = {'base': 'MCP', '2dof_joint': 'MCP', 'proximal': 'MCP', 'middle': 'PIP', 'distal': 'DIP'}
 
         for link, cog in self.cog_points.items():
             if link in ('wrist_joint', 'palm'):
-                J = self.jac.get_wrist_palm_jacobian(q_motor, cog)
+                continue  # constant position with rigid wrist → zero contribution
             elif link.startswith('thumb_'):
                 J = self.jac.get_thumb_jacobian(THUMB_MAP[link.split('_', 1)[1]], q_motor, cog)
             else:
@@ -116,13 +117,12 @@ class GravFricLim:
         Model: τ_friction = F_max * exp(-(v/v_lim)²) * sign(τ_commanded)
 
         Args:
-            q_dot_motor: [15] motor velocities (radians/second).
-            tau_motor: [15] commanded motor torques (N·m).
+            q_dot_motor: [13] motor velocities (radians/second).
+            tau_motor:   [13] commanded motor torques (N·m).
 
         Returns:
-            tau_friction: [15] friction compensation motor torques (N·m).
+            tau_friction: [13] friction compensation motor torques (N·m).
         """
-
         return self.friction_max * np.exp(-(q_dot_motor / friction_vlim) ** 2) * np.sign(tau_motor)
 
     def joint_limit_torques(self, q_motor):
@@ -130,19 +130,12 @@ class GravFricLim:
         Compute joint limit motor torques from deadzone springs.
 
         Args:
-            q_motor: [15] motor angles (radians).
+            q_motor: [13] motor angles (radians).
 
         Returns:
-            tau_limits: [15] joint limit motor torques (N·m).
+            tau_limits: [13] joint limit motor torques (N·m).
         """
-        tau = np.zeros(15)
-
-        # Wrist: [pitch, yaw]
-        theta = FK_motor2wrist(q_motor)
-        J = np.array(self.jac.get_wrist_motor_jacobian(q_motor))
-        tau_joint = np.array([self.limit_springs['wrist_pitch'].compute_force(theta[0]),
-                              self.limit_springs['wrist_yaw'].compute_force(theta[1])])
-        tau += J.T @ tau_joint
+        tau = np.zeros(13)
 
         # Thumb: [CMC1, CMC2, MCP, IP]
         theta = FK_motor2thumb(q_motor)
@@ -153,12 +146,10 @@ class GravFricLim:
 
         # Fingers: spread + [MCP, PIP, DIP]
         for finger in ['index', 'middle', 'ring', 'pinky']:
-            # Spread
             theta_s = FK_motor2spread(q_motor, finger)
             J_s = np.array(self.jac.get_spread_jacobian(finger, q_motor))
             tau += J_s.flatten() * self.limit_springs[f'{finger}_spread'].compute_force(theta_s)
 
-            # MCP, PIP, DIP
             theta_f = FK_motor2finger(q_motor, finger)
             J_f = np.array(self.jac.get_angles_jacobian(finger, q_motor))
             tau_joint = np.array([self.limit_springs[f'{finger}_{j}'].compute_force(theta_f[i])
@@ -172,16 +163,16 @@ class GravFricLim:
         Compute total compensation control torques for the hand motors.
 
         Args:
-            q_motor: [15] motor angles (radians).
-            q_dot_motor: [15] motor velocities (radians/second).
-            tau_motor: [15] torques from the Virtual Model Controller (N·m).
+            q_motor:     [13] motor angles (radians).
+            q_dot_motor: [13] motor velocities (radians/second).
+            tau_motor:   [13] torques from the Virtual Model Controller (N·m).
             R_tcp: optional 3x3 rotation matrix of the UR5 TCP frame in world
                    (i.e. recv.get_tcp_rotation_matrix(), NOT pre-transposed).
                    Combined with HAND_MOUNTING_ANGLE from hand_params to give
                    the true world→hand rotation: (R_tcp @ R_mounting).T
 
         Returns:
-            tau_compensation: [15] total motor compensation torques (N·m).
+            tau_compensation: [13] total motor compensation torques (N·m).
         """
 
         if R_tcp is not None:
