@@ -188,6 +188,12 @@ def _csv_header():
         cols.append(f'q_motor_{i}_rad')
     for i in range(15):
         cols.append(f'q_dot_motor_{i}_rads')
+    for i in range(15):
+        cols.append(f'tau_joint_{i}_Nm')
+    for i in range(15):
+        cols.append(f'tau_task_{i}_Nm')
+    for i in range(15):
+        cols.append(f'tau_comp_{i}_Nm')
     cols += ['joint_wrist_pitch_rad', 'joint_wrist_yaw_rad']
     cols += ['joint_thumb_CMC1_rad', 'joint_thumb_CMC2_rad',
              'joint_thumb_MCP_rad',  'joint_thumb_IP_rad']
