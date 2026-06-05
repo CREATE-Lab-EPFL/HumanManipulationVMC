@@ -250,13 +250,16 @@ def _tip_pos(finger, q):
     return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
 
 
-def _compute_row(q, q_dot, phase, k_dict, converged):
+def _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, phase, k_dict, converged):
     row = [f'{time.time() - _experiment_start:.4f}', phase, int(converged)]
     for _f in FINGERTIPS:
         row.append(f'{k_dict[_f]:.1f}')
 
     row += [f'{v:.6f}' for v in q]
     row += [f'{v:.6f}' for v in q_dot]
+    row += [f'{v:.6f}' for v in tau_joint]
+    row += [f'{v:.6f}' for v in tau_task]
+    row += [f'{v:.6f}' for v in tau_comp]
 
     w = FK_motor2wrist(q)
     t = FK_motor2thumb(q)
@@ -531,7 +534,7 @@ def control_callback():
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
-                _compute_row(q, q_dot, 'uniform', _current_k_dict, True))
+                _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, 'uniform', _current_k_dict, True))
         if elapsed >= RECORD_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
