@@ -732,7 +732,7 @@ finally:
     vmc_joint.set_damping(0.0)
     vmc_task.set_stiffness(0.0)
     vmc_task.set_damping(0.0)
-    controller.publish_torques(np.zeros(15))
+    controller.publish_torques(np.zeros(13))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
 
     if _csv_file is not None and not _csv_file.closed:
