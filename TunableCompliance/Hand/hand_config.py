@@ -16,7 +16,7 @@ UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
 INHAND_PC1_WRIST  = np.deg2rad([0.0,  0.0])
-INHAND_PC1_THUMB  = np.deg2rad([30.0, 0.0, 70.0, 70.0])
+INHAND_PC1_THUMB  = np.deg2rad([40.0, 0.0, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
@@ -59,16 +59,16 @@ SIDE_B_SOFT = ['thumb', 'index', 'middle']
 CONDITIONS  = ['soft', 'stiff', 'adaptive']
 
 # ── Shared joint regulation (both experiments) ────────────────────────────────
-K_ROT       = 0.02      # [N·m/rad]    background joint stiffness
-K_ROT_FLEX  = 0.02      # [N·m/rad]    flex joint stiffness when task spring is active
+K_ROT       = 0.01      # [N·m/rad]    background joint stiffness
+K_ROT_FLEX  = 0.01      # [N·m/rad]    flex joint stiffness when task spring is active
 B_ROT       = 0.0001    # [N·m·s/rad]  background joint damping
 B_TIP       = 0.001     # [N·s/m]      task-space damping
 B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM = 5.0    # [N/m]  baseline uniform tip stiffness
-K_HIGH    = 50.0   # [N/m]  stiff-side stiffness
-K_LOW     = 0.5     # [N/m]  compliant-side stiffness
+K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
+K_LOW     = 0.1     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
