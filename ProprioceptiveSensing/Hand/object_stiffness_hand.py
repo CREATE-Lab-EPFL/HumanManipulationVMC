@@ -22,20 +22,18 @@ from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandVMCTaskSpace  import VMC as TaskVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from KinematicsHand.FK_Hand import (
-    FK_motor2wrist, FK_motor2thumb, FK_motor2finger, FK_motor2spread,
+    FK_motor2thumb, FK_motor2finger, FK_motor2spread,
     FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm,
     joint_to_motor,
 )
-from ModelIDHand.hand_params import (
-    FINGER_TIP_OFFSETS, eta,
-    SOFTWARE_MOTOR_ORDER, goal_limit_torque,
-)
+from ModelIDHand.hand_params import FINGER_TIP_OFFSETS, eta, goal_limit_torque
+from ModelIDHand.motor_config import SOFTWARE_MOTOR_ORDER
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from hand_config import (
     UR5_POSE_SQUEEZING,
-    PC1_WRIST, PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
-    HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
+    PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
+    HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
     K_TIP_GENTLE, K_TIP_SWEEP,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
