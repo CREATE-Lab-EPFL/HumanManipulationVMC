@@ -398,7 +398,6 @@ def _begin_ramp(end_targets):
     global _ramp_t0, _ramp_start_targets, _ramp_end_targets
     _ramp_t0 = time.time()
     _ramp_start_targets = {
-        'wrist':             vmc_joint.wrist.copy(),
         'thumb':             vmc_joint.thumb.copy(),
         'spread':            {f: vmc_joint.spread[f].copy() for f in ['index', 'middle', 'ring', 'pinky']},
         'index_target':      vmc_joint.index_target.copy(),
@@ -411,7 +410,6 @@ def _begin_ramp(end_targets):
 def _step_ramp(now):
     alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
     s, e = _ramp_start_targets, _ramp_end_targets
-    vmc_joint.wrist             = (1 - alpha) * s['wrist']             + alpha * e['wrist']
     vmc_joint.thumb             = (1 - alpha) * s['thumb']             + alpha * e['thumb']
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.spread[_f]    = (1 - alpha) * s['spread'][_f]        + alpha * e['spread'][_f]
