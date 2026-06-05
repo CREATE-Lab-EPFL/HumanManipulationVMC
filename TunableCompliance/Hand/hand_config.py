@@ -23,10 +23,10 @@ INHAND_PC1_SPREAD = {
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-INHAND_PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
-INHAND_PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
-INHAND_PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
-INHAND_PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
+INHAND_PC1_INDEX  = np.deg2rad([65.0, 75.0, 75.0])
+INHAND_PC1_MIDDLE = np.deg2rad([65.0, 75.0, 75.0])
+INHAND_PC1_RING   = np.deg2rad([65.0, 75.0, 75.0])
+INHAND_PC1_PINKY  = np.deg2rad([65.0, 75.0, 75.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
 GRASP_PC1_WRIST  = np.deg2rad([0.0,  0.0])
@@ -64,9 +64,9 @@ B_ROT       = 0.0001    # [N·m·s/rad]  background joint damping
 B_TIP       = 0.001     # [N·s/m]      task-space damping
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 0.0     # [N/m]  baseline uniform tip stiffness
+K_UNIFORM = 20.0     # [N/m]  baseline uniform tip stiffness
 K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
-K_LOW     = 0.0     # [N/m]  compliant-side stiffness
+K_LOW     = 5.0     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────

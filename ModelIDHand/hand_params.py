@@ -303,7 +303,7 @@ goal_limit_torque = 0.8          # [N·m]
 # Friction compensation (Stribeck model, fitted from ModelIDHand experiments)
 # τ_friction = friction_max * exp(-(v/friction_vlim)²) * sign(τ_commanded)
 # =============================================================================
-friction_max  = 0.10  # max static friction torque [N·m]
+friction_max  = 0.01  # max static friction torque [N·m]
 friction_vlim = 0.03  # Stribeck velocity          [rad/s]
 
 # =============================================================================
