@@ -33,21 +33,21 @@ MOTOR_IDS = list(range(15))
 # Home position (ABSOLUTE encoder values)
 # To update: run with --read when hand is in desired pose, then copy values here
 HOME_POSITION = {
-    0: 3429,
-    1: 1989,
-    2: 267,
-    3: 1364,
-    4: 998,
-    5: 1092,
-    6: 844,
-    7: 1988,
-    8: 159,
-    9: 944,
-    10: 125,
-    11: 857,
-    12: 1819,
-    13: 1687,
-    14: 1883,
+    0: 813,
+    1: 784,
+    2: 507,
+    3: 753,
+    4: 1257,
+    5: 384,
+    6: 3357,
+    7: 3167,
+    8: 2857,
+    9: 2845,
+    10: 2931,
+    11: 2766,
+    12: 1862,
+    13: 1656,
+    14: 2299,
 }
 
 # Velocity for going home (lower = slower, safer)
