@@ -10,7 +10,6 @@ import numpy as np
 UR5_POSE_SQUEEZING = np.array([0, 0.66, 0.29, 0.0, 0.0, -1.96])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_WRIST  = np.deg2rad([0.0,  0.0])
 PC1_THUMB  = np.deg2rad([70.0, 0.0, 90.0, 90.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
@@ -24,7 +23,6 @@ PC1_RING   = np.deg2rad([65.0, 80.0, 80.0])
 PC1_PINKY  = np.deg2rad([65.0, 80.0, 80.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
-HOME_WRIST  = np.zeros(2)
 HOME_THUMB  = np.zeros(4)
 HOME_SPREAD = {f: np.zeros(1) for f in ['index', 'middle', 'ring', 'pinky']}
 HOME_FINGER = np.zeros(3)

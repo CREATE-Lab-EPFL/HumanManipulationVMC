@@ -23,7 +23,6 @@ RAMP_DURATION    = 5.0    # [s]
 POSES = [
     {   # PC1: power grasp (~50% variance) — global flexion, thumb opposition
         "label":      "PC1",
-        "wrist":      np.deg2rad([-5.0,  0.0]),
         "thumb":      np.deg2rad([ 65.0,  0.0,  50.0, 40.0]),
         "spread":     {"index":  np.array([np.deg2rad( -2.0)]),
                        "middle": np.array([0.0]),
@@ -35,7 +34,6 @@ POSES = [
     },
     {   # PC2: precision pinch (~30% variance) — index+thumb opposed
         "label":      "PC2",
-        "wrist":      np.deg2rad([ -1.0,  2.0]),
         "thumb":      np.deg2rad([ 50.0, 12.0,  35.0, 25.0]),
         "spread":     {"index":  np.array([np.deg2rad(-1.0)]),
                        "middle": np.array([0.0]),
@@ -50,7 +48,6 @@ POSES = [
 # ── Home pose ──────────────────────────────────────────────────────────────────
 HOME_POSE = {
     "label":      "HOME",
-    "wrist":      np.deg2rad([0.0, 0.0]),
     "thumb":      np.deg2rad([0.0, 0.0, 0.0, 0.0]),
     "spread":     {"index":  np.array([0.0]),
                    "middle": np.array([0.0]),

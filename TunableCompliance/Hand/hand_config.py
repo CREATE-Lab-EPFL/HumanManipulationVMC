@@ -15,7 +15,6 @@ UR5_POSE_INHAND = np.array([-0.35, 0.70, 0.29, 0.0, -0.24, 1.90])
 UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_WRIST  = np.deg2rad([0.0,  0.0])
 INHAND_PC1_THUMB  = np.deg2rad([40.0, 0.0, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
@@ -29,7 +28,6 @@ INHAND_PC1_RING   = np.deg2rad([65.0, 75.0, 75.0])
 INHAND_PC1_PINKY  = np.deg2rad([65.0, 75.0, 75.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
-GRASP_PC1_WRIST  = np.deg2rad([0.0,  0.0])
 GRASP_PC1_THUMB  = np.deg2rad([30.0, 0.0, 70.0, 70.0])
 GRASP_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
@@ -43,7 +41,6 @@ GRASP_PC1_RING   = np.deg2rad([55.0, 65.0, 65.0])
 GRASP_PC1_PINKY  = np.deg2rad([55.0, 65.0, 65.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
-HOME_WRIST  = np.zeros(2)
 HOME_THUMB  = np.zeros(4)
 HOME_SPREAD = {f: np.zeros(1) for f in ['index', 'middle', 'ring', 'pinky']}
 HOME_FINGER = np.zeros(3)
@@ -61,9 +58,7 @@ CONDITIONS  = ['soft', 'stiff', 'adaptive']
 # ── Shared joint regulation (both experiments) ────────────────────────────────
 K_ROT       = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
 B_ROT       = 0.001    # [N·m·s/rad]  background joint damping
-K_ROT_WRIST = 1.0     # [N·m/rad]    wrist joint stiffness
-B_ROT_WRIST = 0.1      # [N·m·s/rad]  wrist joint damping
-B_TIP       = 0.001     # [N·s/m]      task-space damping
+B_TIP       = 0.001    # [N·s/m]      task-space damping
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM = 20.0     # [N/m]  baseline uniform tip stiffness
@@ -90,5 +85,4 @@ HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
 APPROACH_SPEED  = 0.025  # [m/s]
 TOTAL_DISTANCE  = 0.40   # [m]   total X displacement
 CLOSE_DISTANCE  = 0.15   # [m]   X at which the hand closes to PC1
-K_HOME          = 0.15   # [N·m/rad]  finger/thumb stiffness for hand return to HOME
-K_HOME_WRIST    = 0.05   # [N·m/rad]  wrist stiffness for return to HOME (softer — wrist oscillates most)
+K_HOME          = 0.15   # [N·m/rad]  stiffness for hand return to HOME

@@ -32,9 +32,6 @@ SPREAD_ANGLE_DEG   = 0.0
 TORSIONAL_SPRINGS  = [0.1, 0.3]   # [N·m/rad]  compared conditions
 B_ROT              = 0.01   # [N·m·s/rad]  uniform joint damping (as in piano)
 K_ROT              = 0.4    # [N·m/rad]  ramp / background stiffness
-WRIST_PITCH_DEG    = 0.0
-WRIST_K_FIX        = 8.0    # [N·m/rad]  wrist held near-rigid
-WRIST_B_FIX        = 0.5    # [N·m·s/rad]  matched damping (as in piano)
 
 FRICTION_TAU_MAX   = 0.0    # no friction compensation (as in piano)
 

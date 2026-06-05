@@ -1,11 +1,11 @@
 ## VMC Hand Controller
 ## =====================
-## To get motor positions:         /joint_positions (degrees)   — all 15 motors
-## To get motor velocities:        /joint_velocities (deg/s)    — all 15 motors
+## To get motor positions:         /joint_positions (degrees)   — 13 torque-controlled motors
+## To get motor velocities:        /joint_velocities (deg/s)    — 13 torque-controlled motors
 ## To publish torques:             /goal_torque (N·m)           — 13 torque-controlled motors
 ## Always run before (or use ./start_hand.sh):
-##   ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12]
-##   ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[13,14] -p control_mode:=position
+##   ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 \
+##       -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12] -p position_motor_ids:=[13,14]
 ## Speed:                          sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 ##
 ## All units are SI:
