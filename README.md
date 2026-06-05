@@ -229,6 +229,7 @@ HumanManipulationVMC/
 │
 ├── finger_go_home.py       # Bring finger to home position (run before any finger experiment)
 ├── hand_go_home.py         # Bring hand to home position (run before any hand experiment)
+├── start_hand.sh           # Full hand startup: home + latency + dynamixel nodes (torque/position split)
 ├── ADAPT_Hand.urdf         # URDF of the ADAPT hand
 └── plot_config.mplstyle    # Shared matplotlib style
 ```
@@ -291,7 +292,7 @@ python3 finger_go_home.py
 python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
 
 # Hand experiments
-python3 hand_go_home.py
+./start_hand.sh          # home + latency timer + both dynamixel nodes
 python3 ADAPT-StiffControl/grasp_adaptation.py
 ```
 
