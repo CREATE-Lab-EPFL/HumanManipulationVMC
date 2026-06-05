@@ -632,7 +632,7 @@ def control_callback():
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             _csv_writer.writerow(
-                _compute_row(q, q_dot, 'asym_b', _current_k_dict, True))
+                _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, 'asym_b', _current_k_dict, True))
         if elapsed >= RECORD_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
