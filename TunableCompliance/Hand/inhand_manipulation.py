@@ -30,7 +30,7 @@ from VMCHand.HandVMCJointSpace  import VMC as JointVMC
 from VMCHand.HandVMCTaskSpace   import VMC as TaskVMC
 from VMCHand.HandGravFricLim    import GravFricLim
 from KinematicsHand.FK_Hand import (
-    FK_motor2wrist, FK_motor2thumb, FK_motor2finger, FK_motor2spread,
+    FK_motor2thumb, FK_motor2finger, FK_motor2spread,
     FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm,
     joint_to_motor,
 )
@@ -39,17 +39,16 @@ from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from hand_config import (
     UR5_POSE_INHAND,
-    INHAND_PC1_WRIST  as PC1_WRIST,
     INHAND_PC1_THUMB  as PC1_THUMB,
     INHAND_PC1_SPREAD as PC1_SPREAD,
     INHAND_PC1_INDEX  as PC1_INDEX,
     INHAND_PC1_MIDDLE as PC1_MIDDLE,
     INHAND_PC1_RING   as PC1_RING,
     INHAND_PC1_PINKY  as PC1_PINKY,
-    HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
+    HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
     K_UNIFORM, K_HIGH, K_LOW,
-    K_ROT, B_ROT, K_ROT_WRIST, B_ROT_WRIST, B_TIP, K_RETURN,
+    K_ROT, B_ROT, B_TIP, K_RETURN,
     SETTLE_TIME, RAMP_DURATION,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT, RECORD_DURATION,
 )

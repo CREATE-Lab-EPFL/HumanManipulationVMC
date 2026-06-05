@@ -60,7 +60,6 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 # =============================================================================
 # joint2motor_finger takes only [MCP, PIP]; DIP is a mimic of PIP.
 Q_TARGET = joint_to_motor(
-    PC1_WRIST,
     PC1_THUMB,
     PC1_SPREAD['index'],
     PC1_INDEX[:2],
@@ -75,12 +74,10 @@ D_REF = {
     'middle': np.array(FK_motor2fingerPos(Q_TARGET, 'middle', 'DIP', FINGER_TIP_OFFSETS['middle'])),
     'ring':   np.array(FK_motor2fingerPos(Q_TARGET, 'ring',   'DIP', FINGER_TIP_OFFSETS['ring'])),
     'pinky':  np.array(FK_motor2fingerPos(Q_TARGET, 'pinky',  'DIP', FINGER_TIP_OFFSETS['pinky'])),
-    'palm':   np.array(FK_motor2palm(Q_TARGET, np.zeros(3))[1]),
+    'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
-# Zero-stiffness groups are kept so theta_ref indexing stays consistent with K_JOINT_DICT_MODEL.
 THETA_REF_DEG = np.degrees(np.concatenate([
-    PC1_WRIST,
     PC1_THUMB,
     [PC1_SPREAD['index']],
     [PC1_SPREAD['middle']],
@@ -93,7 +90,6 @@ THETA_REF_DEG = np.degrees(np.concatenate([
 ]))
 
 K_JOINT_DICT_MODEL = {
-    'wrist':         K_ROT * np.eye(2),
     'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
     'spread_index':  K_ROT * np.eye(1),
     'spread_middle': K_ROT * np.eye(1),
@@ -118,18 +114,9 @@ rclpy.init()
 controller = HandController()
 
 vmc_joint = JointVMC()
+vmc_joint.set_stiffness(K_ROT)
+vmc_joint.set_damping(B_ROT)
 
-vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
-vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
-vmc_joint.damping['wrist']   = np.full(2, B_ROT)
-vmc_joint.damping['thumb']   = np.full(4, B_ROT)
-for _f in ['index', 'middle', 'ring', 'pinky']:
-    vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
-    vmc_joint.damping[f'spread_{_f}']   = np.array([B_ROT])
-    vmc_joint.stiffness[_f]             = np.full(3, K_ROT)
-    vmc_joint.damping[_f]               = np.full(3, B_ROT)
-
-vmc_joint.wrist             = HOME_WRIST.copy()
 vmc_joint.thumb             = HOME_THUMB.copy()
 vmc_joint.spread            = {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
 vmc_joint.index_target      = HOME_FINGER.copy()
@@ -175,11 +162,10 @@ def _output_path():
 
 def _csv_header():
     cols = ['time_s', 'phase', 'k_tip_Npm', 'converged']
-    for i in range(15):
+    for i in range(13):
         cols.append(f'q_motor_{i}_rad')
-    for i in range(15):
+    for i in range(13):
         cols.append(f'q_dot_motor_{i}_rads')
-    cols += ['joint_wrist_pitch_rad', 'joint_wrist_yaw_rad']
     cols += ['joint_thumb_CMC1_rad', 'joint_thumb_CMC2_rad',
              'joint_thumb_MCP_rad',  'joint_thumb_IP_rad']
     for _f in ['index', 'middle', 'ring', 'pinky']:
@@ -241,9 +227,7 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
     row += [f'{v:.6f}' for v in q]
     row += [f'{v:.6f}' for v in q_dot]
 
-    w = FK_motor2wrist(q)
     t = FK_motor2thumb(q)
-    row += [f'{w[0]:.6f}', f'{w[1]:.6f}']
     row += [f'{t[i]:.6f}' for i in range(4)]
     for _f in ['index', 'middle', 'ring', 'pinky']:
         row.append(f'{FK_motor2spread(q, _f):.6f}')
@@ -288,7 +272,6 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
 # Pose dictionaries
 # =============================================================================
 HOME_POSE_TARGETS = {
-    'wrist':             HOME_WRIST.copy(),
     'thumb':             HOME_THUMB.copy(),
     'spread':            {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']},
     'index_target':      HOME_FINGER.copy(),
@@ -296,7 +279,6 @@ HOME_POSE_TARGETS = {
     'ring_pinky_target': HOME_FINGER.copy(),
 }
 PC1_POSE_TARGETS = {
-    'wrist':             PC1_WRIST.copy(),
     'thumb':             PC1_THUMB.copy(),
     'spread':            {f: np.array([PC1_SPREAD[f]]) for f in ['index', 'middle', 'ring', 'pinky']},
     'index_target':      PC1_INDEX.copy(),
@@ -404,34 +386,23 @@ def _set_task_stiffness(k_tip):
 
 
 def _set_joint_stiffness_uniform(k_rot, b_rot):
-    vmc_joint.stiffness['wrist'] = np.full(2, k_rot)
-    vmc_joint.stiffness['thumb'] = np.full(4, k_rot)
-    vmc_joint.damping['wrist']   = np.full(2, b_rot)
-    vmc_joint.damping['thumb']   = np.full(4, b_rot)
-    for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[f'spread_{_f}'] = np.array([k_rot])
-        vmc_joint.damping[f'spread_{_f}']   = np.array([b_rot])
-        vmc_joint.stiffness[_f]             = np.full(3, k_rot)
-        vmc_joint.damping[_f]               = np.full(3, b_rot)
+    vmc_joint.set_stiffness(k_rot)
+    vmc_joint.set_damping(b_rot)
 
 
 def _set_joint_stiffness_experiment():
-    vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
+    vmc_joint.set_stiffness(K_ROT)
+    vmc_joint.set_damping(B_ROT)
     vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
-    vmc_joint.damping['wrist']   = np.full(2, B_ROT)
-    vmc_joint.damping['thumb']   = np.full(4, B_ROT)
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
-        vmc_joint.damping[f'spread_{_f}']   = np.array([B_ROT])
-        vmc_joint.stiffness[_f]             = np.zeros(3)
-        vmc_joint.damping[_f]               = np.full(3, B_FLEX_DAMP)
+        vmc_joint.stiffness[_f] = np.zeros(3)
+        vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
 
 
 def _begin_ramp(end_targets):
     global _ramp_t0, _ramp_start_targets, _ramp_end_targets
     _ramp_t0 = time.time()
     _ramp_start_targets = {
-        'wrist':             vmc_joint.wrist.copy(),
         'thumb':             vmc_joint.thumb.copy(),
         'spread':            {f: vmc_joint.spread[f].copy() for f in ['index', 'middle', 'ring', 'pinky']},
         'index_target':      vmc_joint.index_target.copy(),
@@ -444,7 +415,6 @@ def _begin_ramp(end_targets):
 def _step_ramp(now):
     alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
     s, e = _ramp_start_targets, _ramp_end_targets
-    vmc_joint.wrist             = (1 - alpha) * s['wrist']             + alpha * e['wrist']
     vmc_joint.thumb             = (1 - alpha) * s['thumb']             + alpha * e['thumb']
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.spread[_f]    = (1 - alpha) * s['spread'][_f]        + alpha * e['spread'][_f]
@@ -483,7 +453,7 @@ def control_callback():
     q_dot = controller.get_joint_velocities()
 
     tau_joint = vmc_joint.hand_torques(q, q_dot)
-    tau_task  = vmc_task.hand_torques(q, q_dot) if _use_task_vmc else np.zeros(15)
+    tau_task  = vmc_task.hand_torques(q, q_dot) if _use_task_vmc else np.zeros(13)
     tau_vmc   = tau_joint + tau_task
     tau_comp  = grav_lim.compute_compensation_torques(
         q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
@@ -491,7 +461,7 @@ def control_callback():
     controller.publish_torques(tau_total)
 
     # Torque saturation debug: log once the first time each finger motor hits the limit.
-    for i in range(2, 15):   # skip wrist motors [0,1]
+    for i in range(13):
         if i not in _sat_warned and abs(tau_total[i]) >= goal_limit_torque * 0.95:
             _sat_warned.add(i)
             controller.get_logger().warn(
@@ -631,7 +601,6 @@ def control_callback():
             # zero initial error — avoids the closing-back transient that occurs
             # when fingers drifted from the PC1 targets during the free-floating
             # UNLOAD second.
-            vmc_joint.wrist             = FK_motor2wrist(q)
             vmc_joint.thumb             = FK_motor2thumb(q)
             for _f in ['index', 'middle', 'ring', 'pinky']:
                 vmc_joint.spread[_f]    = np.array([FK_motor2spread(q, _f)])
@@ -709,7 +678,7 @@ finally:
     vmc_joint.set_damping(0.0)
     vmc_task.set_stiffness(0.0)
     vmc_task.set_damping(0.0)
-    controller.publish_torques(np.zeros(15))
+    controller.publish_torques(np.zeros(13))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
 
     if _csv_file is not None and not _csv_file.closed:
