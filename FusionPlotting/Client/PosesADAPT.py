@@ -1,43 +1,38 @@
 """
 FusionPlotting poses for ADAPT-StiffControl experiment.
 
-PC1 power grasp pose (Santello et al. 1998 first principal component).
-Wrist is rigid (position-controlled), always at 0.0.
+Reads recorded CSV data and sends the mean grasping pose (phase='hold', converged)
+for each object stiffness condition (hard / soft) to Fusion.
 """
 
 import sys
 import pathlib
 import time
+import pandas as pd
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+_HERE = pathlib.Path(__file__).parent
+sys.path.insert(0, str(_HERE))
+
 from JointClient import JointClient
+from _fusion_utils import avg_q15, q15_to_joints_deg, print_joints
 
-PC1_GRASP: dict[str, float] = {
-    "wrist_pitch":  0.0,
-    "wrist_yaw":    0.0,
+_DATA = _HERE.parents[1] / "ADAPT-StiffControl" / "outputs" / "grasp_adaptation"
 
-    "thumb_CMC1":  70.0,
-    "thumb_CMC2":   0.0,
-    "thumb_MCP":   90.0,
-    "thumb_IP":    90.0,
-
-    "index_spread":   0.0,
-    "ring_spread":    0.0,
-    "pinky_spread":   0.0,
-
-    "index_MCP":  65.0,
-    "index_PIP":  80.0,
-    "middle_MCP": 65.0,
-    "middle_PIP": 80.0,
-    "ring_MCP":   65.0,
-    "ring_PIP":   80.0,
-    "pinky_MCP":  65.0,
-    "pinky_PIP":  80.0,
+CONDITIONS = {
+    "hard object": _DATA / "grasp_hard_obj.csv",
+    "soft object": _DATA / "grasp_soft_obj.csv",
 }
 
 client = JointClient()
-print("ADAPT-StiffControl PC1 grasp pose:")
-for name, val in PC1_GRASP.items():
-    print(f"  {name}: {val}")
-client.write_targets(PC1_GRASP, angle_unit="degrees", length_unit="mm")
-time.sleep(0.5)
+
+for label, csv_path in CONDITIONS.items():
+    df = pd.read_csv(csv_path)
+    df_hold = df[(df["phase"] == "hold") & (df["converged"] == 1)]
+    if df_hold.empty:
+        print(f"[ADAPT] {label}: no converged hold-phase rows — skipping")
+        continue
+    q_mean = avg_q15(df_hold, "q_motor_{}_rad")
+    joints = q15_to_joints_deg(q_mean)
+    print_joints(f"ADAPT — {label} (n={len(df_hold)} rows)", joints)
+    client.write_targets(joints, angle_unit="degrees", length_unit="mm")
+    time.sleep(1.5)

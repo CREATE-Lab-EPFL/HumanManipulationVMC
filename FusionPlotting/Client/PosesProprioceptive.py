@@ -1,43 +1,42 @@
 """
 FusionPlotting poses for ProprioceptiveSensing/Hand experiment.
 
-PC1 power grasp pose for proprioceptive stiffness estimation.
-Wrist is rigid (position-controlled), always at 0.0.
+Reads recorded CSV data and sends the mean converged grasp pose for each
+object stiffness condition (hard / medium / soft) to Fusion.
 """
 
 import sys
 import pathlib
 import time
+import pandas as pd
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+_HERE = pathlib.Path(__file__).parent
+sys.path.insert(0, str(_HERE))
+
 from JointClient import JointClient
+from _fusion_utils import avg_q15, q15_to_joints_deg, print_joints
 
-PC1_GRASP: dict[str, float] = {
-    "wrist_pitch":  0.0,
-    "wrist_yaw":    0.0,
+_DATA = (
+    _HERE.parents[1]
+    / "ProprioceptiveSensing" / "Hand" / "outputs" / "object_stiffness_hand"
+)
 
-    "thumb_CMC1":  70.0,
-    "thumb_CMC2":   0.0,
-    "thumb_MCP":   90.0,
-    "thumb_IP":    90.0,
-
-    "index_spread":   0.0,
-    "ring_spread":    0.0,
-    "pinky_spread":   0.0,
-
-    "index_MCP":  65.0,
-    "index_PIP":  80.0,
-    "middle_MCP": 65.0,
-    "middle_PIP": 80.0,
-    "ring_MCP":   65.0,
-    "ring_PIP":   80.0,
-    "pinky_MCP":  65.0,
-    "pinky_PIP":  80.0,
+CONDITIONS = {
+    "hard object":   _DATA / "object_stiffness_hand_hard.csv",
+    "medium object": _DATA / "object_stiffness_hand_medium.csv",
+    "soft object":   _DATA / "object_stiffness_hand_soft.csv",
 }
 
 client = JointClient()
-print("ProprioceptiveSensing PC1 grasp pose:")
-for name, val in PC1_GRASP.items():
-    print(f"  {name}: {val}")
-client.write_targets(PC1_GRASP, angle_unit="degrees", length_unit="mm")
-time.sleep(0.5)
+
+for label, csv_path in CONDITIONS.items():
+    df = pd.read_csv(csv_path)
+    df_conv = df[df["converged"] == 1]
+    if df_conv.empty:
+        print(f"[Proprioceptive] {label}: no converged rows — skipping")
+        continue
+    q_mean = avg_q15(df_conv, "q_motor_{}_rad")
+    joints = q15_to_joints_deg(q_mean)
+    print_joints(f"ProprioceptiveSensing — {label} (n={len(df_conv)} rows)", joints)
+    client.write_targets(joints, angle_unit="degrees", length_unit="mm")
+    time.sleep(1.5)

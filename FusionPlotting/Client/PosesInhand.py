@@ -1,43 +1,35 @@
 """
 FusionPlotting poses for TunableCompliance in-hand manipulation experiment.
 
-PC1 grasp pose used for in-hand manipulation (tighter grip than standard PC1).
-Wrist is rigid (position-controlled), always at 0.0.
+Reads the recorded CSV and sends the mean converged in-hand grasp pose to Fusion.
 """
 
 import sys
 import pathlib
 import time
+import pandas as pd
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+_HERE = pathlib.Path(__file__).parent
+sys.path.insert(0, str(_HERE))
+
 from JointClient import JointClient
+from _fusion_utils import avg_q15, q15_to_joints_deg, print_joints
 
-INHAND_PC1_GRASP: dict[str, float] = {
-    "wrist_pitch":  0.0,
-    "wrist_yaw":    0.0,
-
-    "thumb_CMC1":  40.0,
-    "thumb_CMC2":   0.0,
-    "thumb_MCP":   90.0,
-    "thumb_IP":    90.0,
-
-    "index_spread":   0.0,
-    "ring_spread":    0.0,
-    "pinky_spread":   0.0,
-
-    "index_MCP":  65.0,
-    "index_PIP":  75.0,
-    "middle_MCP": 65.0,
-    "middle_PIP": 75.0,
-    "ring_MCP":   65.0,
-    "ring_PIP":   75.0,
-    "pinky_MCP":  65.0,
-    "pinky_PIP":  75.0,
-}
+_CSV = (
+    _HERE.parents[1]
+    / "TunableCompliance" / "Hand" / "outputs"
+    / "inhand_manipulation" / "inhand_run.csv"
+)
 
 client = JointClient()
-print("TunableCompliance in-hand manipulation PC1 pose:")
-for name, val in INHAND_PC1_GRASP.items():
-    print(f"  {name}: {val}")
-client.write_targets(INHAND_PC1_GRASP, angle_unit="degrees", length_unit="mm")
-time.sleep(0.5)
+
+df = pd.read_csv(_CSV)
+df_conv = df[df["converged"] == 1]
+if df_conv.empty:
+    print("[Inhand] no converged rows in CSV")
+else:
+    q_mean = avg_q15(df_conv, "q_motor_{}_rad")
+    joints = q15_to_joints_deg(q_mean)
+    print_joints(f"Inhand manipulation — grasped pose (n={len(df_conv)} rows)", joints)
+    client.write_targets(joints, angle_unit="degrees", length_unit="mm")
+    time.sleep(0.5)

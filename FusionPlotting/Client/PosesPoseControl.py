@@ -1,69 +1,39 @@
 """
 FusionPlotting poses for PoseControl experiment.
 
-PC1 (power grasp) and PC2 (precision pinch) synergy poses from Santello et al. 1998.
-Wrist is rigid (position-controlled), always at 0.0.
+Reads recorded CSV data and sends the mean converged pose for PC1 (power grasp)
+and PC2 (precision pinch) to Fusion. PoseControl CSVs already contain FK-computed
+joint angles (not raw motor angles), so no extra FK call is needed.
 """
 
 import sys
 import pathlib
 import time
+import pandas as pd
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+_HERE = pathlib.Path(__file__).parent
+sys.path.insert(0, str(_HERE))
+
 from JointClient import JointClient
+from _fusion_utils import act_cols_to_joints_deg, print_joints
 
-PC1_POWER_GRASP: dict[str, float] = {
-    "wrist_pitch":  0.0,
-    "wrist_yaw":    0.0,
+_DATA = _HERE.parents[1] / "PoseControl" / "outputs"
 
-    "thumb_CMC1":  65.0,
-    "thumb_CMC2":   0.0,
-    "thumb_MCP":   50.0,
-    "thumb_IP":    40.0,
-
-    "index_spread":  -2.0,
-    "ring_spread":    2.0,
-    "pinky_spread":   2.0,
-
-    "index_MCP":  55.0,
-    "index_PIP":  65.0,
-    "middle_MCP": 55.0,
-    "middle_PIP": 65.0,
-    "ring_MCP":   55.0,
-    "ring_PIP":   65.0,
-    "pinky_MCP":  55.0,
-    "pinky_PIP":  65.0,
+CONDITIONS = {
+    "PC1 — power grasp":     _DATA / "pose1_PC1.csv",
+    "PC2 — precision pinch": _DATA / "pose2_PC2.csv",
 }
-
-PC2_PRECISION_PINCH: dict[str, float] = {
-    "wrist_pitch":  0.0,
-    "wrist_yaw":    0.0,
-
-    "thumb_CMC1":  50.0,
-    "thumb_CMC2":  12.0,
-    "thumb_MCP":   35.0,
-    "thumb_IP":    25.0,
-
-    "index_spread":  -1.0,
-    "ring_spread":    1.0,
-    "pinky_spread":   1.0,
-
-    "index_MCP":  25.0,
-    "index_PIP":  35.0,
-    "middle_MCP": 25.0,
-    "middle_PIP": 35.0,
-    "ring_MCP":   55.0,
-    "ring_PIP":   65.0,
-    "pinky_MCP":  55.0,
-    "pinky_PIP":  65.0,
-}
-
-POSES = {"PC1 (power grasp)": PC1_POWER_GRASP, "PC2 (precision pinch)": PC2_PRECISION_PINCH}
 
 client = JointClient()
-for label, pose in POSES.items():
-    print(f"\n{label}:")
-    for name, val in pose.items():
-        print(f"  {name}: {val}")
-    client.write_targets(pose, angle_unit="degrees", length_unit="mm")
-    time.sleep(1.0)
+
+for label, csv_path in CONDITIONS.items():
+    df = pd.read_csv(csv_path)
+    df_conv = df[df["converged"] == 1]
+    if df_conv.empty:
+        print(f"[PoseControl] {label}: no converged rows — skipping")
+        continue
+    mean_row = df_conv.mean(numeric_only=True)
+    joints = act_cols_to_joints_deg(mean_row)
+    print_joints(f"PoseControl — {label} (n={len(df_conv)} rows)", joints)
+    client.write_targets(joints, angle_unit="degrees", length_unit="mm")
+    time.sleep(1.5)

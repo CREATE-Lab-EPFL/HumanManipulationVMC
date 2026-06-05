@@ -1,43 +1,44 @@
 """
 FusionPlotting poses for TunableCompliance dynamic grasping experiment.
 
-PC1 grasp pose used for dynamic grasping (lighter grasp pre-contact).
-Wrist is rigid (position-controlled), always at 0.0.
+Reads recorded CSV data and sends the mean closed-grasp pose for each
+compliance condition (adaptive / soft) to Fusion.
+The stiff CSV contains no data and is skipped automatically.
 """
 
 import sys
 import pathlib
 import time
+import pandas as pd
 
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
+_HERE = pathlib.Path(__file__).parent
+sys.path.insert(0, str(_HERE))
+
 from JointClient import JointClient
+from _fusion_utils import avg_q15, q15_to_joints_deg, print_joints
 
-GRASP_PC1: dict[str, float] = {
-    "wrist_pitch":  0.0,
-    "wrist_yaw":    0.0,
+_DATA = (
+    _HERE.parents[1]
+    / "TunableCompliance" / "Hand" / "outputs" / "dynamic_grasp"
+)
 
-    "thumb_CMC1":  30.0,
-    "thumb_CMC2":   0.0,
-    "thumb_MCP":   70.0,
-    "thumb_IP":    70.0,
-
-    "index_spread":   0.0,
-    "ring_spread":    0.0,
-    "pinky_spread":   0.0,
-
-    "index_MCP":  55.0,
-    "index_PIP":  65.0,
-    "middle_MCP": 55.0,
-    "middle_PIP": 65.0,
-    "ring_MCP":   55.0,
-    "ring_PIP":   65.0,
-    "pinky_MCP":  55.0,
-    "pinky_PIP":  65.0,
+CONDITIONS = {
+    "adaptive compliance": _DATA / "dynamic_grasp_adaptive.csv",
+    "soft compliance":     _DATA / "dynamic_grasp_soft.csv",
+    "stiff compliance":    _DATA / "dynamic_grasp_stiff.csv",
 }
 
 client = JointClient()
-print("TunableCompliance dynamic grasping PC1 pose:")
-for name, val in GRASP_PC1.items():
-    print(f"  {name}: {val}")
-client.write_targets(GRASP_PC1, angle_unit="degrees", length_unit="mm")
-time.sleep(0.5)
+
+for label, csv_path in CONDITIONS.items():
+    df = pd.read_csv(csv_path)
+    df_closed = df[df["phase"] == "closed"]
+    if df_closed.empty:
+        print(f"[Dynamic] {label}: no closed-phase rows — skipping")
+        continue
+    # dynamic_grasp CSV uses q_0 ... q_14
+    q_mean = avg_q15(df_closed, "q_{}")
+    joints = q15_to_joints_deg(q_mean)
+    print_joints(f"Dynamic grasp — {label} (n={len(df_closed)} rows)", joints)
+    client.write_targets(joints, angle_unit="degrees", length_unit="mm")
+    time.sleep(1.5)
