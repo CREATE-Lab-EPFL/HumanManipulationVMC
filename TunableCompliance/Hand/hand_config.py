@@ -18,10 +18,10 @@ UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 INHAND_PC1_WRIST  = np.deg2rad([0.0,  0.0])
 INHAND_PC1_THUMB  = np.deg2rad([40.0, 0.0, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
-    'index':  np.deg2rad(-2.0),
+    'index':  np.deg2rad(-5.0),
     'middle': 0.0,
-    'ring':   np.deg2rad(2.0),
-    'pinky':  np.deg2rad(2.0),
+    'ring':   np.deg2rad(5.0),
+    'pinky':  np.deg2rad(5.0),
 }
 INHAND_PC1_INDEX  = np.deg2rad([65.0, 75.0, 75.0])
 INHAND_PC1_MIDDLE = np.deg2rad([65.0, 75.0, 75.0])
