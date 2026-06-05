@@ -631,6 +631,7 @@ def control_callback():
                 'All phases recorded. Releasing contact before returning home …')
             _set_task_stiffness({f: 0.0 for f in FINGERTIPS})
             _use_task_vmc = False
+            _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
             _state_start  = now
             state         = STATE_UNLOAD
 
@@ -638,7 +639,6 @@ def control_callback():
         if elapsed >= CONVERGE_HOLD:
             controller.get_logger().info(
                 f'Contact released. Ramping PC1 → HOME over {RAMP_DURATION:.1f} s …')
-            _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
             _begin_ramp(HOME_POSE_TARGETS)
             _state_start = now
             state        = STATE_RAMP_TO_HOME

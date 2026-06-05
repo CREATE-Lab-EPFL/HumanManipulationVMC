@@ -18,10 +18,10 @@ UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 INHAND_PC1_WRIST  = np.deg2rad([0.0,  0.0])
 INHAND_PC1_THUMB  = np.deg2rad([40.0, 0.0, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
-    'index':  np.deg2rad(-5.0),
+    'index':  np.deg2rad(-2.0),
     'middle': 0.0,
-    'ring':   np.deg2rad(5.0),
-    'pinky':  np.deg2rad(5.0),
+    'ring':   np.deg2rad(2.0),
+    'pinky':  np.deg2rad(2.0),
 }
 INHAND_PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
 INHAND_PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
@@ -68,7 +68,7 @@ B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM = 5.0     # [N/m]  baseline uniform tip stiffness
 K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
-K_LOW     = 1.0     # [N/m]  compliant-side stiffness
+K_LOW     = 0.1     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
