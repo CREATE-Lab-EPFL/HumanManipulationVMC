@@ -13,32 +13,32 @@ import numpy as np
 FINGER_TRANSMISSIONS = {
     "index": {
         "r_motor":  0.005,    # motor pulley radius [m]
-        "r_pulley": 0.00223,  # finger pulley radius [m]
-        "c_param":  0.00810,  # PIP transmission constant [m]
+        "r_pulley": 0.00304,  # finger pulley radius [m]
+        "c_param":  0.01090,  # PIP transmission constant [m]
     },
     "middle": {
         "r_motor":  0.005,    # motor pulley radius [m]
-        "r_pulley": 0.00223,  # finger pulley radius [m]
-        "c_param":  0.00813,  # PIP transmission constant [m]
+        "r_pulley": 0.00304,  # finger pulley radius [m]
+        "c_param":  0.01127,  # PIP transmission constant [m]
     },
     "ring": {
         "r_motor":  0.005,    # motor pulley radius [m]
-        "r_pulley": 0.00223,  # finger pulley radius [m]
-        "c_param":  0.00813,  # PIP transmission constant [m]
+        "r_pulley": 0.00304,  # finger pulley radius [m]
+        "c_param":  0.01090,  # PIP transmission constant [m]
     },
     "pinky": {
         "r_motor":  0.005,    # motor pulley radius [m]
-        "r_pulley": 0.00223,  # finger pulley radius [m]
-        "c_param":  0.00813,  # PIP transmission constant [m]
+        "r_pulley": 0.00304,  # finger pulley radius [m]
+        "c_param":  0.00967,  # PIP transmission constant [m]
     },
 }
 
 THUMB_TRANSMISSION = {
     "r_motor":    0.005,     # motor pulley radius [m]
-    "CMC1_pulley": 0.01478,  # CMC1 pulley radius [m]
-    "CMC2_pulley": 0.01475,  # CMC2 pulley radius [m]
-    "MCP_c":      0.00903,   # MCP transmission constant [m]
-    "IP_c":       0.00983,   # IP transmission constant [m]
+    "CMC1_pulley": 0.01346,  # CMC1 pulley radius [m]
+    "CMC2_pulley": 0.00883,  # CMC2 pulley radius [m]
+    "MCP_c":      0.00605,   # MCP transmission constant [m]
+    "IP_c":       0.00577,   # IP transmission constant [m]
 }
 
 SPREAD_MOTION_RATIO = {
