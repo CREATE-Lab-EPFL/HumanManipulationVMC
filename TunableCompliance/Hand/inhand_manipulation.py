@@ -299,7 +299,6 @@ HOME_POSE_TARGETS = {
     'ring_pinky_target': HOME_FINGER.copy(),
 }
 PC1_POSE_TARGETS = {
-    'wrist':             PC1_WRIST.copy(),
     'thumb':             PC1_THUMB.copy(),
     'spread':            {f: np.array([PC1_SPREAD[f]]) for f in ['index', 'middle', 'ring', 'pinky']},
     'index_target':      PC1_INDEX.copy(),
