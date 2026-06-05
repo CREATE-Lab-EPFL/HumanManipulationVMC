@@ -112,9 +112,9 @@ class VMC:
         return pos, J @ q_dot_motor, J
 
     def _palm(self, q_motor, q_dot_motor):
-        r        = self.attachment_points['palm']
-        J        = np.array(self.jac.get_wrist_palm_jacobian(q_motor, r))
-        _, pos   = FK_motor2palm(q_motor, r)
+        r      = self.attachment_points['palm']
+        J      = np.array(self.jac.get_wrist_palm_jacobian(q_motor, r))  # always zero
+        _, pos = FK_motor2palm(r)
         return pos, J @ q_dot_motor, J
 
     # ------------------------------------------------------------------
