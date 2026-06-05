@@ -18,10 +18,10 @@ UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
 INHAND_PC1_WRIST  = np.deg2rad([0.0,  0.0])
 INHAND_PC1_THUMB  = np.deg2rad([40.0, 0.0, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
-    'index':  np.deg2rad(-2.0),
+    'index':  np.deg2rad(-5.0),
     'middle': 0.0,
-    'ring':   np.deg2rad(2.0),
-    'pinky':  np.deg2rad(2.0),
+    'ring':   np.deg2rad(5.0),
+    'pinky':  np.deg2rad(5.0),
 }
 INHAND_PC1_INDEX  = np.deg2rad([55.0, 65.0, 65.0])
 INHAND_PC1_MIDDLE = np.deg2rad([55.0, 65.0, 65.0])
@@ -72,12 +72,12 @@ K_LOW     = 0.1     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
-SETTLE_TIME      = 3.0   # [s]
-RAMP_DURATION    = 5.0   # [s]   joint-target / K ramp duration
+SETTLE_TIME      = 1.0   # [s]
+RAMP_DURATION    = 2.0   # [s]   joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]
 CONVERGE_HOLD    = 1.0   # [s]
-CONVERGE_TIMEOUT = 12.0  # [s]
-RECORD_DURATION  = 5.0   # [s]
+CONVERGE_TIMEOUT = 5.0  # [s]
+RECORD_DURATION  = 3.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
 K_SOFT        = 1.0    # [N/m]  very compliant tip spring
