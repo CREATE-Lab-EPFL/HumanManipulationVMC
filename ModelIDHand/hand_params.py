@@ -309,10 +309,10 @@ friction_vlim = 0.03  # Stribeck velocity          [rad/s]
 # =============================================================================
 # Hand properties for UR5-based gravity compensation
 # =============================================================================
-hand_mass = 1.270     # [kg]
-Cx = 8.00             # [mm]
-Cy = -2.00            # [mm]
-Cz = 77.00            # [mm]
+hand_mass = 1.610     # [kg]
+Cx = -10.00             # [mm]
+Cy = 4.00            # [mm]
+Cz = 72.00            # [mm]
 
 # =============================================================================
 # Rotation of the hand around the UR5 flange z-axis (the finger direction).

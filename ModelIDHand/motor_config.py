@@ -13,19 +13,19 @@ NUM_MOTORS = 15
 MOTOR_IDS = {
     'wrist_motor1': 13,
     'wrist_motor2': 14,
-    'thumb_CMC1': 4,
-    'thumb_CMC2': 6,
+    'thumb_CMC1': 5,
+    'thumb_CMC2': 4,
     'thumb_MCP': 7,
-    'thumb_IP': 5,
+    'thumb_IP': 6,
     'spread': 12,
-    'index_MCP': 8,
-    'index_PIP': 9,
+    'index_MCP': 3,
+    'index_PIP': 8,
     'middle_MCP': 2,
-    'middle_PIP': 3,
-    'ring_MCP': 10,
-    'ring_PIP': 11,
+    'middle_PIP': 9,
+    'ring_MCP': 1,
+    'ring_PIP': 10,
     'pinky_MCP': 0,
-    'pinky_PIP': 1,
+    'pinky_PIP': 11,
 }
 
 # Software internal ordering (fixed - do not modify)
