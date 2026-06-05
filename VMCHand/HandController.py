@@ -68,7 +68,7 @@ class HandController(Node):
         Get current joint positions in software order.
 
         Returns:
-            q_motor: [15] motor angles (radians).
+            q_motor: [13] motor angles (radians).
         """
         return self.joint_positions
 
@@ -77,7 +77,7 @@ class HandController(Node):
         Get current joint velocities in software order.
 
         Returns:
-            q_dot_motor: [15] motor velocities (radians/second).
+            q_dot_motor: [13] motor velocities (radians/second).
         """
         return self.joint_velocities
 

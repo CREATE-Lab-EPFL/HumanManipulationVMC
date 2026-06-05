@@ -126,8 +126,8 @@ class VMC:
         Compute motor torques from task-space virtual springs and dampers.
 
         Args:
-            q_motor:     [15] motor angles    (rad)
-            q_dot_motor: [15] motor velocities (rad/s)
+            q_motor:     [13] motor angles    (rad)
+            q_dot_motor: [13] motor velocities (rad/s)
 
         Returns:
             tau: [15] motor torques (N·m)

@@ -3,7 +3,7 @@
 ## To get motor positions:         /joint_positions (degrees)
 ## To get motor velocities:        /joint_velocities (deg/s)
 ## To publish torques:             /goal_torque (N·m)
-## Always run before:              ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+## Always run before:              ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12] -p position_motor_ids:=[13,14]
 ## Speed:                          sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 ##
 ## All units are SI:

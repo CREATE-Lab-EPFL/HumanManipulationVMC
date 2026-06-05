@@ -8,7 +8,8 @@ import threading
 
 # In another terminal:
 # ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] -p control_mode:=position
-# Run DynamixedPositionController
+# (This puts ALL 15 motors in position mode — useful for manual positioning / calibration)
+# Run DynamixelPositionController
 
 # To increase Dynamixel communication frequency:
 # sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
