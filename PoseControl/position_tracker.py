@@ -18,7 +18,7 @@ from VMCHand.HandController import HandController, CONTROL_FREQUENCY
 from VMCHand.HandVMCJointSpace import VMC
 from VMCHand.HandGravFricLim import GravFricLim
 from KinematicsHand.FK_Hand import (
-    FK_motor2wrist, FK_motor2thumb, FK_motor2finger, FK_motor2spread,
+    FK_motor2thumb, FK_motor2finger, FK_motor2spread,
 )
 from UR5_codes.UR5_readPose import UR5Receiver
 from hand_config import (
@@ -49,7 +49,6 @@ vmc.set_damping(DAMPING)
 
 
 def _apply_pose(pose):
-    vmc.wrist             = pose["wrist"]
     vmc.thumb             = pose["thumb"]
     vmc.spread            = pose["spread"]
     vmc.middle_target     = pose["middle"]
@@ -66,7 +65,6 @@ def _begin_ramp(pose):
     global _ramp_t0, _ramp_start_state, _ramp_end_state
     _ramp_t0 = time.time()
     _ramp_start_state = {
-        "wrist":             vmc.wrist.copy(),
         "thumb":             vmc.thumb.copy(),
         "spread":            {f: vmc.spread[f].copy() for f in ['index', 'middle', 'ring', 'pinky']},
         "index_target":      vmc.index_target.copy(),
@@ -74,7 +72,6 @@ def _begin_ramp(pose):
         "ring_pinky_target": vmc.ring_pinky_target.copy(),
     }
     _ramp_end_state = {
-        "wrist":             pose["wrist"],
         "thumb":             pose["thumb"],
         "spread":            pose["spread"],
         "index_target":      pose["index"],
@@ -87,7 +84,6 @@ def _step_ramp(now):
     """Returns True when the ramp completes."""
     alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
     s, e  = _ramp_start_state, _ramp_end_state
-    vmc.wrist             = (1 - alpha) * s["wrist"]             + alpha * e["wrist"]
     vmc.thumb             = (1 - alpha) * s["thumb"]             + alpha * e["thumb"]
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc.spread[_f]    = (1 - alpha) * s["spread"][_f]        + alpha * e["spread"][_f]
@@ -99,7 +95,6 @@ def _step_ramp(now):
 
 def _ref_joints():
     return [
-        vmc.wrist[0], vmc.wrist[1],
         vmc.thumb[0], vmc.thumb[1], vmc.thumb[2], vmc.thumb[3],
         float(vmc.spread["index"][0]),  float(vmc.spread["middle"][0]),
         float(vmc.spread["ring"][0]),   float(vmc.spread["pinky"][0]),
@@ -111,10 +106,8 @@ def _ref_joints():
 
 
 def _actual_joints(q):
-    w = FK_motor2wrist(q)
     t = FK_motor2thumb(q)
     return [
-        w[0], w[1],
         t[0], t[1], t[2], t[3],
         FK_motor2spread(q, "index"),  FK_motor2spread(q, "middle"),
         FK_motor2spread(q, "ring"),   FK_motor2spread(q, "pinky"),
@@ -129,7 +122,6 @@ def _actual_joints(q):
 # CSV
 # =============================================================================
 _JOINT_NAMES = [
-    "wrist_pitch", "wrist_yaw",
     "thumb_CMC1",  "thumb_CMC2",  "thumb_MCP",  "thumb_IP",
     "spread_index", "spread_middle", "spread_ring", "spread_pinky",
     "index_MCP",  "index_PIP",  "index_DIP",

@@ -252,7 +252,7 @@ class tip_stiffness_MixedSpace:
             f: (3,) tip force [N]
         """
         eta = np.diag(self.eta)
-        tau = np.zeros(15)
+        tau = np.zeros(13)
         idx = 0
         for group, K in K_joint_dict.items():
             J   = self._J_angle(group, q)

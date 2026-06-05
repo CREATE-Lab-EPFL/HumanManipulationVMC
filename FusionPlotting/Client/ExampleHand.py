@@ -5,8 +5,7 @@ Joint names and sign conventions follow the code (hand_params.py JOINT_LIMITS):
   - Finger MCP/PIP/DIP: positive = flexion  (limits 0 → 1.5 / 1.2 rad)
   - index_spread:        negative = adduction toward middle  (limits -0.3 → 0 rad)
   - ring/pinky_spread:   positive = adduction toward middle  (limits 0 → 0.3 rad)
-  - wrist_pitch:         positive = flexion
-  - wrist_yaw:           positive = ulnar deviation
+  - wrist: rigid, always held at wrist_pitch=0.0, wrist_yaw=0.0 (position-controlled, not in VMC)
 
 The add-in (FusionConventions.py) handles any sign flips and name mapping
 before sending values to Fusion — you never need to manually negate values here.
@@ -26,9 +25,9 @@ from JointClient import JointClient
 # Values in code convention (degrees).  Signs match hand_params.py JOINT_LIMITS.
 # ---------------------------------------------------------------------------
 HAND_JOINTS: dict[str, float] = {
-    # --- Wrist ---
-    "wrist_pitch":    10.0,   # + = flexion
-    "wrist_yaw":      10.0,   # + = ulnar deviation
+    # Wrist is rigid (position-controlled hardware), always at 0.0
+    "wrist_pitch":     0.0,
+    "wrist_yaw":       0.0,
 
     # --- Thumb ---
     "thumb_CMC1":    30.0,

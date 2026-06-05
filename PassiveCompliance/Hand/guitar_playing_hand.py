@@ -32,7 +32,6 @@ from guitar_config import (
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
     TORSIONAL_SPRINGS, B_ROT, K_ROT,
-    WRIST_PITCH_DEG, WRIST_K_FIX, WRIST_B_FIX,
     RAMP_DURATION, SETTLE_TIME, K_RETURN, N_RUNS, FRICTION_TAU_MAX,
     SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_BLOCKSIZE, MIC_DEVICE,
     ONSET_THRESHOLD, ONSET_REFRACTORY,
@@ -49,9 +48,9 @@ END_LIFTED   = END.copy();             END_LIFTED[2]    += LIFT
 # =============================================================================
 # CSV schema
 # =============================================================================
-_S_COLS = ([f'q_{i}'    for i in range(15)] +
-           [f'qdot_{i}' for i in range(15)] +
-           [f'tau_{i}'  for i in range(15)])
+_S_COLS = ([f'q_{i}'    for i in range(13)] +
+           [f'qdot_{i}' for i in range(13)] +
+           [f'tau_{i}'  for i in range(13)])
 FIELDS  = ['time_s', 'k_torsional', 'run', 'phase'] + _S_COLS + ['mic_level']
 
 def _out_path(ktors):
@@ -74,10 +73,6 @@ vmc_joint.set_damping(B_ROT)
 
 for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
-
-vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])
-vmc_joint.stiffness['wrist'][:] = WRIST_K_FIX
-vmc_joint.damping['wrist'][:]   = WRIST_B_FIX
 
 for _k in CLOSED_FINGERS:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
@@ -178,10 +173,9 @@ def _ramp_stiffness(k_new):
         time.sleep(dt)
 
 def _ramp_to_home():
-    """Ramp all finger targets and wrist back to zero, stiffness back to K_ROT."""
-    starts      = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
-    start_wrist = vmc_joint.wrist.copy()
-    start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
+    """Ramp all finger targets back to zero, stiffness back to K_RETURN."""
+    starts   = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
+    start_ks = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
@@ -190,7 +184,6 @@ def _ramp_to_home():
         vmc_joint.middle_target = (1-alpha)*starts['middle'] + alpha*np.zeros(3)
         vmc_joint.ring_target   = (1-alpha)*starts['ring']   + alpha*np.zeros(3)
         vmc_joint.pinky_target  = (1-alpha)*starts['pinky']  + alpha*np.zeros(3)
-        vmc_joint.wrist         = (1-alpha)*start_wrist      + alpha*np.zeros(2)
         for g in start_ks:
             vmc_joint.stiffness[g][:] = (1-alpha)*start_ks[g] + alpha*K_RETURN
         if alpha >= 1.0: break
@@ -240,7 +233,7 @@ finally:
     _running = False
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)
-    controller.publish_torques(np.zeros(15))
+    controller.publish_torques(np.zeros(13))
     arm.disconnect(); recv.disconnect()
     controller.destroy_node()
     if rclpy.ok(): rclpy.shutdown()

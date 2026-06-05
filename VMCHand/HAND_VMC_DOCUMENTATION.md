@@ -1,18 +1,21 @@
 # Hand VMC Documentation
 
-Virtual Model Control for the 15-DOF ADAPT Hand.
+Virtual Model Control for the 13-DOF ADAPT Hand.
+
+The wrist (motors 13, 14 in hardware) is held rigidly by the dynamixel node in
+position-control mode and is **invisible to the VMC and kinematics** — all arrays
+are 13-D.
 
 ## Motor Ordering
 
 **Software order** (all numpy arrays):
 ```
-[0-1]   Wrist: motor1, motor2
-[2-5]   Thumb: CMC1, CMC2, MCP, IP
-[6]     Spread motor
-[7-8]   Index: MCP, PIP
-[9-10]  Middle: MCP, PIP
-[11-12] Ring: MCP, PIP
-[13-14] Pinky: MCP, PIP
+[0-3]   Thumb: CMC1, CMC2, MCP, IP
+[4]     Spread motor
+[5-6]   Index: MCP, PIP
+[7-8]   Middle: MCP, PIP
+[9-10]  Ring: MCP, PIP
+[11-12] Pinky: MCP, PIP
 ```
 
 **Conversion** handled automatically by `HandController`:
@@ -76,7 +79,6 @@ keyed by joint group:
 
 | Key | Shape | DOFs |
 |-----|-------|------|
-| `'wrist'` | (2,) | pitch, yaw |
 | `'thumb'` | (4,) | CMC1, CMC2, MCP, IP |
 | `'spread_index'` | (1,) | index spread |
 | `'spread_middle'` | (1,) | middle spread |
@@ -95,7 +97,6 @@ vmc.set_damping(B)      # [N·m·s/rad]
 
 **Per-joint fine control** — index directly into the arrays:
 ```python
-vmc.stiffness['wrist'][1]   = K_wrist_yaw   # wrist yaw only
 vmc.stiffness['thumb'][2]   = K_thumb_MCP   # thumb MCP only
 vmc.stiffness['index'][0]   = K_index_MCP   # index MCP only  (0=MCP, 1=PIP, 2=DIP)
 vmc.damping['spread_ring']  = np.array([B_spread_ring])
@@ -104,7 +105,6 @@ vmc.damping['spread_ring']  = np.array([B_spread_ring])
 ### Reference Positions
 
 ```python
-vmc.wrist             # [pitch, yaw]          (rad)
 vmc.thumb             # [CMC1, CMC2, MCP, IP] (rad)
 vmc.spread            # dict: 'index','middle','ring','pinky' → (1,) array (rad)
 vmc.index_target      # [MCP, PIP, DIP]       (rad)
@@ -115,7 +115,7 @@ vmc.ring_pinky_target # [MCP, PIP, DIP]       (rad) — ring and pinky share one
 ### Torque Computation
 
 ```python
-tau = vmc.hand_torques(q_motor, q_dot_motor)   # → [15] N·m
+tau = vmc.hand_torques(q_motor, q_dot_motor)   # → [13] N·m
 ```
 
 Implements per-group Jacobian-transpose spring-dampers:

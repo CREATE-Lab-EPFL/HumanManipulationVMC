@@ -48,7 +48,7 @@ class tip_stiffness_JointSpace:
         Args:
             rtips: dict of tip offsets in DIP/IP local frame [m]. Defaults to
                    DEFAULT_RTIPS (z-direction, 0.0175 m per finger).
-            eta:   (15,) motor efficiency vector. Defaults to ones (no efficiency loss).
+            eta:   (13,) motor efficiency vector. Defaults to ones (no efficiency loss).
             mode:  'normal' — P = n nᵀ (rank-1, force/stiffness along contact normal only);
                    'full'   — P = I₃   (full 3-D force and stiffness).
         """
@@ -90,7 +90,7 @@ class tip_stiffness_JointSpace:
         return np.linalg.pinv(self._P(finger, q) @ self._J_tip(finger, q))
 
     def _H_tip(self, finger, q):
-        """(3,15,15) Hessian of (specific) fingertip position wrt motor angles."""
+        """(3,13,13) Hessian of (specific) fingertip position wrt motor angles."""
         rtip = self.rtips[finger]
         if finger == 'thumb':
             return self.hes.get_thumb_hessian('IP', q, rtip)
@@ -228,7 +228,7 @@ class tip_stiffness_JointSpace:
         """
         theta_ref = np.radians(theta_ref_deg)
         eta = np.diag(self.eta)
-        tau = np.zeros(15)
+        tau = np.zeros(13)
         idx = 0
         for group, K in K_dict.items():
             J     = self._J_angle(group, q)
@@ -413,16 +413,15 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Thumb and index flexed
-    q_ref  = np.zeros(15)
-    q_base = np.zeros(15)
-    q_base[4] = np.deg2rad(30.0)   # thumb MCP
-    q_base[5] = np.deg2rad(20.0)   # thumb IP
-    q_base[7] = np.deg2rad(30.0)   # index MCP
-    q_base[8] = np.deg2rad(20.0)   # index PIP
+    q_ref  = np.zeros(13)
+    q_base = np.zeros(13)
+    q_base[2] = np.deg2rad(30.0)   # thumb MCP
+    q_base[3] = np.deg2rad(20.0)   # thumb IP
+    q_base[5] = np.deg2rad(30.0)   # index MCP
+    q_base[6] = np.deg2rad(20.0)   # index PIP
 
     k = 0.4   # uniform stiffness [N·m/rad]
     K_dict = {
-        'wrist':         k * np.eye(2),
         'thumb':         k * np.eye(4),
         'spread_index':  k * np.eye(1),
         'spread_middle': k * np.eye(1),

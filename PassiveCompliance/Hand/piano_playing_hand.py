@@ -36,8 +36,7 @@ from piano_config import (
     UR5_POSE_PIANO, UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     PRESS_POSE, SPREAD_ANGLE_DEG, PRESS_DEPTH, PRESS_SPEED, PRESS_ACCEL,
     PIANO_FINGERS_PLAYING, K_SWEEP, K_STIFF, K_SOFT,
-    K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, WRIST_PITCH_DEG,
-    WRIST_K_FIX, WRIST_B_FIX, FRICTION_TAU_MAX,
+    K_ROT, K_ROT_PRESS, K_MCP_PRESS, B_ROT, B_ROT_HOLD, FRICTION_TAU_MAX,
     B_CART_PLAYING as B_CART,
     PLAYING_SETTLE_TIME as SETTLE_TIME, N_CYCLES, RAMP_DURATION,
 )
@@ -51,14 +50,14 @@ COLLECTED_DATA = False
 # =============================================================================
 # Poses
 # =============================================================================
-Q_PRESS = np.zeros(15)
-Q_PRESS[6] = np.deg2rad(SPREAD_ANGLE_DEG)
+Q_PRESS = np.zeros(13)
+Q_PRESS[4] = np.deg2rad(SPREAD_ANGLE_DEG)   # spread motor
 for _f in PIANO_FINGERS_PLAYING:
     Q_PRESS[MOTOR_SLICES[_f]] = PRESS_POSE[:2]
 
 PRESS_POS = {f: np.array(FK_motor2fingerPos(Q_PRESS, f, 'DIP', np.zeros(3)))
              for f in PIANO_FINGERS_PLAYING}
-REST_POS  = {f: np.array(FK_motor2fingerPos(np.zeros(15), f, 'DIP', np.zeros(3)))
+REST_POS  = {f: np.array(FK_motor2fingerPos(np.zeros(13), f, 'DIP', np.zeros(3)))
              for f in PIANO_FINGERS_PLAYING}
 
 UR5_POSE_PRESS     = UR5_POSE_PIANO.copy()
@@ -67,9 +66,9 @@ UR5_POSE_PRESS[2] -= PRESS_DEPTH
 # =============================================================================
 # CSV schema
 # =============================================================================
-_S_COLS = ([f'q_{i}'    for i in range(15)] +
-           [f'qdot_{i}' for i in range(15)] +
-           [f'tau_{i}'  for i in range(15)])
+_S_COLS = ([f'q_{i}'    for i in range(13)] +
+           [f'qdot_{i}' for i in range(13)] +
+           [f'tau_{i}'  for i in range(13)])
 FIELDS  = ['time_s', 'type', 'k_index', 'k_ring', 'cycle'] + _S_COLS + ['note', 'velocity']
 
 def _out_path(cond):
@@ -94,10 +93,6 @@ for _hold in ['thumb', 'middle', 'pinky',
               'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
     vmc_joint.damping[_hold][:]   = B_ROT_HOLD
-# Wrist held (near-)RIGID via a stiff PD so the measured compliance is finger-only
-vmc_joint.wrist = np.deg2rad([WRIST_PITCH_DEG, 0.0])   # [pitch, yaw]
-vmc_joint.stiffness['wrist'][:] = WRIST_K_FIX
-vmc_joint.damping['wrist'][:]   = WRIST_B_FIX
 for _k in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 _PRESS_JOINTS = PRESS_POSE.copy()
@@ -223,15 +218,14 @@ def _ramp_to_press():
 
 def _ramp_to_home():
     """Gradually open the hand back to home: task targets PRESS→REST with task
-    stiffness→0, joint-space finger/wrist targets PRESS→home, and every joint's
+    stiffness→0, joint-space finger targets PRESS→home, and every joint's
     rotational stiffness ramped up to the proper background K_ROT so the hand
     returns firmly (the playing/held fingers were soft/zero during the task)."""
-    start_pos   = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
-    start_k     = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING}
-    start_jt    = {'index': vmc_joint.index_target.copy(), 'ring': vmc_joint.ring_target.copy()}
-    start_wrist = vmc_joint.wrist.copy()
-    start_ks    = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
-    home_joint  = np.zeros(3)
+    start_pos = {f: vmc_task.targets[f].copy() for f in PIANO_FINGERS_PLAYING}
+    start_k   = {f: float(vmc_task.springs[f].stiffness.flat[0]) for f in PIANO_FINGERS_PLAYING}
+    start_jt  = {'index': vmc_joint.index_target.copy(), 'ring': vmc_joint.ring_target.copy()}
+    start_ks  = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
+    home_joint = np.zeros(3)
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
@@ -241,7 +235,6 @@ def _ramp_to_home():
             vmc_task.springs[_f].stiffness = np.full(3, (1 - alpha) * start_k[_f])
         vmc_joint.index_target = (1 - alpha) * start_jt['index'] + alpha * home_joint
         vmc_joint.ring_target  = (1 - alpha) * start_jt['ring']  + alpha * home_joint
-        vmc_joint.wrist        = (1 - alpha) * start_wrist       + alpha * np.zeros(2)
         for g in start_ks:                                   # restore rotational stiffness → K_ROT
             vmc_joint.stiffness[g][:] = (1 - alpha) * start_ks[g] + alpha * K_ROT
         if alpha >= 1.0:
@@ -293,7 +286,7 @@ finally:
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)
     vmc_task.set_stiffness(0.0);  vmc_task.set_damping(0.0)
-    controller.publish_torques(np.zeros(15))
+    controller.publish_torques(np.zeros(13))
     arm.disconnect(); recv.disconnect()
     controller.destroy_node()
     if rclpy.ok(): rclpy.shutdown()

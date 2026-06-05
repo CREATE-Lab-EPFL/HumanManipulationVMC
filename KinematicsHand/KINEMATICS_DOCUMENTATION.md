@@ -2,8 +2,9 @@
 
 ## Overview
 
-The ADAPT Hand has **15 motors**:
-- 2 wrist motors (differential: pitch/yaw)
+The ADAPT Hand has **13 software motors** (the 2 wrist motors are held rigidly
+by the hardware in position-control mode and are **not visible to kinematics**):
+
 - 4 thumb motors (CMC1, CMC2, MCP, IP)
 - 8 finger motors (2 per finger: MCP, PIP/DIP for Index, Middle, Ring, Pinky)
 - 1 spread motor (controls Index, Ring, Pinky abduction)
@@ -19,20 +20,20 @@ import numpy as np
 from FK_Hand import FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm
 from JacobiansHand import HandJacobians
 
-# Motor angles (15 motors: [wrist1, wrist2, thumb(4), spread, index(2), middle(2), ring(2), pinky(2)])
-q_motor = np.zeros(15)
+# Motor angles (13 motors: [thumb(4), spread, index(2), middle(2), ring(2), pinky(2)])
+q_motor = np.zeros(13)
 r_local = np.array([0.0, 0.0, 0.02])  # Local offset in link frame
 
 # Forward Kinematics
 pos_thumb_IP = FK_motor2thumbPos(q_motor, "IP", r_local)
 pos_index_DIP = FK_motor2fingerPos(q_motor, "index", "DIP", r_local)
-R_palm, pos_palm = FK_motor2palm(q_motor, r_local)
+R_palm, pos_palm = FK_motor2palm(r_local)   # palm position is constant (no q_motor arg)
 
 # Jacobians (initialize once, reuse many times)
 jac = HandJacobians()  # Takes ~5-10 seconds to build all Jacobians
-J_thumb = jac.get_thumb_jacobian("IP", q_motor, r_local)      # 3x15
-J_index = jac.get_finger_jacobian("index", "DIP", q_motor, r_local)  # 3x15
-J_palm = jac.get_wrist_palm_jacobian(q_motor, r_local)        # 3x15
+J_thumb = jac.get_thumb_jacobian("IP", q_motor, r_local)      # 3x13
+J_index = jac.get_finger_jacobian("index", "DIP", q_motor, r_local)  # 3x13
+J_palm = jac.get_wrist_palm_jacobian(q_motor, r_local)        # 3x13
 ```
 
 ---
@@ -40,21 +41,19 @@ J_palm = jac.get_wrist_palm_jacobian(q_motor, r_local)        # 3x15
 ## Motor Order Convention
 
 ```python
-q_motor[0]  = wrist_motor1     # Pinky side
-q_motor[1]  = wrist_motor2     # Thumb side
-q_motor[2]  = thumb_CMC1
-q_motor[3]  = thumb_CMC2
-q_motor[4]  = thumb_MCP
-q_motor[5]  = thumb_IP
-q_motor[6]  = spread           # Shared across fingers
-q_motor[7]  = index_MCP
-q_motor[8]  = index_PIP
-q_motor[9]  = middle_MCP
-q_motor[10] = middle_PIP
-q_motor[11] = ring_MCP
-q_motor[12] = ring_PIP
-q_motor[13] = pinky_MCP
-q_motor[14] = pinky_PIP
+q_motor[0]  = thumb_CMC1
+q_motor[1]  = thumb_CMC2
+q_motor[2]  = thumb_MCP
+q_motor[3]  = thumb_IP
+q_motor[4]  = spread           # Shared across fingers
+q_motor[5]  = index_MCP
+q_motor[6]  = index_PIP
+q_motor[7]  = middle_MCP
+q_motor[8]  = middle_PIP
+q_motor[9]  = ring_MCP
+q_motor[10] = ring_PIP
+q_motor[11] = pinky_MCP
+q_motor[12] = pinky_PIP
 ```
 
 ---
@@ -65,7 +64,6 @@ q_motor[14] = pinky_PIP
 
 **Motor to Joint Conversions:**
 ```python
-FK_motor2wrist(q_motor)                    → [pitch, yaw]
 FK_motor2thumb(q_motor)                    → [CMC1, CMC2, MCP, IP]
 FK_motor2finger(q_motor, finger_name)      → [MCP, PIP, DIP]
 FK_motor2spread(q_motor, finger_name)      → spread_angle
@@ -73,7 +71,7 @@ FK_motor2spread(q_motor, finger_name)      → spread_angle
 
 **Forward Kinematics:**
 ```python
-FK_motor2palm(q_motor, r_local)            → (R_palm, pos)
+FK_motor2palm(r_local)                     → (R_palm, pos)   # palm is constant, no q_motor
 FK_motor2thumbPos(q_motor, link, r_local)  → pos
     # link: 'CMC1', 'CMC2', 'MCP', 'IP'
 FK_motor2fingerPos(q_motor, finger, link, r_local) → pos
@@ -82,15 +80,6 @@ FK_motor2fingerPos(q_motor, finger, link, r_local) → pos
 ```
 
 ### JacobiansHand.py - Jacobian Computation
-
-**Individual Jacobians (build once, call many times):**
-```python
-Jacobian_motor2wrist()                    → func(q_motor) → 2x15
-Jacobian_motor2palm()                     → func(q_motor, r_local) → 3x15
-Jacobian_motor2thumbPos(link)             → func(q_motor, r_local) → 3x15
-FK_motor2fingerPos(finger, link)          → func(q_motor, r_local) → 3x15
-Jacobian_motor2spread(finger)             → func(q_motor) → 1x15
-```
 
 **HandJacobians Class (recommended):**
 ```python
@@ -114,11 +103,12 @@ python3 JacobiansHand.py
 
 ## Important Notes
 
-1. **All functions take `q_motor` as a single 15-element array**
-2. **Jacobians return full (Nx15) matrices** - derivatives w.r.t. all 15 motors
+1. **All kinematics functions take `q_motor` as a single 13-element array**
+2. **Jacobians return full (Nx13) matrices** — derivatives w.r.t. all 13 software motors
 3. **Use `HandJacobians` class** to avoid re-computing symbolic expressions
 4. **Thread-safe**: No global state modification (bug fixed with `.copy()`)
 5. **DIP joint mimics PIP**: Mechanically coupled, same angle
+6. **Wrist is rigid**: Hardware motors 13 & 14 are position-controlled; `FK_motor2palm` takes no `q_motor` arg
 
 ---
 

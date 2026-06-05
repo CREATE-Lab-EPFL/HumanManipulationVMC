@@ -3,7 +3,7 @@ Interactive fingertip contact-normal visualizer for the full hand.
 
 Shows the 3D hand skeleton with one quiver arrow per fingertip representing
 the contact normal n = tip_stiffness_JointSpace._normal(finger, q).
-Sliders on the right panel control all 15 motor angles.
+Sliders on the right panel control all 13 motor angles.
 
 Run:
     python StiffnessModelHand/normal_viz_gui.py
@@ -20,7 +20,7 @@ from matplotlib.widgets import Slider, Button
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from ModelIDHand.hand_viz import (
-    _wrist_pts, _thumb_pts, _finger_pts,
+    _WRIST_PTS, _thumb_pts, _finger_pts,
     _COL, _NAMES, _equal_aspect, MOTOR_LIMITS,
 )
 from KinematicsHand.FK_Hand import FK_motor2fingerPos, FK_motor2thumbPos
@@ -33,14 +33,13 @@ _FINGERS_ALL = ["thumb", "index", "middle", "ring", "pinky"]
 _NORMAL_LEN = 0.040   # quiver arrow length [m]
 
 _MOTOR_LABELS = [
-    "Wrist Motor1 [0]", "Wrist Motor2 [1]",
-    "Thumb CMC1   [2]", "Thumb CMC2   [3]",
-    "Thumb MCP    [4]", "Thumb IP     [5]",
-    "Spread       [6]",
-    "Index MCP    [7]", "Index PIP    [8]",
-    "Middle MCP   [9]", "Middle PIP  [10]",
-    "Ring MCP    [11]", "Ring PIP    [12]",
-    "Pinky MCP   [13]", "Pinky PIP   [14]",
+    "Thumb CMC1  [0]", "Thumb CMC2  [1]",
+    "Thumb MCP   [2]", "Thumb IP    [3]",
+    "Spread      [4]",
+    "Index MCP   [5]", "Index PIP   [6]",
+    "Middle MCP  [7]", "Middle PIP  [8]",
+    "Ring MCP    [9]", "Ring PIP   [10]",
+    "Pinky MCP  [11]", "Pinky PIP  [12]",
 ]
 
 
@@ -73,7 +72,7 @@ class NormalVizGUI:
         self._model = tip_stiffness_JointSpace()
         print("done.")
         self._rtips = self._model.rtips
-        self._q     = np.zeros(15)
+        self._q     = np.zeros(13)
 
         # ---- figure --------------------------------------------------------
         self._fig = plt.figure(figsize=(16, 9))
@@ -122,7 +121,7 @@ class NormalVizGUI:
         _sk = dict(color="dimgray", linestyle="-", linewidth=1.5, zorder=2)
         kw  = dict(linestyle="-", linewidth=2.0, marker="o", markersize=3, zorder=3)
 
-        wp = _wrist_pts(q)
+        wp = _WRIST_PTS
         tp = _thumb_pts(q)
         fp = {n: _finger_pts(q, n) for n in _NAMES}
         po = wp[-1]
@@ -157,7 +156,7 @@ class NormalVizGUI:
 
     def _update_hand(self):
         q  = self._q
-        wp = _wrist_pts(q);  tp = _thumb_pts(q)
+        wp = _WRIST_PTS; tp = _thumb_pts(q)
         fp = {n: _finger_pts(q, n) for n in _NAMES}
         po = wp[-1]
 
@@ -246,7 +245,7 @@ class NormalVizGUI:
         btn.on_clicked(self._on_reset)
         self._btn_reset = btn   # keep reference
 
-        for i in range(15):
+        for i in range(13):
             y    = top - i * gap
             lo   = float(MOTOR_LIMITS[i, 0])
             hi   = float(MOTOR_LIMITS[i, 1])
