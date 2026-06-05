@@ -316,7 +316,6 @@ HOME_POSE_TARGETS = {
     'ring_pinky_target': HOME_FINGER.copy(),
 }
 PC1_POSE_TARGETS = {
-    'wrist':             PC1_WRIST.copy(),
     'thumb':             PC1_THUMB.copy(),
     'spread':            {f: np.array([PC1_SPREAD[f]]) for f in ['index', 'middle', 'ring', 'pinky']},
     'index_target':      PC1_INDEX.copy(),
@@ -397,27 +396,17 @@ def _set_task_stiffness(k):
 
 
 def _set_joint_stiffness_uniform(k_rot, b_rot):
-    vmc_joint.stiffness['wrist'] = np.full(2, k_rot)
-    vmc_joint.stiffness['thumb'] = np.full(4, k_rot)
-    vmc_joint.damping['wrist']   = np.full(2, b_rot)
-    vmc_joint.damping['thumb']   = np.full(4, b_rot)
-    for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[f'spread_{_f}'] = np.array([k_rot])
-        vmc_joint.damping[f'spread_{_f}']   = np.array([b_rot])
-        vmc_joint.stiffness[_f]             = np.full(3, k_rot)
-        vmc_joint.damping[_f]               = np.full(3, b_rot)
+    vmc_joint.set_stiffness(k_rot)
+    vmc_joint.set_damping(b_rot)
 
 
 def _set_joint_stiffness_experiment():
-    vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
+    vmc_joint.set_stiffness(K_ROT)
+    vmc_joint.set_damping(B_ROT)
     vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
-    vmc_joint.damping['wrist']   = np.full(2, B_ROT)
-    vmc_joint.damping['thumb']   = np.full(4, B_ROT)
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
-        vmc_joint.damping[f'spread_{_f}']   = np.array([B_ROT])
-        vmc_joint.stiffness[_f]             = np.zeros(3)
-        vmc_joint.damping[_f]               = np.full(3, B_FLEX_DAMP)
+        vmc_joint.stiffness[_f] = np.zeros(3)
+        vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
 
 
 def _begin_ramp(end_targets):
