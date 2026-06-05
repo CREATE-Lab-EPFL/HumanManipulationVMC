@@ -37,17 +37,16 @@ from UR5_codes.UR5_config       import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERA
 from UR5_codes.UR5_readPose     import UR5Receiver
 from hand_config import (
     UR5_POSE_BOTTLE_START,
-    GRASP_PC1_WRIST  as PC1_WRIST,
     GRASP_PC1_THUMB  as PC1_THUMB,
     GRASP_PC1_SPREAD as PC1_SPREAD,
     GRASP_PC1_INDEX  as PC1_INDEX,
     GRASP_PC1_MIDDLE as PC1_MIDDLE,
     GRASP_PC1_RING   as PC1_RING,
     GRASP_PC1_PINKY  as PC1_PINKY,
-    HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
+    HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
-    K_ROT, B_ROT, B_TIP, K_HOME, K_HOME_WRIST,
+    K_ROT, B_ROT, B_TIP, K_HOME,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
 import rtde_control
@@ -85,7 +84,7 @@ _CLOSE_TIME_S = CLOSE_DISTANCE / APPROACH_SPEED
 # FK targets for task spring
 # =============================================================================
 Q_TARGET = joint_to_motor(
-    PC1_WRIST, PC1_THUMB,
+    PC1_THUMB,
     PC1_SPREAD['index'],
     PC1_INDEX[:2], PC1_MIDDLE[:2], PC1_RING[:2], PC1_PINKY[:2],
 )
@@ -96,18 +95,17 @@ D_REF = {
     'middle': np.array(FK_motor2fingerPos(Q_TARGET, 'middle', 'DIP', FINGER_TIP_OFFSETS['middle'])),
     'ring':   np.array(FK_motor2fingerPos(Q_TARGET, 'ring',   'DIP', FINGER_TIP_OFFSETS['ring'])),
     'pinky':  np.array(FK_motor2fingerPos(Q_TARGET, 'pinky',  'DIP', FINGER_TIP_OFFSETS['pinky'])),
-    'palm':   np.array(FK_motor2palm(Q_TARGET, np.zeros(3))[1]),
+    'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
 THETA_REF_DEG = np.degrees(np.concatenate([
-    PC1_WRIST, PC1_THUMB,
+    PC1_THUMB,
     [PC1_SPREAD['index']], [PC1_SPREAD['middle']],
     [PC1_SPREAD['ring']],  [PC1_SPREAD['pinky']],
     PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
 ]))
 
 K_JOINT_DICT_MODEL = {
-    'wrist':         K_ROT * np.eye(2),
     'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
     'spread_index':  K_ROT * np.eye(1),
     'spread_middle': K_ROT * np.eye(1),
@@ -126,18 +124,9 @@ rclpy.init()
 controller = HandController()
 
 vmc_joint = JointVMC()
+vmc_joint.set_stiffness(K_ROT)
+vmc_joint.set_damping(B_ROT)
 
-vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
-vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
-vmc_joint.damping['wrist']   = np.full(2, B_ROT)
-vmc_joint.damping['thumb']   = np.full(4, B_ROT)
-for _f in ['index', 'middle', 'ring', 'pinky']:
-    vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
-    vmc_joint.damping[f'spread_{_f}']   = np.array([B_ROT])
-    vmc_joint.stiffness[_f]             = np.full(3, K_ROT)
-    vmc_joint.damping[_f]               = np.full(3, B_ROT)
-
-vmc_joint.wrist             = HOME_WRIST.copy()
 vmc_joint.thumb             = HOME_THUMB.copy()
 vmc_joint.spread            = {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
 vmc_joint.index_target      = HOME_FINGER.copy()
@@ -174,9 +163,9 @@ controller.get_logger().info('UR5 connected')
 # =============================================================================
 _FIELDNAMES = (
     ['time_s', 'phase', 'k_tip_Npm'] +
-    [f'q_{i}'     for i in range(15)] +
-    [f'q_dot_{i}' for i in range(15)] +
-    [f'tau_{i}'   for i in range(15)] +
+    [f'q_{i}'     for i in range(13)] +
+    [f'q_dot_{i}' for i in range(13)] +
+    [f'tau_{i}'   for i in range(13)] +
     [f'tip_{f}_{ax}_m'   for f in FINGERTIPS for ax in 'xyz'] +
     [f'disp_{f}_{ax}_m'  for f in FINGERTIPS for ax in 'xyz'] +
     [f'force_{f}_{ax}_N' for f in FINGERTIPS for ax in 'xyz'] +
@@ -251,7 +240,6 @@ def _tip_pos(finger, q):
 
 
 def _close_hand():
-    vmc_joint.wrist             = PC1_WRIST.copy()
     vmc_joint.thumb             = PC1_THUMB.copy()
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.spread[_f]    = np.array([PC1_SPREAD[_f]])
@@ -267,7 +255,6 @@ def _close_hand():
 def _hand_to_home_stiff():
     """Open hand and set high return stiffness."""
     _set_task_stiffness(0.0)
-    vmc_joint.wrist             = HOME_WRIST.copy()
     vmc_joint.thumb             = HOME_THUMB.copy()
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.spread[_f]    = HOME_SPREAD[_f].copy()
