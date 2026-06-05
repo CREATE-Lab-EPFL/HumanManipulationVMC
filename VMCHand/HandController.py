@@ -19,7 +19,7 @@ import numpy as np
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 from ModelIDHand.motor_config import hardware_to_software, software_to_hardware
-from ModelIDHand.hand_params import goal_limit_torque, goal_limit_torque_wrist
+from ModelIDHand.hand_params import goal_limit_torque
 
 # Define ROS2 frequency
 CONTROL_FREQUENCY = 330  # Hz
@@ -50,8 +50,8 @@ class HandController(Node):
             Float64MultiArray, '/joint_velocities', self.velocity_callback, 10)
 
         # Current joint states in SOFTWARE order (radians and rad/s)
-        self.joint_positions = np.zeros(15)
-        self.joint_velocities = np.zeros(15)
+        self.joint_positions = np.zeros(13)
+        self.joint_velocities = np.zeros(13)
 
     def position_callback(self, msg):
         """Callback for joint position updates (hardware order, degrees)."""
@@ -83,17 +83,13 @@ class HandController(Node):
 
     def publish_torques(self, torques):
         """
-        Publish torque commands to the 13 torque-controlled motors.
+        Publish torque commands to the 13 motors.
 
         Args:
-            torques: [13] motor torques in software order (N·m),
-                     corresponding to sw indices 2-14 (thumb_CMC1 … pinky_PIP).
-                     Wrist motors (sw 0-1) are in position mode and are not commanded.
+            torques: [13] motor torques in software order (N·m).
         """
         torques = np.clip(torques, -TORQUE_LIMITS, TORQUE_LIMITS)
-        tau_15 = np.zeros(15)
-        tau_15[2:] = torques        # wrist sw indices 0,1 remain zero
-        tau_hw = software_to_hardware(tau_15)
+        tau_hw = software_to_hardware(torques)
         msg = Float64MultiArray()
         msg.data = list(tau_hw)
         self.torque_pub.publish(msg)

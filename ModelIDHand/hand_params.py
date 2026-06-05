@@ -127,24 +127,6 @@ PINKY = {
 
 FINGERS = {"thumb": THUMB, "index": INDEX, "middle": MIDDLE, "ring": RING, "pinky": PINKY}
 
-SOFTWARE_MOTOR_ORDER = [
-    'wrist_motor1',  # [0]
-    'wrist_motor2',  # [1]
-    'thumb_CMC1',    # [2]
-    'thumb_CMC2',    # [3]
-    'thumb_MCP',     # [4]
-    'thumb_IP',      # [5]
-    'spread',        # [6]
-    'index_MCP',     # [7]
-    'index_PIP',     # [8]
-    'middle_MCP',    # [9]
-    'middle_PIP',    # [10]
-    'ring_MCP',      # [11]
-    'ring_PIP',      # [12]
-    'pinky_MCP',     # [13]
-    'pinky_PIP',     # [14]
-]
-
 # =============================================================================
 # Link masses (from URDF / physical measurement)  [kg]
 # =============================================================================
@@ -226,8 +208,6 @@ FINGER_TIP_OFFSETS = {
 # Joint limits  [rad]
 # =============================================================================
 JOINT_LIMITS = {
-    'wrist_pitch':  (-0.5,  0.5),
-    'wrist_yaw':    (-0.5,  0.5),
     'thumb_CMC1':   ( 0.0,  1.5),
     'thumb_CMC2':   (-0.5,  0.5),
     'thumb_MCP':    ( 0.0,  1.5),
@@ -252,40 +232,36 @@ JOINT_LIMITS = {
 
 # =============================================================================
 # Motor efficiency
-# One η per motor axis, ordered as SOFTWARE_MOTOR_ORDER
+# One η per motor axis, ordered as SOFTWARE_MOTOR_ORDER (see motor_config.py)
 # =============================================================================
-ETA_WRIST1 = 1.0000   # wrist_motor1  [0]
-ETA_WRIST2 = 1.0000   # wrist_motor2  [1]
-ETA_THUMB_CMC1 = 1.0000  # thumb_CMC1    [2]
-ETA_THUMB_CMC2 = 1.0000  # thumb_CMC2    [3]
-ETA_THUMB_MCP = 0.8373  # thumb_MCP     [4]
-ETA_THUMB_IP = 0.3594  # thumb_IP      [5]
-ETA_SPREAD = 1.0000  # spread        [6]
-ETA_INDEX_MCP = 0.8373  # index_MCP     [7]
-ETA_INDEX_PIP = 0.3594  # index_PIP     [8]
-ETA_MIDDLE_MCP = 0.8373  # middle_MCP    [9]
-ETA_MIDDLE_PIP = 0.3594  # middle_PIP    [10]
-ETA_RING_MCP = 0.8373  # ring_MCP      [11]
-ETA_RING_PIP = 0.3594  # ring_PIP      [12]
-ETA_PINKY_MCP = 0.8373  # pinky_MCP     [13]
-ETA_PINKY_PIP = 0.3594  # pinky_PIP     [14]
+ETA_THUMB_CMC1 = 1.0000  # [0]  thumb_CMC1
+ETA_THUMB_CMC2 = 1.0000  # [1]  thumb_CMC2
+ETA_THUMB_MCP  = 0.8373  # [2]  thumb_MCP
+ETA_THUMB_IP   = 0.3594  # [3]  thumb_IP
+ETA_SPREAD     = 1.0000  # [4]  spread
+ETA_INDEX_MCP  = 0.8373  # [5]  index_MCP
+ETA_INDEX_PIP  = 0.3594  # [6]  index_PIP
+ETA_MIDDLE_MCP = 0.8373  # [7]  middle_MCP
+ETA_MIDDLE_PIP = 0.3594  # [8]  middle_PIP
+ETA_RING_MCP   = 0.8373  # [9]  ring_MCP
+ETA_RING_PIP   = 0.3594  # [10] ring_PIP
+ETA_PINKY_MCP  = 0.8373  # [11] pinky_MCP
+ETA_PINKY_PIP  = 0.3594  # [12] pinky_PIP
 
 eta = np.array([
-    ETA_WRIST1,     # [0]  wrist_motor1
-    ETA_WRIST2,     # [1]  wrist_motor2
-    ETA_THUMB_CMC1, # [2]  thumb_CMC1
-    ETA_THUMB_CMC2, # [3]  thumb_CMC2
-    ETA_THUMB_MCP,  # [4]  thumb_MCP
-    ETA_THUMB_IP,   # [5]  thumb_IP
-    ETA_SPREAD,     # [6]  spread
-    ETA_INDEX_MCP,  # [7]  index_MCP
-    ETA_INDEX_PIP,  # [8]  index_PIP
-    ETA_MIDDLE_MCP, # [9]  middle_MCP
-    ETA_MIDDLE_PIP, # [10] middle_PIP
-    ETA_RING_MCP,   # [11] ring_MCP
-    ETA_RING_PIP,   # [12] ring_PIP
-    ETA_PINKY_MCP,  # [13] pinky_MCP
-    ETA_PINKY_PIP,  # [14] pinky_PIP
+    ETA_THUMB_CMC1, # [0]
+    ETA_THUMB_CMC2, # [1]
+    ETA_THUMB_MCP,  # [2]
+    ETA_THUMB_IP,   # [3]
+    ETA_SPREAD,     # [4]
+    ETA_INDEX_MCP,  # [5]
+    ETA_INDEX_PIP,  # [6]
+    ETA_MIDDLE_MCP, # [7]
+    ETA_MIDDLE_PIP, # [8]
+    ETA_RING_MCP,   # [9]
+    ETA_RING_PIP,   # [10]
+    ETA_PINKY_MCP,  # [11]
+    ETA_PINKY_PIP,  # [12]
 ])
 
 # =============================================================================
@@ -296,8 +272,7 @@ limit_stiffness = 0.6  # [N·m/rad]
 # =============================================================================
 # Maximum torque
 # =============================================================================
-goal_limit_torque_wrist = 0.03  # [N·m]
-goal_limit_torque = 0.8          # [N·m]
+goal_limit_torque = 0.8  # [N·m]  — applied to all 13 torque-controlled motors
 
 # =============================================================================
 # Friction compensation (Stribeck model, fitted from ModelIDHand experiments)
