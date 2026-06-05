@@ -7,7 +7,9 @@ Modify MOTOR_IDS to match your actual hardware setup.
 
 import numpy as np
 
-NUM_MOTORS = 15
+NUM_MOTORS = 15         # total motors (position feedback from all 15)
+NUM_TORQUE_MOTORS = 13  # torque-controlled motors (hw 0-12, sw indices 2-14)
+WRIST_HW_IDS = {13, 14} # wrist hardware IDs — run in position mode, not torque
 
 # Hardware motor IDs - EDIT THIS to match your hardware
 MOTOR_IDS = {

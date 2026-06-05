@@ -2,11 +2,13 @@
 ## ===============
 ## Sends the hand to the home/reference position using Dynamixel SDK directly.
 ## Uses ABSOLUTE encoder positions (not relative).
-## After reaching home, switches back to torque mode (ready for VMC control).
+## After reaching home:
+##   - Finger/thumb motors (hw 0-12) switch to torque (current) mode, zero torque.
+##   - Wrist motors (hw 13, 14) remain in position mode, holding the home position.
 ##
 ## Usage:
-##   python3 go_home.py          # Send to home position, then switch to torque mode
-##   python3 go_home.py --read   # Read and print current absolute positions
+##   python3 hand_go_home.py          # Send to home, then split into torque/position modes
+##   python3 hand_go_home.py --read   # Read and print current absolute positions
 
 import argparse
 from dynamixel_sdk import PortHandler, PacketHandler, GroupSyncWrite, COMM_SUCCESS
@@ -29,6 +31,9 @@ POSITION_THRESHOLD = 10
 
 # Motor IDs
 MOTOR_IDS = list(range(15))
+
+# Wrist motors (hardware IDs) — kept in position mode, not switched to torque
+WRIST_HW_IDS = {13, 14}
 
 # Home position (ABSOLUTE encoder values)
 # To update: run with --read when hand is in desired pose, then copy values here
@@ -165,8 +170,10 @@ def wait_until_reached(port_handler, packet_handler, timeout=5.0):
 
 
 def set_torque_mode(port_handler, packet_handler):
-    """Set all motors to current (torque) control mode with zero torque."""
+    """Switch finger/thumb motors to torque mode; leave wrist motors in position mode."""
     for motor_id in MOTOR_IDS:
+        if motor_id in WRIST_HW_IDS:
+            continue  # wrist stays in position mode, holding home
         # Disable torque first (required to change operating mode)
         packet_handler.write1ByteTxRx(port_handler, motor_id, ADDR_TORQUE_ENABLE, 0)
         # Set current control mode (value = 0)
@@ -175,7 +182,7 @@ def set_torque_mode(port_handler, packet_handler):
         packet_handler.write2ByteTxRx(port_handler, motor_id, ADDR_GOAL_CURRENT, 0)
         # Enable torque
         packet_handler.write1ByteTxRx(port_handler, motor_id, ADDR_TORQUE_ENABLE, 1)
-    print("All motors set to torque mode (zero torque)")
+    print("Finger/thumb motors (hw 0-12) set to torque mode; wrist (hw 13-14) holding position.")
 
 
 def main():

@@ -250,9 +250,23 @@ For the **finger**:
 ros2 run dynamixel_interface dynamixel_node
 ```
 
-For the **hand**:
+For the **hand**, use the startup script (does all steps in order):
 ```bash
-ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+./start_hand.sh
+```
+
+This script:
+1. Moves the hand to home position (`hand_go_home.py`) — finger/thumb motors end in torque mode, wrist motors stay in position mode holding the home pose
+2. Sets the USB latency timer for maximum throughput
+3. Starts the Dynamixel node for finger/thumb motors (hw 0–12) in torque (current) mode
+4. Starts the Dynamixel node for wrist motors (hw 13–14) in position mode
+
+Or step by step manually:
+```bash
+python3 hand_go_home.py
+sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
+ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12]
+ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[13,14] -p control_mode:=position
 ```
 
 ### Configure UR5 network (optional)

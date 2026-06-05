@@ -1,9 +1,11 @@
 ## VMC Hand Controller
 ## =====================
-## To get motor positions:         /joint_positions (degrees)
-## To get motor velocities:        /joint_velocities (deg/s)
-## To publish torques:             /goal_torque (N·m)
-## Always run before:              ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+## To get motor positions:         /joint_positions (degrees)   — all 15 motors
+## To get motor velocities:        /joint_velocities (deg/s)    — all 15 motors
+## To publish torques:             /goal_torque (N·m)           — 13 torque-controlled motors
+## Always run before (or use ./start_hand.sh):
+##   ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12]
+##   ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[13,14] -p control_mode:=position
 ## Speed:                          sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 ##
 ## All units are SI:
@@ -22,11 +24,9 @@ from ModelIDHand.hand_params import goal_limit_torque, goal_limit_torque_wrist
 # Define ROS2 frequency
 CONTROL_FREQUENCY = 330  # Hz
 
-# Per-motor torque limits in software order: wrist_motor1, wrist_motor2 use the
-# wrist limit; all finger/thumb motors use the standard limit.
-TORQUE_LIMITS = np.array(
-    [goal_limit_torque_wrist] * 2 + [goal_limit_torque] * 13
-)
+# Torque limits for the 13 torque-controlled motors (sw indices 2-14: thumb + fingers).
+# Wrist motors are in position mode and receive no torque commands.
+TORQUE_LIMITS = np.full(13, goal_limit_torque)
 
 
 class HandController(Node):
@@ -83,13 +83,17 @@ class HandController(Node):
 
     def publish_torques(self, torques):
         """
-        Publish torque commands to motors.
+        Publish torque commands to the 13 torque-controlled motors.
 
         Args:
-            torques: [15] motor torques in software order (N·m).
+            torques: [13] motor torques in software order (N·m),
+                     corresponding to sw indices 2-14 (thumb_CMC1 … pinky_PIP).
+                     Wrist motors (sw 0-1) are in position mode and are not commanded.
         """
         torques = np.clip(torques, -TORQUE_LIMITS, TORQUE_LIMITS)
-        tau_hw  = software_to_hardware(torques)
+        tau_15 = np.zeros(15)
+        tau_15[2:] = torques        # wrist sw indices 0,1 remain zero
+        tau_hw = software_to_hardware(tau_15)
         msg = Float64MultiArray()
         msg.data = list(tau_hw)
         self.torque_pub.publish(msg)
