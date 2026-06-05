@@ -66,22 +66,22 @@ B_TIP       = 0.001     # [N·s/m]      task-space damping
 B_FLEX_DAMP = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 5.0    # [N/m]  baseline uniform tip stiffness
+K_UNIFORM = 5.0     # [N/m]  baseline uniform tip stiffness
 K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
-K_LOW     = 0.01    # [N/m]  compliant-side stiffness
+K_LOW     = 1.0     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
 SETTLE_TIME      = 1.0   # [s]
-RAMP_DURATION    = 2.0   # [s]   joint-target / K ramp duration
+RAMP_DURATION    = 3.0   # [s]   joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]
-CONVERGE_HOLD    = 1.0   # [s]
-CONVERGE_TIMEOUT = 5.0  # [s]
-RECORD_DURATION  = 3.0   # [s]
+CONVERGE_HOLD    = 2.0   # [s]
+CONVERGE_TIMEOUT = 8.0  # [s]
+RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
 K_SOFT        = 1.0    # [N/m]  very compliant tip spring
-K_STIFF       = 50.0  # [N/m]  very stiff tip spring
+K_STIFF       = 100.0  # [N/m]  very stiff tip spring
 SOFT_DURATION    = 2.0    # [s]    (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
 HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
