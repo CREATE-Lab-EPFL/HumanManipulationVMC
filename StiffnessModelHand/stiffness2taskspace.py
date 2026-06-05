@@ -39,7 +39,7 @@ class tip_stiffness_TaskSpace:
     in the world frame.
 
     Uses constant efficiency model:
-        η = diag([η_wrist1, η_wrist2, η_CMC1, η_CMC2, η_MCP_thumb, η_IP,
+        η = diag([η_CMC1, η_CMC2, η_MCP_thumb, η_IP,
                   η_spread, η_MCP_idx, η_PIP_idx, η_MCP_mid, η_PIP_mid,
                   η_MCP_rng, η_PIP_rng, η_MCP_pnk, η_PIP_pnk])
     """
