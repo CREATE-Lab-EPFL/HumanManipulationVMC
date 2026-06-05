@@ -5,8 +5,9 @@ Hand configuration for PoseControl experiments.
 import numpy as np
 
 # ── VMC parameters ─────────────────────────────────────────────────────────────
-STIFFNESS = 0.3    # [N·m/rad]
-DAMPING   = 0.0001 # [N·m·s/rad]
+STIFFNESS        = 0.3    # [N·m/rad]
+DAMPING          = 0.0001 # [N·m·s/rad]
+FRICTION_TAU_MAX = 0.10   # [N·m]  max stiction compensation (overrides hand_params default)
 
 # Lower gains used when ramping back to home (smoother, less overshoot)
 RETURN_STIFFNESS = 0.15  # [N·m/rad]

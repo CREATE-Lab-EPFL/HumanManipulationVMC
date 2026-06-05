@@ -49,6 +49,7 @@ from hand_config import (
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
     K_UNIFORM, K_HIGH, K_LOW,
     K_ROT, B_ROT, B_TIP, K_RETURN,
+    FRICTION_TAU_MAX,
     SETTLE_TIME, RAMP_DURATION,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT, RECORD_DURATION,
 )
@@ -133,7 +134,6 @@ vmc_joint.ring_pinky_target = HOME_FINGER.copy()
 vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
-    vmc_task.springs[_f].stiffness  = np.zeros(3)
     vmc_task.dampers[_f].damping    = np.full(3, B_TIP)
     vmc_task.targets[_f]            = D_REF[_f].copy()
     vmc_task.attachment_points[_f]  = FINGER_TIP_OFFSETS[_f].copy()
@@ -143,6 +143,7 @@ vmc_task.dampers['palm'].damping   = np.full(3, B_TIP)
 vmc_task.targets['palm']           = D_REF['palm'].copy()
 
 grav_lim = GravFricLim()
+grav_lim.friction_max = FRICTION_TAU_MAX
 recv     = UR5Receiver()
 
 print('Initialising stiffness model (HandHessians)…')

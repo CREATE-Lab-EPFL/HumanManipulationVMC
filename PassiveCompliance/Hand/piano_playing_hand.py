@@ -108,7 +108,6 @@ vmc_joint.middle_target = np.zeros(3)
 vmc_joint.pinky_target  = np.zeros(3)
 
 vmc_task = TaskVMC()
-vmc_task.set_stiffness(0.0)
 for _f in PIANO_FINGERS_PLAYING:
     vmc_task.dampers[_f].damping = np.full(3, B_CART)
     vmc_task.targets[_f]         = REST_POS[_f].copy()

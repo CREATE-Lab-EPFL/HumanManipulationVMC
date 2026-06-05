@@ -47,6 +47,7 @@ from hand_config import (
     FINGERTIPS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, B_ROT, B_TIP, K_HOME,
+    FRICTION_TAU_MAX,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
 import rtde_control
@@ -136,16 +137,15 @@ vmc_joint.ring_pinky_target = HOME_FINGER.copy()
 vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
-    vmc_task.springs[_f].stiffness  = np.zeros(3)
     vmc_task.dampers[_f].damping    = np.full(3, B_TIP)
     vmc_task.targets[_f]            = D_REF[_f].copy()
     vmc_task.attachment_points[_f]  = FINGER_TIP_OFFSETS[_f].copy()
 
-vmc_task.springs['palm'].stiffness = np.zeros(3)
 vmc_task.dampers['palm'].damping   = np.full(3, B_TIP)
 vmc_task.targets['palm']           = D_REF['palm'].copy()
 
 grav_lim = GravFricLim()
+grav_lim.friction_max = FRICTION_TAU_MAX
 recv     = UR5Receiver()
 
 print('Initialising stiffness model …')

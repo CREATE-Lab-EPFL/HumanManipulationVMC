@@ -23,6 +23,7 @@ from KinematicsHand.FK_Hand import (
 from UR5_codes.UR5_readPose import UR5Receiver
 from hand_config import (
     POSES, HOME_POSE, STIFFNESS, DAMPING, RETURN_STIFFNESS, RETURN_DAMPING,
+    FRICTION_TAU_MAX,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT,
     LOG_DURATION, RAMP_DURATION,
 )
@@ -42,6 +43,7 @@ rclpy.init()
 controller = HandController()
 vmc        = VMC()
 grav_lim   = GravFricLim()
+grav_lim.friction_max = FRICTION_TAU_MAX
 recv       = UR5Receiver()
 
 vmc.set_stiffness(STIFFNESS)

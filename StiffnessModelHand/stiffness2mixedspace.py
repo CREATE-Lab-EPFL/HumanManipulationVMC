@@ -62,7 +62,7 @@ class tip_stiffness_MixedSpace:
                            normal computation. Defaults to DEFAULT_RTIPS.
             rattachments:  dict of attachment offsets for task-space springs [m].
                            Defaults to DEFAULT_RATTACHMENTS.
-            eta:           (15,) motor efficiency vector. Defaults to ones (no efficiency loss).
+            eta:           (13,) motor efficiency vector. Defaults to ones (no efficiency loss).
             mode:          'normal' — P = n nᵀ (rank-1, force/stiffness along contact normal only);
                            'full'   — P = I₃   (full 3-D force and stiffness).
         """
@@ -381,7 +381,7 @@ class tip_stiffness_MixedSpace:
         for group, K in K_joint_dict.items():
             J_q = self._J_angle(group, q)
             cols.append(J_q.T @ np.atleast_2d(K))
-        M_joint = np.hstack(cols) if cols else np.zeros((15, 0))
+        M_joint = np.hstack(cols) if cols else np.zeros((13, 0))
         S_joint = J_pinv.T @ eta @ M_joint
 
         S_task = {
@@ -407,8 +407,8 @@ class tip_stiffness_MixedSpace:
             vec(K_des) ≈ M · vec(K_group),   M = (J_g·J_pinv)^T ⊗ (J_pinv^T·η·J_g^T)
         """
         eta_mat = np.diag(self.eta)
-        J_pinv  = self._J_tip_P_pinv(finger, q)   # (15,3)
-        J_g     = self._J_angle(group, q)          # (n_g,15)
+        J_pinv  = self._J_tip_P_pinv(finger, q)   # (13,3)
+        J_g     = self._J_angle(group, q)          # (n_g,13)
         n_g     = J_g.shape[0]
         L = J_pinv.T @ eta_mat @ J_g.T             # (3,n_g)
         R = J_g @ J_pinv                            # (n_g,3)
@@ -597,7 +597,7 @@ if __name__ == "__main__":
                 print(f"  [{finger}] iter {i:3d}  ||error|| = {err:.6f}")
             Kj_opt, Kt_opt = model.stiffness_descent(
                 finger, q_base, theta_ref_init_deg, d_ref_dict, Kj_opt, Kt_opt,
-                f_meas, f_des, lr_joint=3e-3, lr_task=3e-3)
+                f_meas, f_des, lr_joint=1e-3, lr_task=1e-3)
         final = np.linalg.norm(
             model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict, Kj_opt, Kt_opt) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")

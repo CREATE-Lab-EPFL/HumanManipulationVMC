@@ -56,9 +56,10 @@ SIDE_B_SOFT = ['thumb', 'index', 'middle']
 CONDITIONS  = ['soft', 'stiff', 'adaptive']
 
 # ── Shared joint regulation (both experiments) ────────────────────────────────
-K_ROT       = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
-B_ROT       = 0.001    # [N·m·s/rad]  background joint damping
-B_TIP       = 0.001    # [N·s/m]      task-space damping
+K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
+B_ROT          = 0.001    # [N·m·s/rad]  background joint damping
+B_TIP          = 0.001    # [N·s/m]      task-space damping
+FRICTION_TAU_MAX = 0.10   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM = 5.0     # [N/m]  baseline uniform tip stiffness
