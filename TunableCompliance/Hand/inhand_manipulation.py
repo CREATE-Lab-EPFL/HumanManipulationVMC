@@ -382,11 +382,6 @@ def _set_task_stiffness(k_dict):
         vmc_task.springs[_f].stiffness = np.full(3, k_dict[_f])
 
 
-def _set_joint_stiffness_uniform(k_rot, b_rot):
-    vmc_joint.set_stiffness(k_rot)
-    vmc_joint.set_damping(b_rot)
-
-
 def _set_joint_stiffness_experiment():
     vmc_joint.set_stiffness(K_ROT)
     vmc_joint.set_damping(B_ROT)
@@ -434,6 +429,23 @@ def _step_k_ramp(now):
         _current_k_dict[_f] = (1 - alpha) * _k_ramp_start[_f] + alpha * _k_ramp_end[_f]
     _set_task_stiffness(_current_k_dict)
     return alpha >= 1.0
+
+
+def _tick_converge(q_dot, elapsed):
+    global _converge_ticks
+    if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
+        _converge_ticks += 1
+    else:
+        _converge_ticks = 0
+    return (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT)
+
+
+def _write_record_row(q, q_dot, tau_joint, tau_task, tau_comp, phase):
+    global _log_tick
+    _log_tick += 1
+    if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
+        _csv_writer.writerow(
+            _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, phase, _current_k_dict, True))
 
 # =============================================================================
 # Control callback
@@ -486,25 +498,17 @@ def control_callback():
                 f'Ramp done. Engaging tip springs at K_UNIFORM = {K_UNIFORM} N/m …')
 
     elif state == STATE_UNIFORM_CONV:
-        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
-            _converge_ticks += 1
-        else:
-            _converge_ticks = 0
-        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
-            if not _converged:
-                _converged   = True
-                _log_tick    = 0
-                _state_start = now
-                state        = STATE_UNIFORM_REC
-                controller.get_logger().info(
-                    f'Uniform grasp converged at {elapsed:.1f} s. '
-                    f'Recording {RECORD_DURATION:.0f} s …')
+        if _tick_converge(q_dot, elapsed) and not _converged:
+            _converged   = True
+            _log_tick    = 0
+            _state_start = now
+            state        = STATE_UNIFORM_REC
+            controller.get_logger().info(
+                f'Uniform grasp converged at {elapsed:.1f} s. '
+                f'Recording {RECORD_DURATION:.0f} s …')
 
     elif state == STATE_UNIFORM_REC:
-        _log_tick += 1
-        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
-            _csv_writer.writerow(
-                _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, 'uniform', _current_k_dict, True))
+        _write_record_row(q, q_dot, tau_joint, tau_task, tau_comp, 'uniform')
         if elapsed >= RECORD_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
@@ -535,25 +539,17 @@ def control_callback():
             state           = _k_ramp_after
 
     elif state == STATE_ASYM_A_CONV:
-        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
-            _converge_ticks += 1
-        else:
-            _converge_ticks = 0
-        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
-            if not _converged:
-                _converged   = True
-                _log_tick    = 0
-                _state_start = now
-                state        = STATE_ASYM_A_REC
-                controller.get_logger().info(
-                    f'ASYM_A converged at {elapsed:.1f} s. '
-                    f'Recording {RECORD_DURATION:.0f} s …')
+        if _tick_converge(q_dot, elapsed) and not _converged:
+            _converged   = True
+            _log_tick    = 0
+            _state_start = now
+            state        = STATE_ASYM_A_REC
+            controller.get_logger().info(
+                f'ASYM_A converged at {elapsed:.1f} s. '
+                f'Recording {RECORD_DURATION:.0f} s …')
 
     elif state == STATE_ASYM_A_REC:
-        _log_tick += 1
-        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
-            _csv_writer.writerow(
-                _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, 'asym_a', _current_k_dict, True))
+        _write_record_row(q, q_dot, tau_joint, tau_task, tau_comp, 'asym_a')
         if elapsed >= RECORD_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
@@ -584,25 +580,17 @@ def control_callback():
             state           = _k_ramp_after
 
     elif state == STATE_ASYM_B_CONV:
-        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
-            _converge_ticks += 1
-        else:
-            _converge_ticks = 0
-        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
-            if not _converged:
-                _converged   = True
-                _log_tick    = 0
-                _state_start = now
-                state        = STATE_ASYM_B_REC
-                controller.get_logger().info(
-                    f'ASYM_B converged at {elapsed:.1f} s. '
-                    f'Recording {RECORD_DURATION:.0f} s …')
+        if _tick_converge(q_dot, elapsed) and not _converged:
+            _converged   = True
+            _log_tick    = 0
+            _state_start = now
+            state        = STATE_ASYM_B_REC
+            controller.get_logger().info(
+                f'ASYM_B converged at {elapsed:.1f} s. '
+                f'Recording {RECORD_DURATION:.0f} s …')
 
     elif state == STATE_ASYM_B_REC:
-        _log_tick += 1
-        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
-            _csv_writer.writerow(
-                _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, 'asym_b', _current_k_dict, True))
+        _write_record_row(q, q_dot, tau_joint, tau_task, tau_comp, 'asym_b')
         if elapsed >= RECORD_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
@@ -610,7 +598,8 @@ def control_callback():
                 'All phases recorded. Releasing contact before returning home …')
             _set_task_stiffness({f: 0.0 for f in FINGERTIPS})
             _use_task_vmc = False
-            _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
+            vmc_joint.set_stiffness(K_RETURN)
+            vmc_joint.set_damping(B_RETURN)
             _state_start  = now
             state         = STATE_UNLOAD
 
@@ -631,11 +620,7 @@ def control_callback():
             controller.get_logger().info('Ramp to HOME done. Waiting for convergence …')
 
     elif state == STATE_RETURN:
-        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
-            _converge_ticks += 1
-        else:
-            _converge_ticks = 0
-        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
+        if _tick_converge(q_dot, elapsed):
             state = STATE_DONE
             controller.get_logger().info('Home reached. Experiment complete.')
 
