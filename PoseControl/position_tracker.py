@@ -1,5 +1,5 @@
 """
-Position tracking with the full 15-DOF ADAPT Hand using joint-space VMC.
+Position tracking with the 13-DOF ADAPT Hand using joint-space VMC.
 
 Two target poses inspired by hand synergies (Santello et al. 1998) are commanded
 in sequence: PC1 (power grasp, uniform flexion) and PC2 (pinch, differential).

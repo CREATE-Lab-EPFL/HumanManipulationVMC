@@ -264,7 +264,6 @@ def _hand_to_home_stiff():
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.stiffness[_f] = np.full(3, K_HOME)
         vmc_joint.damping[_f]   = np.full(3, B_ROT)
-    vmc_joint.stiffness['wrist'] = np.full(2, K_HOME_WRIST)
     vmc_joint.stiffness['thumb'] = np.full(4, K_HOME)
 
 
@@ -469,7 +468,7 @@ finally:
     vmc_joint.set_damping(0.0)
     vmc_task.set_stiffness(0.0)
     vmc_task.set_damping(0.0)
-    controller.publish_torques(np.zeros(15))
+    controller.publish_torques(np.zeros(13))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
 
     arm.disconnect()
