@@ -319,4 +319,4 @@ Cz = 77.00            # [mm]
 # This is the in-plane rotation between the hand base frame and the flange
 # screw pattern — measure it physically and set it here.
 # =============================================================================
-HAND_MOUNTING_ANGLE = np.deg2rad(45)  # [rad]
+HAND_MOUNTING_ANGLE = np.deg2rad(0)  # [rad]
