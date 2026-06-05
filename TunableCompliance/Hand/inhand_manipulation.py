@@ -49,7 +49,7 @@ from hand_config import (
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
     K_UNIFORM, K_HIGH, K_LOW,
-    K_ROT, B_ROT, B_TIP, K_RETURN,
+    K_ROT, B_ROT, K_ROT_WRIST, B_ROT_WRIST, B_TIP, K_RETURN,
     SETTLE_TIME, RAMP_DURATION,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT, RECORD_DURATION,
 )
@@ -126,9 +126,9 @@ controller = HandController()
 
 vmc_joint = JointVMC()
 
-vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
+vmc_joint.stiffness['wrist'] = np.full(2, K_ROT_WRIST)
 vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
-vmc_joint.damping['wrist']   = np.full(2, B_ROT)
+vmc_joint.damping['wrist']   = np.full(2, B_ROT_WRIST)
 vmc_joint.damping['thumb']   = np.full(4, B_ROT)
 for _f in ['index', 'middle', 'ring', 'pinky']:
     vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
@@ -412,9 +412,9 @@ def _set_joint_stiffness_uniform(k_rot, b_rot):
 
 
 def _set_joint_stiffness_experiment():
-    vmc_joint.stiffness['wrist'] = np.full(2, K_ROT)
+    vmc_joint.stiffness['wrist'] = np.full(2, K_ROT_WRIST)
     vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
-    vmc_joint.damping['wrist']   = np.full(2, B_ROT)
+    vmc_joint.damping['wrist']   = np.full(2, B_ROT_WRIST)
     vmc_joint.damping['thumb']   = np.full(4, B_ROT)
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
