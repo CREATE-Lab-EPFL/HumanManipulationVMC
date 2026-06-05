@@ -247,9 +247,7 @@ def _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, phase, k_dict, converg
     row += [f'{v:.6f}' for v in tau_task]
     row += [f'{v:.6f}' for v in tau_comp]
 
-    w = FK_motor2wrist(q)
     t = FK_motor2thumb(q)
-    row += [f'{w[0]:.6f}', f'{w[1]:.6f}']
     row += [f'{t[i]:.6f}' for i in range(4)]
     for _f in ['index', 'middle', 'ring', 'pinky']:
         row.append(f'{FK_motor2spread(q, _f):.6f}')
@@ -294,7 +292,6 @@ def _compute_row(q, q_dot, tau_joint, tau_task, tau_comp, phase, k_dict, converg
 # Pose dictionaries
 # =============================================================================
 HOME_POSE_TARGETS = {
-    'wrist':             HOME_WRIST.copy(),
     'thumb':             HOME_THUMB.copy(),
     'spread':            {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']},
     'index_target':      HOME_FINGER.copy(),
