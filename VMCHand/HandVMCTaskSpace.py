@@ -130,7 +130,7 @@ class VMC:
             q_dot_motor: [13] motor velocities (rad/s)
 
         Returns:
-            tau: [15] motor torques (N·m)
+            tau: [13] motor torques (N·m)
         """
         tau = np.zeros(13)
 

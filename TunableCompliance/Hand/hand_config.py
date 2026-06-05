@@ -9,7 +9,7 @@ import numpy as np
 # inhand_manipulation.py — hand horizontal, fingers down over the in-hand
 # reorientation fixture. Independent from ProprioceptiveSensing's
 # UR5_POSE_SQUEEZING (object-stiffness fixture) — edit them separately.
-UR5_POSE_INHAND = np.array([-0.35, 0.70, 0.29, 0.0, -0.24, 1.90])
+UR5_POSE_INHAND = np.array([-0.38, 0.64, 0.19, -1.80, -0.59, 0.65])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along +X.
 UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
@@ -61,14 +61,14 @@ B_ROT       = 0.001    # [N·m·s/rad]  background joint damping
 B_TIP       = 0.001    # [N·s/m]      task-space damping
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 20.0     # [N/m]  baseline uniform tip stiffness
+K_UNIFORM = 5.0     # [N/m]  baseline uniform tip stiffness
 K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
-K_LOW     = 5.0     # [N/m]  compliant-side stiffness
+K_LOW     = 0.5     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
 SETTLE_TIME      = 1.0   # [s]
-RAMP_DURATION    = 3.0   # [s]   joint-target / K ramp duration
+RAMP_DURATION    = 1.0   # [s]   joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]
 CONVERGE_HOLD    = 2.0   # [s]
 CONVERGE_TIMEOUT = 8.0  # [s]

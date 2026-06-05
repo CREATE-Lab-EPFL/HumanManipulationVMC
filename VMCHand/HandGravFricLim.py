@@ -26,7 +26,7 @@ from ModelIDHand.hand_params import (
 
 class GravFricLim:
     """
-    Gravity, friction, and joint limit compensation for the 15-DOF hand model.
+    Gravity, friction, and joint limit compensation for the 13 torque-controlled DOF hand model.
 
     PLA masses (g):
     - Wrist/Palm: Wrist_joint=10.4g, Palm=80.8g

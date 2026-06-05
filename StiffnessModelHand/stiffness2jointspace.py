@@ -184,9 +184,9 @@ class tip_stiffness_JointSpace:
 
         if f_ext is not None:
             P    = self._P(finger, q)
-            H_xf = self._H_tip(finger, q)                          # (3,15,15)
-            H_xf_P = np.tensordot(P, H_xf, axes=([1], [0]))        # (3,15,15)
-            K_g_out = np.tensordot(f_ext, H_xf_P, axes=([0], [0])) # (15,15)
+            H_xf = self._H_tip(finger, q)                          # (3,13,13)
+            H_xf_P = np.tensordot(P, H_xf, axes=([1], [0]))        # (3,13,13)
+            K_g_out = np.tensordot(f_ext, H_xf_P, axes=([0], [0])) # (13,13)
 
             if theta_ref_deg is not None:
                 theta_ref = np.radians(theta_ref_deg)
@@ -278,15 +278,15 @@ class tip_stiffness_JointSpace:
         Args:
             finger:  output fingertip
             group:   spring group
-            q:       (15,) current motor angles [rad]
+            q:       (13,) current motor angles [rad]
             K_des:   (3,3) desired tip stiffness [N/m]
 
         Returns:
             K_ff: (n_g, n_g) minimum-norm group stiffness that best produces K_des
         """
         eta_mat = np.diag(self.eta)
-        J_pinv  = self._J_tip_P_pinv(finger, q)   # (15,3)
-        J_g     = self._J_angle(group, q)          # (n_g,15)
+        J_pinv  = self._J_tip_P_pinv(finger, q)   # (13,3)
+        J_g     = self._J_angle(group, q)          # (n_g,13)
         n_g     = J_g.shape[0]
         L = J_pinv.T @ eta_mat @ J_g.T             # (3,n_g)
         R = J_g @ J_pinv                            # (n_g,3)
@@ -302,7 +302,7 @@ class tip_stiffness_JointSpace:
 
         Args:
             finger:  output fingertip
-            q:       (15,) current motor angles [rad]
+            q:       (13,) current motor angles [rad]
             K_dict:  dict of per-group stiffness matrices (ordering defines vec stack)
             K_des:   (3,3) desired tip stiffness [N/m]
 
@@ -346,7 +346,7 @@ class tip_stiffness_JointSpace:
 
         Args:
             finger:         output fingertip
-            q:              (15,) current motor angles [rad]
+            q:              (13,) current motor angles [rad]
             theta_ref_deg:  (n_total,) concatenated joint-space reference [deg]
             K_dict:         dict of per-group stiffness matrices
             f_meas, f_des:  (3,) measured and desired tip forces [N]
@@ -397,7 +397,7 @@ class tip_stiffness_JointSpace:
         for group, K in K_dict.items():
             J_q = self._J_angle(group, q)
             cols.append(J_q.T @ np.atleast_2d(K))
-        S_mat = np.hstack(cols) if cols else np.zeros((15, 0))
+        S_mat = np.hstack(cols) if cols else np.zeros((13, 0))
 
         S = J_pinv.T @ eta @ S_mat
         error = f_meas - f_des
