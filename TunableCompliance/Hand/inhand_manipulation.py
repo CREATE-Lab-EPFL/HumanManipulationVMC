@@ -68,7 +68,6 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 # Derived quantities
 # =============================================================================
 Q_TARGET = joint_to_motor(
-    PC1_WRIST,
     PC1_THUMB,
     PC1_SPREAD['index'],
     PC1_INDEX[:2],
@@ -83,11 +82,10 @@ D_REF = {
     'middle': np.array(FK_motor2fingerPos(Q_TARGET, 'middle', 'DIP', FINGER_TIP_OFFSETS['middle'])),
     'ring':   np.array(FK_motor2fingerPos(Q_TARGET, 'ring',   'DIP', FINGER_TIP_OFFSETS['ring'])),
     'pinky':  np.array(FK_motor2fingerPos(Q_TARGET, 'pinky',  'DIP', FINGER_TIP_OFFSETS['pinky'])),
-    'palm':   np.array(FK_motor2palm(Q_TARGET, np.zeros(3))[1]),
+    'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
 THETA_REF_DEG = np.degrees(np.concatenate([
-    PC1_WRIST,
     PC1_THUMB,
     [PC1_SPREAD['index']],
     [PC1_SPREAD['middle']],
@@ -100,7 +98,6 @@ THETA_REF_DEG = np.degrees(np.concatenate([
 ]))
 
 K_JOINT_DICT_MODEL = {
-    'wrist':         K_ROT * np.eye(2),
     'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
     'spread_index':  K_ROT * np.eye(1),
     'spread_middle': K_ROT * np.eye(1),
@@ -124,18 +121,9 @@ rclpy.init()
 controller = HandController()
 
 vmc_joint = JointVMC()
+vmc_joint.set_stiffness(K_ROT)
+vmc_joint.set_damping(B_ROT)
 
-vmc_joint.stiffness['wrist'] = np.full(2, K_ROT_WRIST)
-vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
-vmc_joint.damping['wrist']   = np.full(2, B_ROT_WRIST)
-vmc_joint.damping['thumb']   = np.full(4, B_ROT)
-for _f in ['index', 'middle', 'ring', 'pinky']:
-    vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
-    vmc_joint.damping[f'spread_{_f}']   = np.array([B_ROT])
-    vmc_joint.stiffness[_f]             = np.full(3, K_ROT)
-    vmc_joint.damping[_f]               = np.full(3, B_ROT)
-
-vmc_joint.wrist             = HOME_WRIST.copy()
 vmc_joint.thumb             = HOME_THUMB.copy()
 vmc_joint.spread            = {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
 vmc_joint.index_target      = HOME_FINGER.copy()
@@ -183,17 +171,16 @@ def _csv_header():
     cols = ['time_s', 'phase', 'converged']
     for _f in FINGERTIPS:
         cols.append(f'k_{_f}_Npm')
-    for i in range(15):
+    for i in range(13):
         cols.append(f'q_motor_{i}_rad')
-    for i in range(15):
+    for i in range(13):
         cols.append(f'q_dot_motor_{i}_rads')
-    for i in range(15):
+    for i in range(13):
         cols.append(f'tau_joint_{i}_Nm')
-    for i in range(15):
+    for i in range(13):
         cols.append(f'tau_task_{i}_Nm')
-    for i in range(15):
+    for i in range(13):
         cols.append(f'tau_comp_{i}_Nm')
-    cols += ['joint_wrist_pitch_rad', 'joint_wrist_yaw_rad']
     cols += ['joint_thumb_CMC1_rad', 'joint_thumb_CMC2_rad',
              'joint_thumb_MCP_rad',  'joint_thumb_IP_rad']
     for _f in ['index', 'middle', 'ring', 'pinky']:
