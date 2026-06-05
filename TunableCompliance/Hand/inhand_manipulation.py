@@ -49,7 +49,7 @@ from hand_config import (
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
     K_UNIFORM, K_HIGH, K_LOW,
-    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
+    K_ROT, B_ROT, B_TIP, K_RETURN,
     SETTLE_TIME, RAMP_DURATION,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT, RECORD_DURATION,
 )
@@ -410,8 +410,8 @@ def _set_joint_stiffness_experiment():
     for _f in ['index', 'middle', 'ring', 'pinky']:
         vmc_joint.stiffness[f'spread_{_f}'] = np.array([K_ROT])
         vmc_joint.damping[f'spread_{_f}']   = np.array([B_ROT])
-        vmc_joint.stiffness[_f]             = np.full(3, K_ROT_FLEX)
-        vmc_joint.damping[_f]               = np.full(3, B_FLEX_DAMP)
+        vmc_joint.stiffness[_f]             = np.zeros(3)
+        vmc_joint.damping[_f]               = np.full(3, B_ROT)
 
 
 def _begin_ramp(end_targets):

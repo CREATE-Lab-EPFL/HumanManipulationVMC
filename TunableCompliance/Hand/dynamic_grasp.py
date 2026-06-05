@@ -47,7 +47,7 @@ from hand_config import (
     HOME_WRIST, HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
-    K_ROT, K_ROT_FLEX, B_ROT, B_TIP, B_FLEX_DAMP, K_HOME, K_HOME_WRIST,
+    K_ROT, B_ROT, B_TIP, K_HOME, K_HOME_WRIST,
     APPROACH_SPEED, TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
 import rtde_control
@@ -259,8 +259,8 @@ def _close_hand():
     vmc_joint.middle_target     = PC1_MIDDLE.copy()
     vmc_joint.ring_pinky_target = PC1_RING.copy()
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.full(3, K_ROT_FLEX)
-        vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
+        vmc_joint.stiffness[_f] = np.zeros(3)
+        vmc_joint.damping[_f]   = np.full(3, B_ROT)
     _set_task_stiffness(_K_INIT_MAP[CONDITION])
 
 
