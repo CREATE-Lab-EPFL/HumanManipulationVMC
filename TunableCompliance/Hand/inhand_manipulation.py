@@ -448,7 +448,7 @@ def control_callback():
     q_dot = controller.get_joint_velocities()
 
     tau_joint = vmc_joint.hand_torques(q, q_dot)
-    tau_task  = vmc_task.hand_torques(q, q_dot) if _use_task_vmc else np.zeros(15)
+    tau_task  = vmc_task.hand_torques(q, q_dot) if _use_task_vmc else np.zeros(13)
     tau_vmc   = tau_joint + tau_task
     tau_comp  = grav_lim.compute_compensation_torques(
         q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
@@ -665,7 +665,7 @@ finally:
     vmc_joint.set_damping(0.0)
     vmc_task.set_stiffness(0.0)
     vmc_task.set_damping(0.0)
-    controller.publish_torques(np.zeros(15))
+    controller.publish_torques(np.zeros(13))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
 
     if _csv_file is not None and not _csv_file.closed:
