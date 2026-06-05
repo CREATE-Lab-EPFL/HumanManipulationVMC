@@ -686,7 +686,6 @@ def control_callback():
         if elapsed >= CONVERGE_HOLD:
             controller.get_logger().info(
                 f'Contact released. Ramping PC1 → HOME over {RAMP_DURATION:.1f} s …')
-            vmc_joint.wrist             = FK_motor2wrist(q)
             vmc_joint.thumb             = FK_motor2thumb(q)
             for _f in ['index', 'middle', 'ring', 'pinky']:
                 vmc_joint.spread[_f]    = np.array([FK_motor2spread(q, _f)])
