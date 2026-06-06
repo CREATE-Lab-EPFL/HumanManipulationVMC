@@ -78,13 +78,9 @@ D_REF = {
     'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
-# Centroid of all fingertip FK positions — used as common task-spring target.
-D_REF_CENTER = np.mean([D_REF[f] for f in FINGERTIPS], axis=0)
-D_REF_CENTER_DICT = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
-D_REF_CENTER_DICT['palm'] = D_REF['palm'].copy()
-
-# Mutable reference dict for force/stiffness model — 4 fingers updated when frozen.
-_d_ref_model_dict = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
+# Mutable reference dict for force/stiffness model — per-finger PC1 targets;
+# 4 clamping fingers overwritten with their frozen positions at sweep start.
+_d_ref_model_dict = {f: D_REF[f].copy() for f in FINGERTIPS}
 _d_ref_model_dict['palm'] = D_REF['palm'].copy()
 
 # Frozen tip positions of the 4 clamping fingers (filled at sweep start).
@@ -140,7 +136,7 @@ vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
     vmc_task.dampers[_f].damping      = np.full(3, B_TIP)
-    vmc_task.targets[_f]              = D_REF_CENTER.copy()
+    vmc_task.targets[_f]              = D_REF[_f].copy()
     vmc_task.attachment_points[_f]    = FINGER_TIP_OFFSETS[_f].copy()
 
 vmc_task.springs['palm'].stiffness = np.full(3, K_TIP_GENTLE)
@@ -376,7 +372,7 @@ def _reset_trial():
     _confirm_pending = False
     _finger_hold_pos.clear()
     for _f in FINGERTIPS:
-        _d_ref_model_dict[_f] = D_REF_CENTER.copy()
+        _d_ref_model_dict[_f] = D_REF[_f].copy()
 
     if not COLLECTED_DATA:
         _csv_path   = _output_path()
@@ -535,7 +531,7 @@ def control_callback():
             _set_joint_stiffness_experiment()
             _set_task_stiffness(K_TIP_GENTLE)
             for _f in FINGERTIPS:
-                vmc_task.targets[_f] = D_REF_CENTER.copy()
+                vmc_task.targets[_f] = D_REF[_f].copy()
             _use_task_vmc   = True
             _converge_ticks = 0
             _converged      = False

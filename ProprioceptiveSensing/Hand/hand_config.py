@@ -9,7 +9,7 @@ import numpy as np
 UR5_POSE_SQUEEZING = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([100.0, -70.0, 90.0, 90.0])
+PC1_THUMB  = np.deg2rad([100.0, -70.0, 120.0, 120.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),
@@ -32,7 +32,7 @@ OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
 K_TIP_GENTLE = 20.0              # [N/m]  gentle-grasp stiffness (baseline)
-K_TIP_SWEEP  = [50, 100, 150]    # [N/m]  stiffness levels for the thumb sweep
+K_TIP_SWEEP  = [100, 200, 300]    # [N/m]  stiffness levels for the thumb sweep
 K_TIP_HOLD   = 100.0             # [N/m]  constant hold stiffness for the 4 clamping fingers
 
 # ── Background joint regulation ───────────────────────────────────────────────
