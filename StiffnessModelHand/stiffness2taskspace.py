@@ -396,10 +396,10 @@ if __name__ == "__main__":
     # Thumb and index flexed
     q_ref  = np.zeros(13)
     q_base = np.zeros(13)
-    q_base[4] = np.deg2rad(30.0)   # thumb MCP
-    q_base[5] = np.deg2rad(20.0)   # thumb IP
-    q_base[7] = np.deg2rad(30.0)   # index MCP
-    q_base[8] = np.deg2rad(20.0)   # index PIP
+    q_base[2] = np.deg2rad(30.0)   # thumb MCP
+    q_base[3] = np.deg2rad(20.0)   # thumb IP
+    q_base[5] = np.deg2rad(30.0)   # index MCP
+    q_base[6] = np.deg2rad(20.0)   # index PIP
 
     k = 200.0   # [N/m]
 
@@ -455,7 +455,7 @@ if __name__ == "__main__":
     f_des = np.array([0.0, 0.02, 0.5])
     for finger in ['thumb', 'index']:
         K_opt = {p: K.copy() for p, K in K_dict.items()}
-        MAX_ITERS = 10000
+        MAX_ITERS = 30000
         for i in range(MAX_ITERS):
             f_meas = model.tip_force(finger, q_base, d_ref_dict, K_opt)
             err    = np.linalg.norm(f_meas - f_des)

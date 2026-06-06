@@ -540,7 +540,7 @@ if __name__ == "__main__":
 
     theta_ref_init_deg = _build_theta_ref_deg(q_ref, K_joint_dict)
 
-    MAX_ITERS = 10000
+    MAX_ITERS = 30000
 
     # 1. Tip stiffnesses and forces
     print("\n1. Tip stiffnesses (eigenvalues) and forces at q_base:")
@@ -597,7 +597,7 @@ if __name__ == "__main__":
                 print(f"  [{finger}] iter {i:3d}  ||error|| = {err:.6f}")
             Kj_opt, Kt_opt = model.stiffness_descent(
                 finger, q_base, theta_ref_init_deg, d_ref_dict, Kj_opt, Kt_opt,
-                f_meas, f_des, lr_joint=1e-3, lr_task=1e-3)
+                f_meas, f_des, lr_joint=2e-4, lr_task=1e-3)
         final = np.linalg.norm(
             model.tip_force(finger, q_base, theta_ref_init_deg, d_ref_dict, Kj_opt, Kt_opt) - f_des)
         print(f"  [{finger}] Final  ||error|| = {final:.6f}")

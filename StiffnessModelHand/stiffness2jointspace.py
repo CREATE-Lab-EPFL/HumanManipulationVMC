@@ -489,7 +489,7 @@ if __name__ == "__main__":
     # 3. stiffness_descent convergence (thumb and index)
     print("\n3. stiffness_descent convergence ...")
     f_des = np.array([0.0, 0.02, 0.03])
-    MAX_ITERS = 10000
+    MAX_ITERS = 30000
     for finger in ['thumb', 'index']:
         K_opt = {g: K.copy() for g, K in K_dict.items()}
         for i in range(MAX_ITERS):
