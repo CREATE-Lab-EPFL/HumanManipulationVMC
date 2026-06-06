@@ -45,6 +45,7 @@ from hand_config import (
     GRASP_PC1_PINKY  as PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS,
+    K_BACKGROUND_DG,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
     K_ROT, B_ROT, B_TIP, K_HOME,
     FRICTION_TAU_MAX,
@@ -107,15 +108,15 @@ THETA_REF_DEG = np.degrees(np.concatenate([
 ]))
 
 K_JOINT_DICT_MODEL = {
-    'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
-    'spread_index':  K_ROT * np.eye(1),
-    'spread_middle': K_ROT * np.eye(1),
-    'spread_ring':   K_ROT * np.eye(1),
-    'spread_pinky':  K_ROT * np.eye(1),
-    'index':         np.zeros((3, 3)),
-    'middle':        np.zeros((3, 3)),
-    'ring':          np.zeros((3, 3)),
-    'pinky':         np.zeros((3, 3)),
+    'thumb':         K_BACKGROUND_DG * np.eye(4),
+    'spread_index':  K_BACKGROUND_DG * np.eye(1),
+    'spread_middle': K_BACKGROUND_DG * np.eye(1),
+    'spread_ring':   K_BACKGROUND_DG * np.eye(1),
+    'spread_pinky':  K_BACKGROUND_DG * np.eye(1),
+    'index':         K_BACKGROUND_DG * np.eye(3),
+    'middle':        K_BACKGROUND_DG * np.eye(3),
+    'ring':          K_BACKGROUND_DG * np.eye(3),
+    'pinky':         K_BACKGROUND_DG * np.eye(3),
 }
 
 # =============================================================================
@@ -125,7 +126,7 @@ rclpy.init()
 controller = HandController()
 
 vmc_joint = JointVMC()
-vmc_joint.set_stiffness(K_ROT)
+vmc_joint.set_stiffness(K_BACKGROUND_DG)
 vmc_joint.set_damping(B_ROT)
 
 vmc_joint.thumb             = HOME_THUMB.copy()
@@ -247,7 +248,7 @@ def _close_hand():
     vmc_joint.middle_target     = PC1_MIDDLE.copy()
     vmc_joint.ring_pinky_target = PC1_RING.copy()
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.zeros(3)
+        vmc_joint.stiffness[_f] = np.full(3, K_BACKGROUND_DG)
         vmc_joint.damping[_f]   = np.full(3, B_ROT)
     _set_task_stiffness(_K_INIT_MAP[CONDITION])
 

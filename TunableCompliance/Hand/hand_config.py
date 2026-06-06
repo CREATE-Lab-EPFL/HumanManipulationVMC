@@ -61,10 +61,11 @@ B_TIP          = 0.01     # [N·s/m]      task-space damping
 FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 10.0     # [N/m]  baseline uniform tip stiffness
-K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
-K_LOW     = 0.5     # [N/m]  compliant-side stiffness
-K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
+K_UNIFORM      = 10.0   # [N/m]  baseline uniform tip stiffness
+K_HIGH         = 100.0  # [N/m]  stiff-side stiffness
+K_LOW          = 0.5    # [N/m]  compliant-side stiffness
+K_RETURN       = 0.1    # [N·m/rad]  joint stiffness for ramp back to HOME
+K_BACKGROUND_IH = 0.1  # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
 SETTLE_TIME      = 1.0   # [s]
@@ -75,6 +76,7 @@ CONVERGE_TIMEOUT = 8.0  # [s]
 RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
+K_BACKGROUND_DG = 0.1  # [N·m/rad]  uniform background stiffness on all joints
 K_SOFT        = 20.0    # [N/m]  very compliant tip spring
 K_STIFF       = 100.0  # [N/m]  very stiff tip spring
 SOFT_DURATION    = 1.0    # [s]    (adaptive) time at K_SOFT before ramp starts

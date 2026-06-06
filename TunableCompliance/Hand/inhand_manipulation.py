@@ -48,7 +48,7 @@ from hand_config import (
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
     K_UNIFORM, K_HIGH, K_LOW,
-    K_ROT, B_ROT, B_TIP, K_RETURN,
+    K_ROT, B_ROT, B_TIP, K_RETURN, K_BACKGROUND_IH,
     FRICTION_TAU_MAX,
     SETTLE_TIME, RAMP_DURATION,
     CONVERGE_VEL_THR, CONVERGE_HOLD, CONVERGE_TIMEOUT, RECORD_DURATION,
@@ -99,15 +99,15 @@ THETA_REF_DEG = np.degrees(np.concatenate([
 ]))
 
 K_JOINT_DICT_MODEL = {
-    'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
+    'thumb':         np.diag([K_ROT, K_ROT, K_BACKGROUND_IH, K_BACKGROUND_IH]),
     'spread_index':  K_ROT * np.eye(1),
     'spread_middle': K_ROT * np.eye(1),
     'spread_ring':   K_ROT * np.eye(1),
     'spread_pinky':  K_ROT * np.eye(1),
-    'index':         np.zeros((3, 3)),
-    'middle':        np.zeros((3, 3)),
-    'ring':          np.zeros((3, 3)),
-    'pinky':         np.zeros((3, 3)),
+    'index':         K_BACKGROUND_IH * np.eye(3),
+    'middle':        K_BACKGROUND_IH * np.eye(3),
+    'ring':          K_BACKGROUND_IH * np.eye(3),
+    'pinky':         K_BACKGROUND_IH * np.eye(3),
 }
 
 # Stiffness dicts for each experimental phase.
@@ -385,9 +385,9 @@ def _set_task_stiffness(k_dict):
 def _set_joint_stiffness_experiment():
     vmc_joint.set_stiffness(K_ROT)
     vmc_joint.set_damping(B_ROT)
-    vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
+    vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, K_BACKGROUND_IH, K_BACKGROUND_IH])
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.zeros(3)
+        vmc_joint.stiffness[_f] = np.full(3, K_BACKGROUND_IH)
 
 
 def _begin_ramp(end_targets):
