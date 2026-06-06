@@ -5,22 +5,8 @@ UR5 poses and hand configuration for ProprioceptiveSensing/Hand experiments.
 import numpy as np
 
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
-# Safe starting pose, arm raised above all objects.
-UR5_POSE_ABOVE = np.array([-0.4703, 0.6441, 0.2533, -0.0419, -1.6773, -2.3027])
-# Base squeezing pose shared by all objects (lateral position + wrist orientation).
-# Z is overridden per-object via GRASP_Z_OFFSET below.
-UR5_POSE_GRASP_BASE = np.array([-0.5103, 0.6022, 0.0818, -0.2289, -1.9969, -2.374])
-
-# Per-object Z correction added to UR5_POSE_GRASP_BASE[2].
-# Positive = hand higher; negative = hand lower.
-GRASP_Z_OFFSET = {
-    'hard':   0.00,   # [m]
-    'medium': 0.00,   # [m]
-    'soft':   0.00,   # [m]
-}
-
-# ── UR5 motion ────────────────────────────────────────────────────────────────
-GRASP_SPEED = 0.05   # [m/s]  slow positioning speed for descend / ascend
+# Hand horizontal, fingers pointing down, centred over the squeezing fixture.
+UR5_POSE_SQUEEZING = np.array([-0.5103, 0.6022, 0.0818, -0.2289, -1.9969, -2.374])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
 PC1_THUMB  = np.deg2rad([70.0, -40.0, 90.0, 90.0])
@@ -45,7 +31,7 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 20.0            # [N/m]   gentle-grasp stiffness (baseline)
+K_TIP_GENTLE = 10.0            # [N/m]   gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
@@ -54,7 +40,7 @@ B_ROT          = 0.0001    # [N·m·s/rad]
 B_TIP          = 0.001     # [N·s/m]
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness for ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.0     # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.01    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]

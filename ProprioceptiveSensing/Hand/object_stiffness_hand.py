@@ -31,7 +31,7 @@ from ModelIDHand.motor_config import SOFTWARE_MOTOR_ORDER
 from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from hand_config import (
-    UR5_POSE_ABOVE, UR5_POSE_GRASP_BASE, GRASP_Z_OFFSET, GRASP_SPEED,
+    UR5_POSE_SQUEEZING,
     PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
@@ -288,34 +288,22 @@ PC1_POSE_TARGETS = {
 }
 
 # =============================================================================
-# Helpers
-# =============================================================================
-
-def _grasp_pose(obj_name):
-    """Return the UR5 grasp pose for obj_name (base + per-object Z offset)."""
-    pose = UR5_POSE_GRASP_BASE.copy()
-    pose[2] += GRASP_Z_OFFSET[obj_name]
-    return pose
-
-
-# =============================================================================
 # State machine
 # =============================================================================
-STATE_INIT_ARM     = 0
-STATE_DESCEND      = 1   # move arm to per-object grasp pose
-STATE_SETTLE_ARM   = 2
-STATE_RAMP_TO_PC1  = 3
-STATE_GENTLE_CONV  = 4
-STATE_GENTLE_REC   = 5
-STATE_K_TIP_RAMP   = 6
-STATE_SWEEP_CONV   = 7
-STATE_SWEEP_REC    = 8
-STATE_UNLOAD       = 9
-STATE_RAMP_TO_HOME = 10
-STATE_RETURN       = 11
-STATE_ASCEND       = 12  # move arm back to UR5_POSE_ABOVE
-STATE_CONFIRM_NEXT = 13  # wait for ENTER before next object
-STATE_DONE         = 14
+STATE_INIT_ARM      = 0
+STATE_SETTLE_ARM    = 1
+STATE_CLOSE_CONFIRM = 2   # wait for "Close for X object?" confirmation
+STATE_RAMP_TO_PC1   = 3
+STATE_GENTLE_CONV   = 4
+STATE_GENTLE_REC    = 5
+STATE_K_TIP_RAMP    = 6
+STATE_SWEEP_CONV    = 7
+STATE_SWEEP_REC     = 8
+STATE_UNLOAD        = 9
+STATE_RAMP_TO_HOME  = 10
+STATE_RETURN        = 11
+STATE_CONFIRM_NEXT  = 12
+STATE_DONE          = 13
 
 state             = STATE_INIT_ARM
 _state_start      = time.time()
@@ -486,20 +474,26 @@ def control_callback():
 
     if state == STATE_INIT_ARM:
         if not _arm_moving:
-            controller.get_logger().info('Moving UR5 to starting pose above objects …')
-            _move_arm_async(UR5_POSE_ABOVE, UR5_INIT_SPEED, STATE_DESCEND)
-
-    elif state == STATE_DESCEND:
-        if not _arm_moving:
-            controller.get_logger().info(
-                f'Descending to {OBJECT_NAME} grasp pose '
-                f'(Z offset = {GRASP_Z_OFFSET[OBJECT_NAME]:+.3f} m) …')
-            _move_arm_async(_grasp_pose(OBJECT_NAME), GRASP_SPEED, STATE_SETTLE_ARM)
+            controller.get_logger().info('Moving UR5 to squeezing pose …')
+            _move_arm_async(UR5_POSE_SQUEEZING, UR5_INIT_SPEED, STATE_SETTLE_ARM)
 
     elif state == STATE_SETTLE_ARM:
         if elapsed >= SETTLE_TIME:
+            controller.get_logger().info('UR5 settled. Waiting for close confirmation …')
+            _confirm_ready   = False
+            _confirm_pending = False
+            _state_start     = now
+            state            = STATE_CLOSE_CONFIRM
+
+    elif state == STATE_CLOSE_CONFIRM:
+        if not _confirm_pending:
+            _ask_confirm_async(
+                f'\n[Confirm] Close for {OBJECT_NAME} object? Press ENTER …\n')
+        elif _confirm_ready:
+            _confirm_ready   = False
+            _confirm_pending = False
             controller.get_logger().info(
-                f'UR5 settled. Ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
+                f'Closing — ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
             _begin_ramp(PC1_POSE_TARGETS)
             _state_start = now
             state        = STATE_RAMP_TO_PC1
@@ -634,28 +628,25 @@ def control_callback():
         else:
             _converge_ticks = 0
         if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
-            controller.get_logger().info(
-                f'Object {_obj_idx + 1}/{len(OBJECTS)} done. '
-                f'Ascending to starting pose …')
-            _state_start = now
-            state        = STATE_ASCEND
-
-    elif state == STATE_ASCEND:
-        if not _arm_moving:
             if _obj_idx + 1 < len(OBJECTS):
-                _move_arm_async(UR5_POSE_ABOVE, GRASP_SPEED, STATE_CONFIRM_NEXT)
+                state        = STATE_CONFIRM_NEXT
+                _state_start = now
+                controller.get_logger().info(
+                    f'Object {_obj_idx + 1}/{len(OBJECTS)} done. '
+                    f'Place next object and press ENTER …')
             else:
-                _move_arm_async(UR5_POSE_ABOVE, GRASP_SPEED, STATE_DONE)
+                state = STATE_DONE
+                controller.get_logger().info('All objects complete.')
 
     elif state == STATE_CONFIRM_NEXT:
         if not _confirm_pending:
             _ask_confirm_async(
-                f'\n[Confirm] Press ENTER to test next object '
-                f'({OBJECTS[_obj_idx + 1]}) …\n')
+                f'\n[Confirm] Place {OBJECTS[_obj_idx + 1]} and press ENTER to continue …\n')
         elif _confirm_ready:
             _reset_trial()
+            # _reset_trial() resets _confirm_ready/_confirm_pending to False
             _state_start = now
-            state        = STATE_DESCEND
+            state        = STATE_CLOSE_CONFIRM
             controller.get_logger().info(
                 f'Starting object {_obj_idx + 1}/{len(OBJECTS)}: {OBJECT_NAME}')
 
