@@ -35,11 +35,12 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard_obj', 'soft_obj']
 
 # ── Grasp adaptation rule (grasp_adaptation.py) ───────────────────────────────
-# Two-point compliance estimation: settle at K_TIP_GENTLE, then push at
-# K_TIP_PROBE.  Per finger:  C_O = ||Δpos|| / ||Δforce||.  Average across
-# fingers, then  k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX).
-K_TIP_GENTLE = 10.0    # [N/m]   first sensing stiffness
-K_TIP_PROBE  = 50.0    # [N/m]   second sensing stiffness
+# Two-point compliance estimation: 4 fingers clamped at K_TIP_HOLD (frozen
+# position), thumb probes from K_TIP_GENTLE to K_TIP_PROBE.
+# C_O = ||Δpos_thumb|| / ||ΔF_thumb||; k_applied = clip(K_GAIN/C_O, K_MIN, K_MAX).
+K_TIP_GENTLE = 10.0    # [N/m]   gentle baseline stiffness (thumb)
+K_TIP_PROBE  = 50.0    # [N/m]   probe stiffness (thumb)
+K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
 K_GAIN       = 5.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
 K_MIN        = 5.0     # [N/m]   lower bound on adapted stiffness
 K_MAX        = 150.0   # [N/m]   upper bound on adapted stiffness

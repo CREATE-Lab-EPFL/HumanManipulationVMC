@@ -54,7 +54,7 @@ from hand_config import (
     PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
-    K_TIP_GENTLE, K_TIP_PROBE, K_GAIN, K_MIN, K_MAX,
+    K_TIP_GENTLE, K_TIP_PROBE, K_TIP_HOLD, K_GAIN, K_MIN, K_MAX,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     APPROACH_HEIGHT, LIFT_HEIGHT,
@@ -114,10 +114,13 @@ D_REF = {
     'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
-# Centroid of all fingertip FK positions — used as common task-spring target.
-D_REF_CENTER = np.mean([D_REF[f] for f in FINGERTIPS], axis=0)
-D_REF_CENTER_DICT = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
-D_REF_CENTER_DICT['palm'] = D_REF['palm'].copy()
+# Mutable reference dict for the force/stiffness model — per-finger PC1 targets;
+# 4 clamping fingers overwritten with their frozen positions at probe start.
+_d_ref_model_dict = {f: D_REF[f].copy() for f in FINGERTIPS}
+_d_ref_model_dict['palm'] = D_REF['palm'].copy()
+
+# Frozen tip positions of the 4 clamping fingers (filled when sensing starts probe).
+_finger_hold_pos: dict = {}
 
 THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_THUMB,
@@ -158,7 +161,7 @@ vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
     vmc_task.dampers[_f].damping    = np.full(3, B_TIP)
-    vmc_task.targets[_f]            = D_REF_CENTER.copy()
+    vmc_task.targets[_f]            = D_REF[_f].copy()
     vmc_task.attachment_points[_f]  = FINGER_TIP_OFFSETS[_f].copy()
 
 vmc_task.springs['palm'].stiffness = np.full(3, K_TIP_GENTLE)
@@ -253,12 +256,19 @@ def _tip_pos(finger, q):
     return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
 
 
+def _thumb_K_task(k_thumb):
+    """K_task dict: thumb at k_thumb, clamping fingers at K_TIP_HOLD (or k_thumb before freeze)."""
+    k_hold = K_TIP_HOLD if _finger_hold_pos else k_thumb
+    K = {f: (k_thumb if f == 'thumb' else k_hold) * np.eye(3) for f in FINGERTIPS}
+    K['palm'] = k_thumb * np.eye(3)
+    return K
+
+
 def _tip_force(finger, q, k_tip):
-    """Analytic VMC tip force at uniform per-finger task stiffness k_tip."""
-    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
-    K_task_now['palm'] = k_tip * np.eye(3)
+    """Analytic VMC tip force for the given finger."""
     return np.asarray(stiff_model.tip_force(
-        finger, q, THETA_REF_DEG, D_REF_CENTER_DICT, K_JOINT_DICT_MODEL, K_task_now))
+        finger, q, THETA_REF_DEG, _d_ref_model_dict,
+        K_JOINT_DICT_MODEL, _thumb_K_task(k_tip)))
 
 
 def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
