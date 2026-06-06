@@ -5,8 +5,23 @@ UR5 poses and hand configuration for ProprioceptiveSensing/Hand experiments.
 import numpy as np
 
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
-# Hand horizontal, fingers pointing down, centred over the squeezing fixture.
-UR5_POSE_SQUEEZING = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
+# Safe starting pose, arm raised above all objects.
+UR5_POSE_ABOVE = np.array([-0.381, 0.55, 0.40, -1.86, -0.12, 0.59])  # PLACEHOLDER: tune Z
+
+# Base squeezing pose shared by all objects (lateral position + wrist orientation).
+# Z is overridden per-object via GRASP_Z_OFFSET below.
+UR5_POSE_GRASP_BASE = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])  # PLACEHOLDER
+
+# Per-object Z correction added to UR5_POSE_GRASP_BASE[2].
+# Positive = hand higher; negative = hand lower.
+GRASP_Z_OFFSET = {
+    'hard':   0.00,   # [m]
+    'medium': 0.00,   # [m]
+    'soft':   0.00,   # [m]
+}
+
+# ── UR5 motion ────────────────────────────────────────────────────────────────
+GRASP_SPEED = 0.05   # [m/s]  slow positioning speed for descend / ascend
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
 PC1_THUMB  = np.deg2rad([70.0, -40.0, 90.0, 90.0])
