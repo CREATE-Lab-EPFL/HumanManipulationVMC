@@ -634,25 +634,28 @@ def control_callback():
         else:
             _converge_ticks = 0
         if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
+            controller.get_logger().info(
+                f'Object {_obj_idx + 1}/{len(OBJECTS)} done. '
+                f'Ascending to starting pose …')
+            _state_start = now
+            state        = STATE_ASCEND
+
+    elif state == STATE_ASCEND:
+        if not _arm_moving:
             if _obj_idx + 1 < len(OBJECTS):
-                state        = STATE_CONFIRM_NEXT
-                _state_start = now
-                controller.get_logger().info(
-                    f'Object {_obj_idx + 1}/{len(OBJECTS)} done. '
-                    f'Place next object and press ENTER …')
+                _move_arm_async(UR5_POSE_ABOVE, GRASP_SPEED, STATE_CONFIRM_NEXT)
             else:
-                state = STATE_DONE
-                controller.get_logger().info('All objects complete.')
+                _move_arm_async(UR5_POSE_ABOVE, GRASP_SPEED, STATE_DONE)
 
     elif state == STATE_CONFIRM_NEXT:
         if not _confirm_pending:
             _ask_confirm_async(
-                f'\n[Confirm] Place {OBJECTS[_obj_idx + 1]} and press ENTER to continue …\n')
+                f'\n[Confirm] Press ENTER to test next object '
+                f'({OBJECTS[_obj_idx + 1]}) …\n')
         elif _confirm_ready:
             _reset_trial()
-            # _reset_trial() resets _confirm_ready/_confirm_pending to False
             _state_start = now
-            state        = STATE_CLOSE_CONFIRM
+            state        = STATE_DESCEND
             controller.get_logger().info(
                 f'Starting object {_obj_idx + 1}/{len(OBJECTS)}: {OBJECT_NAME}')
 

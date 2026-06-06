@@ -6,11 +6,10 @@ import numpy as np
 
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # Safe starting pose, arm raised above all objects.
-UR5_POSE_ABOVE = np.array([-0.381, 0.55, 0.40, -1.86, -0.12, 0.59])  # PLACEHOLDER: tune Z
-
+UR5_POSE_ABOVE = np.array([-0.4703, 0.6441, 0.2533, -0.0419, -1.6773, -2.3027])
 # Base squeezing pose shared by all objects (lateral position + wrist orientation).
 # Z is overridden per-object via GRASP_Z_OFFSET below.
-UR5_POSE_GRASP_BASE = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])  # PLACEHOLDER
+UR5_POSE_GRASP_BASE = np.array([-0.5103, 0.6022, 0.0818, -0.2289, -1.9969, -2.374])
 
 # Per-object Z correction added to UR5_POSE_GRASP_BASE[2].
 # Positive = hand higher; negative = hand lower.
