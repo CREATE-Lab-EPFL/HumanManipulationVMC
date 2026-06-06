@@ -21,10 +21,10 @@ INHAND_PC1_SPREAD = {
     'ring':   np.deg2rad(5.0),
     'pinky':  np.deg2rad(5.0),
 }
-INHAND_PC1_INDEX  = np.deg2rad([65.0, 75.0, 75.0])
-INHAND_PC1_MIDDLE = np.deg2rad([65.0, 75.0, 75.0])
-INHAND_PC1_RING   = np.deg2rad([65.0, 75.0, 75.0])
-INHAND_PC1_PINKY  = np.deg2rad([65.0, 75.0, 75.0])
+INHAND_PC1_INDEX  = np.deg2rad([70.0, 90.0, 90.0])
+INHAND_PC1_MIDDLE = np.deg2rad([70.0, 90.0, 90.0])
+INHAND_PC1_RING   = np.deg2rad([70.0, 90.0, 90.0])
+INHAND_PC1_PINKY  = np.deg2rad([70.0, 90.0, 90.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
 GRASP_PC1_THUMB  = np.deg2rad([30.0, -60.0, 60.0, 60.0])
@@ -34,10 +34,10 @@ GRASP_PC1_SPREAD = {
     'ring':   np.deg2rad(2.0),
     'pinky':  np.deg2rad(2.0),
 }
-GRASP_PC1_INDEX  = np.deg2rad([65.0, 75.0, 75.0])
-GRASP_PC1_MIDDLE = np.deg2rad([65.0, 75.0, 75.0])
-GRASP_PC1_RING   = np.deg2rad([65.0, 75.0, 75.0])
-GRASP_PC1_PINKY  = np.deg2rad([65.0, 75.0, 75.0])
+GRASP_PC1_INDEX  = np.deg2rad([70.0, 90.0, 90.0])
+GRASP_PC1_MIDDLE = np.deg2rad([70.0, 90.0, 90.0])
+GRASP_PC1_RING   = np.deg2rad([70.0, 90.0, 90.0])
+GRASP_PC1_PINKY  = np.deg2rad([70.0, 90.0, 90.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_THUMB  = np.zeros(4)
