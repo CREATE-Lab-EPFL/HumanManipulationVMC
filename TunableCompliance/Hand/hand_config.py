@@ -14,7 +14,7 @@ UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 UR5_POSE_BOTTLE_START = np.array([0.00, 0.66, 0.29, 0.0, 0.0, 2.53]) # TODO: remove and uncomment
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_THUMB  = np.deg2rad([40.0, -40, 90.0, 90.0])
+INHAND_PC1_THUMB  = np.deg2rad([40.0, -40, 60.0, 60.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': 0.0,
@@ -27,7 +27,7 @@ INHAND_PC1_RING   = np.deg2rad([65.0, 75.0, 75.0])
 INHAND_PC1_PINKY  = np.deg2rad([65.0, 75.0, 75.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
-GRASP_PC1_THUMB  = np.deg2rad([30.0, -60.0, 90.0, 90.0])
+GRASP_PC1_THUMB  = np.deg2rad([30.0, -60.0, 60.0, 60.0])
 GRASP_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
@@ -58,10 +58,10 @@ CONDITIONS  = ['soft', 'stiff', 'adaptive']
 K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
 B_ROT          = 0.01     # [N·m·s/rad]  background joint damping
 B_TIP          = 0.01     # [N·s/m]      task-space damping
-FRICTION_TAU_MAX = 0.03   # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 10.0     # [N/m]  baseline uniform tip stiffness
+K_UNIFORM = 20.0     # [N/m]  baseline uniform tip stiffness
 K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
 K_LOW     = 0.5     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
@@ -75,7 +75,7 @@ CONVERGE_TIMEOUT = 8.0  # [s]
 RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
-K_SOFT        = 10.0    # [N/m]  very compliant tip spring
+K_SOFT        = 20.0    # [N/m]  very compliant tip spring
 K_STIFF       = 100.0  # [N/m]  very stiff tip spring
 SOFT_DURATION    = 1.0    # [s]    (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
@@ -83,7 +83,7 @@ HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
 APPROACH_DIRECTION = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
-APPROACH_SPEED  = 0.08   # [m/s]
+APPROACH_SPEED  = 0.10   # [m/s]
 TOTAL_DISTANCE  = 0.40   # [m]   total displacement along APPROACH_DIRECTION
 CLOSE_DISTANCE  = 0.15   # [m]   displacement at which the hand closes to PC1
 K_HOME          = 0.15   # [N·m/rad]  stiffness for hand return to HOME
