@@ -31,7 +31,7 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 5.0            # [N/m]   gentle-grasp stiffness (baseline)
+K_TIP_GENTLE = 20.0            # [N/m]   gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
@@ -40,7 +40,7 @@ B_ROT          = 0.0001    # [N·m·s/rad]
 B_TIP          = 0.001     # [N·s/m]
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness for ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.01    # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.0     # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]
