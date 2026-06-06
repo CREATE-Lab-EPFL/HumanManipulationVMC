@@ -286,24 +286,22 @@ def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
         ang = FK_motor2finger(q, _f)
         row += [f'{ang[i]:.6f}' for i in range(3)]
 
-    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
-    K_task_now['palm'] = k_tip * np.eye(3)
+    K_task_now = _thumb_K_task(k_tip)
 
     for _f in FINGERTIPS:
         pos  = _tip_pos(_f, q)
-        ref  = D_REF[_f]
+        ref  = _d_ref_model_dict[_f]
         disp = pos - ref
         mag  = float(np.linalg.norm(disp))
 
-        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF_CENTER_DICT,
+        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, _d_ref_model_dict,
                                       K_JOINT_DICT_MODEL, K_task_now)
         K1   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now)
         eig1 = np.linalg.eigvalsh(K1)
 
-        # Force is linear in spring deflections; CCT modifies only stiffness.
         f2   = f1
         K2   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now,
-                                          d_ref_dict=D_REF_CENTER_DICT, f_ext=f1)
+                                          d_ref_dict=_d_ref_model_dict, f_ext=f1)
         eig2 = np.linalg.eigvalsh(K2)
 
         row += [f'{v:.6f}' for v in pos]
