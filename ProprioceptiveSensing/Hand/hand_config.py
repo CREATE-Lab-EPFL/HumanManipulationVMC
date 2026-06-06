@@ -32,7 +32,8 @@ OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
 K_TIP_GENTLE = 20.0              # [N/m]  gentle-grasp stiffness (baseline)
-K_TIP_SWEEP  = [50, 100, 150]    # [N/m]  stiffness levels for the sweep
+K_TIP_SWEEP  = [50, 100, 150]    # [N/m]  stiffness levels for the thumb sweep
+K_TIP_HOLD   = 100.0             # [N/m]  constant hold stiffness for the 4 clamping fingers
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]

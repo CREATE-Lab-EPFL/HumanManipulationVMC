@@ -35,7 +35,7 @@ from hand_config import (
     PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
-    K_TIP_GENTLE, K_TIP_SWEEP,
+    K_TIP_GENTLE, K_TIP_SWEEP, K_TIP_HOLD,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     SETTLE_TIME, RAMP_DURATION,
@@ -82,6 +82,13 @@ D_REF = {
 D_REF_CENTER = np.mean([D_REF[f] for f in FINGERTIPS], axis=0)
 D_REF_CENTER_DICT = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
 D_REF_CENTER_DICT['palm'] = D_REF['palm'].copy()
+
+# Mutable reference dict for force/stiffness model — 4 fingers updated when frozen.
+_d_ref_model_dict = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
+_d_ref_model_dict['palm'] = D_REF['palm'].copy()
+
+# Frozen tip positions of the 4 clamping fingers (filled at sweep start).
+_finger_hold_pos: dict = {}
 
 THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_THUMB,
@@ -241,15 +248,18 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
         ang = FK_motor2finger(q, _f)
         row += [f'{ang[i]:.6f}' for i in range(3)]
 
-    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
+    k_hold = K_TIP_HOLD if _finger_hold_pos else k_tip
+    K_task_now = {
+        f: (k_tip if f == 'thumb' else k_hold) * np.eye(3) for f in FINGERTIPS
+    }
     K_task_now['palm'] = k_tip * np.eye(3)
 
     for _f in FINGERTIPS:
         pos  = _tip_pos(_f, q)
-        ref  = D_REF[_f]
+        ref  = _d_ref_model_dict[_f]
         disp = pos - ref
 
-        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF_CENTER_DICT,
+        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, _d_ref_model_dict,
                                       K_JOINT_DICT_MODEL, K_task_now)
         K1   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now)
         eig1 = np.linalg.eigvalsh(K1)
@@ -257,7 +267,7 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
         # Force is linear in spring deflections; CCT modifies only stiffness.
         f2   = f1
         K2   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now,
-                                          d_ref_dict=D_REF_CENTER_DICT, f_ext=f1)
+                                          d_ref_dict=_d_ref_model_dict, f_ext=f1)
         eig2 = np.linalg.eigvalsh(K2)
 
         row += [f'{v:.6f}' for v in pos]
@@ -364,6 +374,9 @@ def _reset_trial():
     _log_tick       = 0
     _confirm_ready  = False
     _confirm_pending = False
+    _finger_hold_pos.clear()
+    for _f in FINGERTIPS:
+        _d_ref_model_dict[_f] = D_REF_CENTER.copy()
 
     if not COLLECTED_DATA:
         _csv_path   = _output_path()
@@ -405,6 +418,20 @@ def _set_joint_stiffness_experiment():
         vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
 
 
+def _set_thumb_stiffness(k_tip):
+    vmc_task.springs['thumb'].stiffness = np.full(3, k_tip)
+
+
+def _freeze_and_hold_fingers(q):
+    """Lock the 4 clamping fingers at their current tip positions with K_TIP_HOLD."""
+    for _f in ['index', 'middle', 'ring', 'pinky']:
+        pos = _tip_pos(_f, q)
+        _finger_hold_pos[_f]           = pos.copy()
+        vmc_task.targets[_f]           = pos.copy()
+        vmc_task.springs[_f].stiffness = np.full(3, K_TIP_HOLD)
+        _d_ref_model_dict[_f]          = pos.copy()
+
+
 def _begin_ramp(end_targets):
     global _ramp_t0, _ramp_start_targets, _ramp_end_targets
     _ramp_t0 = time.time()
@@ -441,7 +468,7 @@ def _begin_k_tip_ramp(k_start, k_end, after_state):
 def _step_k_tip_ramp(now):
     alpha = min(1.0, (now - _ramp_t0) / RAMP_DURATION)
     k_now = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
-    _set_task_stiffness(k_now)
+    _set_thumb_stiffness(k_now)
     return alpha >= 1.0, k_now
 
 
@@ -541,10 +568,12 @@ def control_callback():
                 _csv_file.flush()
             _sweep_idx   = 0
             _state_start = now
+            _freeze_and_hold_fingers(q)
             _begin_k_tip_ramp(K_TIP_GENTLE, K_TIP_SWEEP[0], STATE_SWEEP_CONV)
             state = STATE_K_TIP_RAMP
             controller.get_logger().info(
-                f'Baseline recorded. Ramping k_tip {K_TIP_GENTLE:.1f} → '
+                f'Baseline recorded. Fingers frozen at K_TIP_HOLD={K_TIP_HOLD:.0f} N/m. '
+                f'Ramping thumb k_tip {K_TIP_GENTLE:.1f} → '
                 f'{K_TIP_SWEEP[0]} N/m over {RAMP_DURATION:.1f} s '
                 f'(sweep step 1/{len(K_TIP_SWEEP)})…')
 
