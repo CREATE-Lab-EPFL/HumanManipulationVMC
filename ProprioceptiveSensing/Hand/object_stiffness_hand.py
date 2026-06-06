@@ -80,6 +80,8 @@ D_REF = {
 
 # Centroid of all fingertip FK positions — used as common task-spring target.
 D_REF_CENTER = np.mean([D_REF[f] for f in FINGERTIPS], axis=0)
+D_REF_CENTER_DICT = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
+D_REF_CENTER_DICT['palm'] = D_REF['palm'].copy()
 
 THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_THUMB,
@@ -247,7 +249,7 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
         ref  = D_REF[_f]
         disp = pos - ref
 
-        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF,
+        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF_CENTER_DICT,
                                       K_JOINT_DICT_MODEL, K_task_now)
         K1   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now)
         eig1 = np.linalg.eigvalsh(K1)
@@ -255,7 +257,7 @@ def _compute_row(q, q_dot, phase, k_tip, converged):
         # Force is linear in spring deflections; CCT modifies only stiffness.
         f2   = f1
         K2   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now,
-                                          d_ref_dict=D_REF, f_ext=f1)
+                                          d_ref_dict=D_REF_CENTER_DICT, f_ext=f1)
         eig2 = np.linalg.eigvalsh(K2)
 
         row += [f'{v:.6f}' for v in pos]
@@ -506,7 +508,7 @@ def control_callback():
             _set_joint_stiffness_experiment()
             _set_task_stiffness(K_TIP_GENTLE)
             for _f in FINGERTIPS:
-                vmc_task.targets[_f] = D_REF[_f].copy()
+                vmc_task.targets[_f] = D_REF_CENTER.copy()
             _use_task_vmc   = True
             _converge_ticks = 0
             _converged      = False
