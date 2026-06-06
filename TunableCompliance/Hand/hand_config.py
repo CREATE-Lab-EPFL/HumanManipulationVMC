@@ -61,7 +61,7 @@ B_TIP          = 0.01     # [N·s/m]      task-space damping
 FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM = 20.0     # [N/m]  baseline uniform tip stiffness
+K_UNIFORM = 10.0     # [N/m]  baseline uniform tip stiffness
 K_HIGH    = 100.0   # [N/m]  stiff-side stiffness
 K_LOW     = 0.5     # [N/m]  compliant-side stiffness
 K_RETURN  = 0.1     # [N·m/rad]  joint stiffness for ramp back to HOME
