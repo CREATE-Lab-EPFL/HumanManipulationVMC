@@ -45,7 +45,7 @@ K_MIN        = 5.0      # [N/m]   lower bound on adapted stiffness
 K_MAX        = 150.0    # [N/m]   upper bound on adapted stiffness
 
 # ── Background joint regulation ───────────────────────────────────────────────
-K_ROT          = 0.08      # [N·m/rad]    background joint stiffness
+K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
 B_ROT          = 0.0001    # [N·m·s/rad]  background joint damping
 B_TIP          = 0.001     # [N·s/m]      task-space damping
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness during ramp back to HOME
