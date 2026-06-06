@@ -495,7 +495,7 @@ if __name__ == "__main__":
         for i in range(MAX_ITERS):
             f_meas = model.tip_force(finger, q_base, theta_ref_deg, K_opt)
             err    = np.linalg.norm(f_meas - f_des)
-            if i % 200 == 0:
+            if i % 5000 == 0:
                 print(f"  [{finger}] iter {i:4d}  ||error|| = {err:.6f}")
             K_opt = model.stiffness_descent(finger, q_base, theta_ref_deg, K_opt,
                                             f_meas, f_des, lr=2e-4)
@@ -511,7 +511,7 @@ if __name__ == "__main__":
         for i in range(MAX_ITERS):
             f_meas = model.tip_force(finger, q_base, theta_ref_opt_deg, K_dict)
             err    = np.linalg.norm(f_meas - f_des)
-            if i % 200 == 0:
+            if i % 5000 == 0:
                 print(f"  [{finger}] iter {i:4d}  ||error|| = {err:.6f}")
             theta_ref_opt_deg = model.ref_descent(finger, q_base, theta_ref_opt_deg, K_dict,
                                                   f_meas, f_des, lr=5e-4)
