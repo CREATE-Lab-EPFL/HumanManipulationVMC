@@ -9,8 +9,8 @@ import numpy as np
 # inhand_manipulation.py — hand horizontal, fingers down over the in- reorientation
 UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 
-# dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along +X.
-UR5_POSE_BOTTLE_START = np.array([-0.04, 0.78, 0.07, -1.48, -1.04, -1.64])
+# dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along APPROACH_DIRECTION.
+UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.13, -1.48, -1.04, -1.64])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
 INHAND_PC1_THUMB  = np.deg2rad([40.0, -40, 90.0, 90.0])
@@ -81,7 +81,8 @@ K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
 HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
+APPROACH_DIRECTION = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
 APPROACH_SPEED  = 0.025  # [m/s]
-TOTAL_DISTANCE  = 0.40   # [m]   total X displacement
-CLOSE_DISTANCE  = 0.15   # [m]   X at which the hand closes to PC1
+TOTAL_DISTANCE  = 0.40   # [m]   total displacement along APPROACH_DIRECTION
+CLOSE_DISTANCE  = 0.15   # [m]   displacement at which the hand closes to PC1
 K_HOME          = 0.15   # [N·m/rad]  stiffness for hand return to HOME
