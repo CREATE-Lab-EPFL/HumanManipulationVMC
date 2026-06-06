@@ -9,17 +9,17 @@ import numpy as np
 UR5_POSE_SQUEEZING = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([70.0, 0.0, 90.0, 90.0])
+PC1_THUMB  = np.deg2rad([70.0, -40.0, 90.0, 90.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),
     'ring':   np.deg2rad(0.0),
     'pinky':  np.deg2rad(0.0),
 }
-PC1_INDEX  = np.deg2rad([70.0, 90.0, 90.0])
-PC1_MIDDLE = np.deg2rad([70.0, 90.0, 90.0])
-PC1_RING   = np.deg2rad([70.0, 90.0, 90.0])
-PC1_PINKY  = np.deg2rad([70.0, 90.0, 90.0])
+PC1_INDEX  = np.deg2rad([70.0, 95.0, 95.0])
+PC1_MIDDLE = np.deg2rad([70.0, 95.0, 95.0])
+PC1_RING   = np.deg2rad([70.0, 95.0, 95.0])
+PC1_PINKY  = np.deg2rad([70.0, 95.0, 95.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_THUMB  = np.zeros(4)
@@ -31,7 +31,7 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 10.0            # [N/m]   gentle-grasp stiffness (baseline)
+K_TIP_GENTLE = 5.0            # [N/m]   gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
@@ -44,8 +44,8 @@ FRICTION_TAU_MAX = 0.01    # [N·m]        max stiction compensation (overrides 
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]
-RAMP_DURATION    = 5.0   # [s]
+RAMP_DURATION    = 1.0   # [s]
 CONVERGE_VEL_THR = 0.02  # [rad/s]
 CONVERGE_HOLD    = 1.0   # [s]
-CONVERGE_TIMEOUT = 12.0  # [s]
+CONVERGE_TIMEOUT = 5.0  # [s]
 RECORD_DURATION  = 5.0   # [s]
