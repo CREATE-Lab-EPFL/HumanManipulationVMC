@@ -39,7 +39,7 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # position), thumb probes from K_TIP_GENTLE to K_TIP_PROBE.
 # C_O = ||Δpos_thumb|| / ||ΔF_thumb||; k_applied = clip(K_GAIN/C_O, K_MIN, K_MAX).
 K_TIP_GENTLE = 10.0    # [N/m]   gentle baseline stiffness (thumb)
-K_TIP_PROBE  = 50.0    # [N/m]   probe stiffness (thumb)
+K_TIP_PROBE  = 100.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
 K_GAIN       = 5.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
 K_MIN        = 5.0     # [N/m]   lower bound on adapted stiffness
