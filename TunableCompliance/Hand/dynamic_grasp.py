@@ -279,8 +279,8 @@ def _start_transport():
     global _arm_moving, _move_start
     def _run():
         global state, _arm_moving
-        arm.moveL(CLOSE_POSE.tolist(), APPROACH_SPEED, UR5_INIT_ACCELERATION)
-        arm.moveL(FINAL_POSE.tolist(), _POST_SPEED,    UR5_INIT_ACCELERATION)
+        arm.moveL(CLOSE_POSE.tolist(), APPROACH_SPEED, APPROACH_ACCELERATION)
+        arm.moveL(FINAL_POSE.tolist(), _POST_SPEED,    APPROACH_ACCELERATION)
         state       = STATE_RETURN_HOME
         _arm_moving = False
     _arm_moving = True
