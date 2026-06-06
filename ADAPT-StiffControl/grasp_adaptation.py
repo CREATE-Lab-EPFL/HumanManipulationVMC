@@ -3,9 +3,9 @@ ADAPT Hand — grasp adaptation via online compliance sensing.
 
 The hand grasps one of the known objects, then estimates its compliance via
 two-point finite difference (same algorithm as ProprioceptiveSensing/Hand):
-settle at K_GENTLE, push at K_PROBE, measure how much tip position changed
-per Newton of analytic VMC force. The adapted joint stiffness is then matched
-to the object's stiffness:
+settle at K_TIP_GENTLE, push at K_TIP_PROBE, measure how much position
+changed per Newton of analytic VMC force. The adapted controller stiffness
+is then matched to the object's stiffness:
 
     C_O_f      = ||pos_probe[f] - pos_gentle[f]|| / ||F_probe[f] - F_gentle[f]||
     C_O_mean   = mean over fingers
@@ -13,12 +13,12 @@ to the object's stiffness:
 
 Protocol per object:
   1. UR5 moves to ABOVE_POSE, descends to GRASP_POSE.
-  2. Hand closes to PC1 at K_GENTLE (first sensing point).
+  2. Hand closes to PC1 at K_TIP_GENTLE (first sensing point).
   3. Wait for convergence, then record pos_gentle, F_gentle for SENSE_DURATION.
-  4. Ramp stiffness K_GENTLE → K_PROBE (second sensing point).
+  4. Ramp stiffness K_TIP_GENTLE → K_TIP_PROBE (second sensing point).
   5. Wait for convergence, then record pos_probe, F_probe for SENSE_DURATION.
   6. Compute C_O per finger, average, and derive k_applied.
-  7. Ramp stiffness K_PROBE → k_applied; wait for convergence.
+  7. Ramp stiffness K_TIP_PROBE → k_applied; wait for convergence.
   8. UR5 lifts, holds HOLD_TIME, places the object back.
   9. Open hand; return home.
 
@@ -36,16 +36,17 @@ import threading
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, '..'))
 
-from VMCHand.HandController    import HandController, CONTROL_FREQUENCY
-from VMCHand.HandVMCJointSpace import VMC as JointVMC
-from VMCHand.HandGravFricLim   import GravFricLim
+from VMCHand.HandController     import HandController, CONTROL_FREQUENCY
+from VMCHand.HandVMCJointSpace  import VMC as JointVMC
+from VMCHand.HandVMCTaskSpace   import VMC as TaskVMC
+from VMCHand.HandGravFricLim    import GravFricLim
 from KinematicsHand.FK_Hand import (
     FK_motor2thumb, FK_motor2finger, FK_motor2spread,
     FK_motor2thumbPos, FK_motor2fingerPos, FK_motor2palm,
     joint_to_motor,
 )
 from ModelIDHand.hand_params import FINGER_TIP_OFFSETS, eta
-from StiffnessModelHand.stiffness2jointspace import tip_stiffness_JointSpace
+from StiffnessModelHand.stiffness2mixedspace import tip_stiffness_MixedSpace
 from UR5_codes.UR5_config import UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCELERATION
 from UR5_codes.UR5_readPose import UR5Receiver
 from hand_config import (
@@ -53,8 +54,8 @@ from hand_config import (
     PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
-    K_GENTLE, K_PROBE, K_GAIN, K_MIN, K_MAX,
-    K_ROT, B_ROT, K_RETURN, B_FLEX_DAMP,
+    K_TIP_GENTLE, K_TIP_PROBE, K_GAIN, K_MIN, K_MAX,
+    K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     APPROACH_HEIGHT, LIFT_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
@@ -71,12 +72,14 @@ B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
 # =============================================================================
-# UR5 object poses
+# UR5 object poses (from hand_config.py)
 # =============================================================================
-_lift_offset = np.array([0.0, 0.0, LIFT_HEIGHT,     0.0, 0.0, 0.0])
-_appr_offset = np.array([0.0, 0.0, APPROACH_HEIGHT,  0.0, 0.0, 0.0])
+# Pre-compute derived poses.
+_lift_offset = np.array([0.0, 0.0, LIFT_HEIGHT,    0.0, 0.0, 0.0])
+_appr_offset = np.array([0.0, 0.0, APPROACH_HEIGHT, 0.0, 0.0, 0.0])
 UR5_LIFT_POSE  = {k: v + _lift_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
 UR5_ABOVE_POSE = {k: v + _appr_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
+
 
 # =============================================================================
 # Object selection
@@ -118,21 +121,17 @@ THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
 ]))
 
-
-def _make_k_dict(k):
-    """Joint-space stiffness dict: spread/CMC at K_ROT, thumb MCP/IP and finger flex at k."""
-    return {
-        'thumb':         np.diag([K_ROT, K_ROT, k, k]),
-        'spread_index':  K_ROT * np.eye(1),
-        'spread_middle': K_ROT * np.eye(1),
-        'spread_ring':   K_ROT * np.eye(1),
-        'spread_pinky':  K_ROT * np.eye(1),
-        'index':         k * np.eye(3),
-        'middle':        k * np.eye(3),
-        'ring':          k * np.eye(3),
-        'pinky':         k * np.eye(3),
-    }
-
+K_JOINT_DICT_MODEL = {
+    'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
+    'spread_index':  K_ROT * np.eye(1),
+    'spread_middle': K_ROT * np.eye(1),
+    'spread_ring':   K_ROT * np.eye(1),
+    'spread_pinky':  K_ROT * np.eye(1),
+    'index':         np.zeros((3, 3)),
+    'middle':        np.zeros((3, 3)),
+    'ring':          np.zeros((3, 3)),
+    'pinky':         np.zeros((3, 3)),
+}
 
 # =============================================================================
 # ROS2 + controller initialisation
@@ -150,13 +149,24 @@ vmc_joint.index_target      = HOME_FINGER.copy()
 vmc_joint.middle_target     = HOME_FINGER.copy()
 vmc_joint.ring_pinky_target = HOME_FINGER.copy()
 
+vmc_task = TaskVMC()
+
+for _f in FINGERTIPS:
+    vmc_task.dampers[_f].damping    = np.full(3, B_TIP)
+    vmc_task.targets[_f]            = D_REF[_f].copy()
+    vmc_task.attachment_points[_f]  = FINGER_TIP_OFFSETS[_f].copy()
+
+vmc_task.springs['palm'].stiffness = np.full(3, K_TIP_GENTLE)
+vmc_task.dampers['palm'].damping   = np.full(3, B_TIP)
+vmc_task.targets['palm']           = D_REF['palm'].copy()
+
 grav_lim = GravFricLim()
 grav_lim.friction_max = FRICTION_TAU_MAX
 recv     = UR5Receiver()
 
 print('Initialising stiffness model (HandHessians)…')
 _t0 = time.time()
-stiff_model = tip_stiffness_JointSpace(eta=eta, mode='normal')
+stiff_model = tip_stiffness_MixedSpace(eta=eta, mode='normal')
 print(f'  done in {time.time() - _t0:.1f} s')
 input('Press ENTER to continue…')
 print()
@@ -177,7 +187,7 @@ def _output_path():
 
 
 def _csv_header():
-    cols = ['time_s', 'phase', 'k_Nmrad', 'C_O_m_per_N', 'k_applied_Nmrad', 'converged']
+    cols = ['time_s', 'phase', 'k_tip_Npm', 'C_O_m_per_N', 'k_applied_Npm', 'converged']
     for i in range(13):
         cols.append(f'q_motor_{i}_rad')
     for i in range(13):
@@ -238,14 +248,17 @@ def _tip_pos(finger, q):
     return np.array(FK_motor2fingerPos(q, finger, 'DIP', r))
 
 
-def _tip_force(finger, q, k):
-    """Analytic VMC tip force at joint flexion stiffness k."""
-    return np.asarray(stiff_model.tip_force(finger, q, THETA_REF_DEG, _make_k_dict(k)))
+def _tip_force(finger, q, k_tip):
+    """Analytic VMC tip force at uniform per-finger task stiffness k_tip."""
+    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
+    K_task_now['palm'] = k_tip * np.eye(3)
+    return np.asarray(stiff_model.tip_force(
+        finger, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now))
 
 
-def _compute_row(q, q_dot, phase, k, C_O, k_applied, converged):
+def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
     row = [f'{time.time() - _experiment_start:.4f}', phase,
-           f'{k:.4f}', f'{C_O:.6e}', f'{k_applied:.4f}', int(converged)]
+           f'{k_tip:.2f}', f'{C_O:.6e}', f'{k_applied:.2f}', int(converged)]
 
     row += [f'{v:.6f}' for v in q]
     row += [f'{v:.6f}' for v in q_dot]
@@ -258,7 +271,8 @@ def _compute_row(q, q_dot, phase, k, C_O, k_applied, converged):
         ang = FK_motor2finger(q, _f)
         row += [f'{ang[i]:.6f}' for i in range(3)]
 
-    K_dict_now = _make_k_dict(k)
+    K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
+    K_task_now['palm'] = k_tip * np.eye(3)
 
     for _f in FINGERTIPS:
         pos  = _tip_pos(_f, q)
@@ -266,13 +280,15 @@ def _compute_row(q, q_dot, phase, k, C_O, k_applied, converged):
         disp = pos - ref
         mag  = float(np.linalg.norm(disp))
 
-        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, K_dict_now)
-        K1   = stiff_model.tip_stiffness(_f, q, K_dict_now)
+        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF,
+                                      K_JOINT_DICT_MODEL, K_task_now)
+        K1   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now)
         eig1 = np.linalg.eigvalsh(K1)
 
+        # Force is linear in spring deflections; CCT modifies only stiffness.
         f2   = f1
-        K2   = stiff_model.tip_stiffness(_f, q, K_dict_now,
-                                          f_ext=f1, theta_ref_deg=THETA_REF_DEG)
+        K2   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now,
+                                          d_ref_dict=D_REF, f_ext=f1)
         eig2 = np.linalg.eigvalsh(K2)
 
         row += [f'{v:.6f}' for v in pos]
@@ -315,12 +331,12 @@ STATE_APPROACH    = 0
 STATE_DESCEND     = 1
 STATE_SETTLE_ARM  = 2
 STATE_RAMP_CLOSE  = 3
-STATE_SENSE_CONV  = 4
-STATE_SENSE_REC   = 5
-STATE_PROBE_RAMP  = 6
-STATE_PROBE_CONV  = 7
-STATE_PROBE_REC   = 8
-STATE_ADAPT_RAMP  = 9
+STATE_SENSE_CONV  = 4    # convergence at K_TIP_GENTLE
+STATE_SENSE_REC   = 5    # record pos_gentle, F_gentle
+STATE_PROBE_RAMP  = 6    # ramp K_TIP_GENTLE → K_TIP_PROBE
+STATE_PROBE_CONV  = 7    # convergence at K_TIP_PROBE
+STATE_PROBE_REC   = 8    # record pos_probe, F_probe; compute k_applied
+STATE_ADAPT_RAMP  = 9    # ramp K_TIP_PROBE → k_applied
 STATE_ADAPT_CONV  = 10
 STATE_LIFT        = 11
 STATE_HOLD        = 12
@@ -339,6 +355,7 @@ _converge_ticks   = 0
 _CONVERGE_TICKS   = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
 _log_tick         = 0
 _converged        = False
+_use_task_vmc     = False
 
 _ramp_t0            = None
 _ramp_start_targets = None
@@ -348,10 +365,11 @@ _k_ramp_t0    = None
 _k_ramp_start = None
 _k_ramp_end   = None
 
-_current_k    = K_GENTLE
-_k_applied    = K_GENTLE
+_current_k    = K_TIP_GENTLE
+_k_applied    = K_TIP_GENTLE
 _C_O_mean     = 0.0
 
+# Per-finger steady-state accumulators for the two-point compliance estimate.
 _pos_gentle_sum   = {f: np.zeros(3) for f in FINGERTIPS}
 _force_gentle_sum = {f: np.zeros(3) for f in FINGERTIPS}
 _pos_probe_sum    = {f: np.zeros(3) for f in FINGERTIPS}
@@ -372,10 +390,10 @@ def _move_arm_async(target_pose, speed, done_state):
     threading.Thread(target=_run, daemon=True).start()
 
 
-def _set_flex_stiffness(k):
-    vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, k, k])
-    for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.full(3, k)
+def _set_task_stiffness(k):
+    for _f in FINGERTIPS:
+        vmc_task.springs[_f].stiffness = np.full(3, k)
+    vmc_task.springs['palm'].stiffness = np.full(3, k)
 
 
 def _set_joint_stiffness_uniform(k_rot, b_rot):
@@ -386,9 +404,9 @@ def _set_joint_stiffness_uniform(k_rot, b_rot):
 def _set_joint_stiffness_experiment():
     vmc_joint.set_stiffness(K_ROT)
     vmc_joint.set_damping(B_ROT)
-    vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, K_GENTLE, K_GENTLE])
+    vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.full(3, K_GENTLE)
+        vmc_joint.stiffness[_f] = np.zeros(3)
         vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
 
 
@@ -428,7 +446,7 @@ def _step_k_ramp(now):
     global _current_k
     alpha      = min(1.0, (now - _k_ramp_t0) / RAMP_DURATION)
     _current_k = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
-    _set_flex_stiffness(_current_k)
+    _set_task_stiffness(_current_k)
     return alpha >= 1.0
 
 # =============================================================================
@@ -438,14 +456,16 @@ def _step_k_ramp(now):
 def control_callback():
     global state, _state_start
     global _converge_ticks, _log_tick, _converged
-    global _k_applied, _C_O_mean
+    global _use_task_vmc, _k_applied, _C_O_mean
     global _sense_count, _probe_count
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
 
-    tau_vmc  = vmc_joint.hand_torques(q, q_dot)
-    tau_comp = grav_lim.compute_compensation_torques(
+    tau_joint = vmc_joint.hand_torques(q, q_dot)
+    tau_task  = vmc_task.hand_torques(q, q_dot) if _use_task_vmc else np.zeros(13)
+    tau_vmc   = tau_joint + tau_task
+    tau_comp  = grav_lim.compute_compensation_torques(
         q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
     controller.publish_torques(tau_vmc + tau_comp)
 
@@ -454,7 +474,8 @@ def control_callback():
 
     if state == STATE_APPROACH:
         if not _arm_moving:
-            controller.get_logger().info(f'Approaching above {OBJECT_NAME} …')
+            controller.get_logger().info(
+                f'Approaching above {OBJECT_NAME} …')
             _move_arm_async(ABOVE_POSE, UR5_INIT_SPEED, STATE_DESCEND)
 
     elif state == STATE_DESCEND:
@@ -473,12 +494,16 @@ def control_callback():
     elif state == STATE_RAMP_CLOSE:
         if _step_ramp(now):
             _set_joint_stiffness_experiment()
+            _set_task_stiffness(K_TIP_GENTLE)
+            for _f in FINGERTIPS:
+                vmc_task.targets[_f] = D_REF[_f].copy()
+            _use_task_vmc   = True
             _converge_ticks = 0
             _converged      = False
             _state_start    = now
             state           = STATE_SENSE_CONV
             controller.get_logger().info(
-                f'Closing at K_GENTLE = {K_GENTLE} N·m/rad for sensing …')
+                f'Closing at K_TIP_GENTLE = {K_TIP_GENTLE} N/m for sensing …')
 
     elif state == STATE_SENSE_CONV:
         if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
@@ -497,7 +522,7 @@ def control_callback():
                 state        = STATE_SENSE_REC
                 controller.get_logger().info(
                     f'Sensing converged at {elapsed:.1f} s. '
-                    f'Recording gentle-point ({K_GENTLE} N·m/rad) for '
+                    f'Recording gentle-point ({K_TIP_GENTLE} N/m) for '
                     f'{SENSE_DURATION:.1f} s …')
 
     elif state == STATE_SENSE_REC:
@@ -505,19 +530,19 @@ def control_callback():
         if _log_tick % LOG_EVERY == 0:
             for _f in FINGERTIPS:
                 _pos_gentle_sum[_f]   += _tip_pos(_f, q)
-                _force_gentle_sum[_f] += _tip_force(_f, q, K_GENTLE)
+                _force_gentle_sum[_f] += _tip_force(_f, q, K_TIP_GENTLE)
             _sense_count += 1
             if not COLLECTED_DATA:
                 _csv_writer.writerow(
-                    _compute_row(q, q_dot, 'sense', K_GENTLE,
-                                 0.0, K_GENTLE, True))
+                    _compute_row(q, q_dot, 'sense', K_TIP_GENTLE,
+                                 0.0, K_TIP_GENTLE, True))
         if elapsed >= SENSE_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
             controller.get_logger().info(
                 f'Gentle point recorded ({_sense_count} samples). '
-                f'Ramping K {K_GENTLE} → {K_PROBE} N·m/rad …')
-            _begin_k_ramp(K_GENTLE, K_PROBE)
+                f'Ramping K {K_TIP_GENTLE} → {K_TIP_PROBE} N/m …')
+            _begin_k_ramp(K_TIP_GENTLE, K_TIP_PROBE)
             _converge_ticks = 0
             _converged      = False
             _log_tick       = 0
@@ -549,7 +574,7 @@ def control_callback():
                 state        = STATE_PROBE_REC
                 controller.get_logger().info(
                     f'Probe converged at {elapsed:.1f} s. '
-                    f'Recording probe-point ({K_PROBE} N·m/rad) for '
+                    f'Recording probe-point ({K_TIP_PROBE} N/m) for '
                     f'{SENSE_DURATION:.1f} s …')
 
     elif state == STATE_PROBE_REC:
@@ -557,12 +582,12 @@ def control_callback():
         if _log_tick % LOG_EVERY == 0:
             for _f in FINGERTIPS:
                 _pos_probe_sum[_f]   += _tip_pos(_f, q)
-                _force_probe_sum[_f] += _tip_force(_f, q, K_PROBE)
+                _force_probe_sum[_f] += _tip_force(_f, q, K_TIP_PROBE)
             _probe_count += 1
             if not COLLECTED_DATA:
                 _csv_writer.writerow(
-                    _compute_row(q, q_dot, 'probe', K_PROBE,
-                                 0.0, K_PROBE, True))
+                    _compute_row(q, q_dot, 'probe', K_TIP_PROBE,
+                                 0.0, K_TIP_PROBE, True))
         if elapsed >= SENSE_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
@@ -584,10 +609,11 @@ def control_callback():
                 k_raw     = K_MIN
             _k_applied = float(np.clip(k_raw, K_MIN, K_MAX))
             controller.get_logger().info(
-                f'C_O_mean = {_C_O_mean * 1e3:.3f} mm/N → '
-                f'k_applied = {_k_applied:.3f} N·m/rad '
-                f'(K_GAIN / C_O, clipped to [{K_MIN}, {K_MAX}])')
-            _begin_k_ramp(K_PROBE, _k_applied)
+                f'C_O_mean = {_C_O_mean * 1e3:.3f} mm/N '
+                f'(K_O ≈ {1.0 / _C_O_mean if _C_O_mean > 1e-12 else float("inf"):.1f} N/m) → '
+                f'k_applied = {_k_applied:.1f} N/m '
+                f'(K_GAIN / C_O / clip [{K_MIN}, {K_MAX}])')
+            _begin_k_ramp(K_TIP_PROBE, _k_applied)
             _converge_ticks = 0
             _converged      = False
             _log_tick       = 0
@@ -652,9 +678,10 @@ def control_callback():
 
     elif state == STATE_UNLOAD:
         controller.get_logger().info('Releasing grasp …')
-        _set_flex_stiffness(K_ROT)
-        _state_start = now
-        state        = STATE_RAMP_HOME
+        _set_task_stiffness(0.0)
+        _use_task_vmc = False
+        _state_start  = now
+        state         = STATE_RAMP_HOME
 
     elif state == STATE_RAMP_HOME:
         if elapsed >= CONVERGE_HOLD:
@@ -690,9 +717,9 @@ timer_period = 1.0 / CONTROL_FREQUENCY
 controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
     f'Grasp adaptation | object: {OBJECT_NAME} | '
-    f'K_GENTLE = {K_GENTLE} N·m/rad | '
-    f'K_PROBE = {K_PROBE} N·m/rad | K_GAIN = {K_GAIN} | '
-    f'k_applied ∈ [{K_MIN}, {K_MAX}] N·m/rad')
+    f'K_TIP_GENTLE = {K_TIP_GENTLE} N/m | '
+    f'K_TIP_PROBE = {K_TIP_PROBE} N/m | K_GAIN = {K_GAIN} | '
+    f'k_applied ∈ [{K_MIN}, {K_MAX}] N/m')
 
 try:
     while rclpy.ok() and state != STATE_DONE:
@@ -704,6 +731,8 @@ finally:
 
     vmc_joint.set_stiffness(0.0)
     vmc_joint.set_damping(0.0)
+    vmc_task.set_stiffness(0.0)
+    vmc_task.set_damping(0.0)
     controller.publish_torques(np.zeros(13))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
 
