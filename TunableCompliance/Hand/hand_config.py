@@ -10,11 +10,10 @@ import numpy as np
 UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along APPROACH_DIRECTION.
-#UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
-UR5_POSE_BOTTLE_START = np.array([0.00, 0.66, 0.29, 0.0, 0.0, 2.53]) # TODO: remove and uncomment
+UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_THUMB  = np.deg2rad([40.0, -40, 60.0, 60.0])
+INHAND_PC1_THUMB  = np.deg2rad([60.0, -60, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': 0.0,
@@ -79,13 +78,13 @@ RECORD_DURATION  = 5.0   # [s]
 K_BACKGROUND_DG = 0.1  # [N·m/rad]  uniform background stiffness on all joints
 K_SOFT        = 20.0    # [N/m]  very compliant tip spring
 K_STIFF       = 100.0  # [N/m]  very stiff tip spring
-SOFT_DURATION    = 1.0    # [s]    (adaptive) time at K_SOFT before ramp starts
+SOFT_DURATION    = 0.5    # [s]    (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]    (adaptive) stiffness ramp duration
 HOME_DURATION    = 5.0    # [s]    time to hold home targets before shutdown
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
 APPROACH_DIRECTION = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
-APPROACH_SPEED  = 0.10   # [m/s]
+APPROACH_SPEED  = 0.20   # [m/s]
 TOTAL_DISTANCE  = 0.40   # [m]   total displacement along APPROACH_DIRECTION
 CLOSE_DISTANCE  = 0.15   # [m]   displacement at which the hand closes to PC1
 K_HOME          = 0.15   # [N·m/rad]  stiffness for hand return to HOME
