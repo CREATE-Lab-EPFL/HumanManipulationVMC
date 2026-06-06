@@ -31,11 +31,11 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 20.0            # [N/m]   gentle-grasp stiffness (baseline)
+K_TIP_GENTLE = 8.0             # [N/m]   gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
-K_ROT          = 0.1       # [N·m/rad]
+K_ROT          = 0.08      # [N·m/rad]
 B_ROT          = 0.0001    # [N·m·s/rad]
 B_TIP          = 0.001     # [N·s/m]
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness for ramp back to HOME
