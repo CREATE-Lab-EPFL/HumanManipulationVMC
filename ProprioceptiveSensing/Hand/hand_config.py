@@ -34,7 +34,7 @@ OBJECTS    = ['hard', 'medium', 'soft']
 K_TIP_GENTLE = 20.0              # [N/m]  gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 200]    # [N/m]  stiffness levels for the thumb sweep
 K_TIP_HOLD   = 100.0             # [N/m]  constant hold stiffness for the 4 clamping fingers
-N_RUNS       = 5                 # independent grasp trials per object (data collection only; 1 for video)
+N_RUNS       = 1                 # independent grasp trials per object (data collection only; 1 for video)
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]
