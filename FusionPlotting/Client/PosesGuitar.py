@@ -14,7 +14,7 @@ _HERE = pathlib.Path(__file__).parent
 sys.path.insert(0, str(_HERE))
 
 from JointClient import JointClient
-from _fusion_utils import avg_q15, q15_to_joints_deg, print_joints
+from _fusion_utils import avg_q13, q13_to_joints_deg, print_joints
 
 _DATA = _HERE.parents[1] / "PassiveCompliance" / "Hand" / "outputs" / "guitar_playing_hand"
 
@@ -31,9 +31,9 @@ for label, csv_path in CONDITIONS.items():
     if df_sweep.empty:
         print(f"[Guitar] {label}: no sweep-phase rows — skipping")
         continue
-    # guitar CSV uses q_0 ... q_14
-    q_mean = avg_q15(df_sweep, "q_{}")
-    joints = q15_to_joints_deg(q_mean)
+    # guitar CSV uses q_0 ... q_12
+    q_mean = avg_q13(df_sweep, "q_{}")
+    joints = q13_to_joints_deg(q_mean)
     print_joints(f"Guitar — {label} (n={len(df_sweep)} rows)", joints)
     client.write_targets(joints, angle_unit="degrees", length_unit="mm")
     time.sleep(1.5)

@@ -1,14 +1,13 @@
 """
 Utility for converting recorded motor-angle CSV data to Fusion joint-angle dicts.
 
-CSV motor-angle convention (old 15-motor software order):
-  q[0,1]    = wrist (rigid, always skipped)
-  q[2..5]   = thumb CMC1, CMC2, MCP, IP
-  q[6]      = spread
-  q[7..8]   = index MCP, PIP
-  q[9..10]  = middle MCP, PIP
-  q[11..12] = ring MCP, PIP
-  q[13..14] = pinky MCP, PIP
+Current 13-motor software order (wrist excluded — position-controlled):
+  q[0..3]  = thumb CMC1, CMC2, MCP, IP
+  q[4]     = spread
+  q[5..6]  = index MCP, PIP
+  q[7..8]  = middle MCP, PIP
+  q[9..10] = ring MCP, PIP
+  q[11..12]= pinky MCP, PIP
 """
 
 import sys
@@ -22,26 +21,26 @@ from KinematicsHand.FK_Hand import (
 )
 
 
-def q15_to_joints_deg(q15):
-    """Convert old 15-motor software-order vector to Fusion joint dict [deg].
+def q13_to_joints_deg(q13):
+    """Convert 13-motor software-order vector to Fusion joint dict [deg].
 
     Args:
-        q15: (15,) array in old software order (wrist at [0,1])
+        q13: (13,) array in current software order (no wrist)
 
     Returns:
         dict mapping Fusion joint names to angles in degrees
     """
-    q = np.asarray(q15, dtype=float)
-    q13 = q[2:15]   # drop wrist, get 13-motor vector
+    q = np.asarray(q13, dtype=float)
+    assert q.shape == (13,), f"Expected (13,) motor vector, got {q.shape}"
 
-    thumb  = FK_motor2thumb(q13)
-    s_idx  = FK_motor2spread(q13, "index")
-    s_ring = FK_motor2spread(q13, "ring")
-    s_pnk  = FK_motor2spread(q13, "pinky")
-    idx    = FK_motor2finger(q13, "index")
-    mid    = FK_motor2finger(q13, "middle")
-    ring   = FK_motor2finger(q13, "ring")
-    pinky  = FK_motor2finger(q13, "pinky")
+    thumb  = FK_motor2thumb(q)
+    s_idx  = FK_motor2spread(q, "index")
+    s_ring = FK_motor2spread(q, "ring")
+    s_pnk  = FK_motor2spread(q, "pinky")
+    idx    = FK_motor2finger(q, "index")
+    mid    = FK_motor2finger(q, "middle")
+    ring   = FK_motor2finger(q, "ring")
+    pinky  = FK_motor2finger(q, "pinky")
 
     return {
         "wrist_pitch":  0.0,
@@ -92,14 +91,14 @@ def act_cols_to_joints_deg(row):
     }
 
 
-def avg_q15(df, q_prefix="q_motor_{}_rad"):
-    """Return mean 15-motor vector from a filtered DataFrame.
+def avg_q13(df, q_prefix="q_motor_{}_rad"):
+    """Return mean 13-motor vector from a filtered DataFrame.
 
     Args:
         df:       filtered DataFrame
-        q_prefix: column name template; use '{}' for the motor index
+        q_prefix: column name template; use '{}' for the motor index (0..12)
     """
-    cols = [q_prefix.format(i) for i in range(15)]
+    cols = [q_prefix.format(i) for i in range(13)]
     return df[cols].mean().values
 
 
