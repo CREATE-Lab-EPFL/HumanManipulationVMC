@@ -130,7 +130,12 @@ vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_BACKGROUND_DG)
 vmc_joint.set_damping(B_ROT)
 
-vmc_joint.thumb             = HOME_THUMB.copy()
+_PREGRIP_THUMB = HOME_THUMB.copy()
+_PREGRIP_THUMB[0] = PC1_THUMB[0]                      # CMC1: full final target
+_PREGRIP_THUMB[1] = PC1_THUMB[1] * CMC2_PREGRIP_FRAC  # CMC2: fraction of final
+
+vmc_joint.thumb             = _PREGRIP_THUMB.copy()
+vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
 vmc_joint.spread            = {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
 vmc_joint.index_target      = HOME_FINGER.copy()
 vmc_joint.middle_target     = HOME_FINGER.copy()
@@ -324,6 +329,9 @@ def _reset_trial():
     CONDITION = CONDITIONS_ORDER[_cond_idx]
     _experiment_start = time.time()
     _csv_path, _csv_file, _csv_writer = _open_csv(CONDITION)
+    # Restore thumb pre-grip position for the next trial.
+    vmc_joint.thumb = _PREGRIP_THUMB.copy()
+    vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
 
 
 # =============================================================================
@@ -451,7 +459,9 @@ arm.moveL(UR5_POSE_BOTTLE_START.tolist(), UR5_INIT_SPEED, UR5_INIT_ACCELERATION)
 controller.get_logger().info(
     f'Dynamic grasp | order: {" → ".join(CONDITIONS_ORDER)} | '
     f'K_SOFT = {K_SOFT} N/m | K_STIFF = {K_STIFF} N/m | '
-    f'close at X+{CLOSE_DISTANCE:.2f} m | speed = {APPROACH_SPEED:.3f} m/s')
+    f'close at {CLOSE_DISTANCE:.2f} m | speed = {APPROACH_SPEED:.3f} m/s | '
+    f'CMC1 = {np.degrees(PC1_THUMB[0]):.0f}° | '
+    f'CMC2 pre-grip = {CMC2_PREGRIP_FRAC*100:.0f}% of {np.degrees(PC1_THUMB[1]):.0f}°')
 
 input(f'\nPress ENTER to start first condition: {CONDITIONS_ORDER[0]} …\n')
 
