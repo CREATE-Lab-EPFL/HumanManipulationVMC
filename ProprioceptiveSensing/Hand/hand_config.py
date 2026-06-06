@@ -9,7 +9,7 @@ import numpy as np
 UR5_POSE_SQUEEZING = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([70.0, -40.0, 90.0, 90.0])
+PC1_THUMB  = np.deg2rad([70.0, -60.0, 90.0, 90.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),
@@ -31,7 +31,7 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 10.0            # [N/m]   gentle-grasp stiffness (baseline)
+K_TIP_GENTLE = 20.0            # [N/m]   gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [50, 100, 150]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
@@ -40,7 +40,7 @@ B_ROT          = 0.0001    # [N·m·s/rad]
 B_TIP          = 0.001     # [N·s/m]
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness for ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.01    # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]
