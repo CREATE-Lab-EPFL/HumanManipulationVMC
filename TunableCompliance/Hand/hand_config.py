@@ -89,9 +89,9 @@ HOME_DURATION    = 5.0   # [s]     time to hold home targets before shutdown
 CMC2_PREGRIP_FRAC = 0.5  # [0–1]  fraction of PC1_THUMB[1] to pre-set at start
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
-APPROACH_DIRECTION = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
-APPROACH_SPEED  = 0.025  # [m/s]  keep low: UR5_INIT_ACCELERATION=0.05 m/s² means
-                          #        timing offset ≈ v/(2a); at 0.025 m/s → 0.25 s error
+APPROACH_DIRECTION   = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
+APPROACH_SPEED       = 0.025  # [m/s]
+APPROACH_ACCELERATION = 0.10  # [m/s²]  2× UR5_INIT_ACCELERATION (0.05) for this experiment
 TOTAL_DISTANCE  = 0.40   # [m]   total displacement along APPROACH_DIRECTION
 CLOSE_DISTANCE  = 0.15   # [m]   displacement at which the hand closes to PC1
 K_HOME          = 0.15   # [N·m/rad]  stiffness for hand return to HOME
