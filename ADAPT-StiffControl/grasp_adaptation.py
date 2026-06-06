@@ -423,6 +423,20 @@ def _set_joint_stiffness_experiment():
         vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
 
 
+def _set_thumb_stiffness(k):
+    vmc_task.springs['thumb'].stiffness = np.full(3, k)
+
+
+def _freeze_and_hold_fingers(q):
+    """Lock the 4 clamping fingers at their current tip positions with K_TIP_HOLD."""
+    for _f in ['index', 'middle', 'ring', 'pinky']:
+        pos = _tip_pos(_f, q)
+        _finger_hold_pos[_f]           = pos.copy()
+        vmc_task.targets[_f]           = pos.copy()
+        vmc_task.springs[_f].stiffness = np.full(3, K_TIP_HOLD)
+        _d_ref_model_dict[_f]          = pos.copy()
+
+
 def _begin_ramp(end_targets):
     global _ramp_t0, _ramp_start_targets, _ramp_end_targets
     _ramp_t0 = time.time()
@@ -459,7 +473,7 @@ def _step_k_ramp(now):
     global _current_k
     alpha      = min(1.0, (now - _k_ramp_t0) / RAMP_DURATION)
     _current_k = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
-    _set_task_stiffness(_current_k)
+    _set_thumb_stiffness(_current_k)
     return alpha >= 1.0
 
 # =============================================================================
@@ -510,6 +524,7 @@ def control_callback():
             _set_task_stiffness(K_TIP_GENTLE)
             for _f in FINGERTIPS:
                 vmc_task.targets[_f] = D_REF[_f].copy()
+                _d_ref_model_dict[_f] = D_REF[_f].copy()
             _use_task_vmc   = True
             _converge_ticks = 0
             _converged      = False
@@ -552,9 +567,11 @@ def control_callback():
         if elapsed >= SENSE_DURATION:
             if not COLLECTED_DATA:
                 _csv_file.flush()
+            _freeze_and_hold_fingers(q)
             controller.get_logger().info(
                 f'Gentle point recorded ({_sense_count} samples). '
-                f'Ramping K {K_TIP_GENTLE} → {K_TIP_PROBE} N/m …')
+                f'Fingers frozen at K_TIP_HOLD={K_TIP_HOLD:.0f} N/m. '
+                f'Ramping thumb K {K_TIP_GENTLE} → {K_TIP_PROBE} N/m …')
             _begin_k_ramp(K_TIP_GENTLE, K_TIP_PROBE)
             _converge_ticks = 0
             _converged      = False
@@ -605,17 +622,13 @@ def control_callback():
             if not COLLECTED_DATA:
                 _csv_file.flush()
 
-            n_g = max(1, _sense_count)
-            n_p = max(1, _probe_count)
-            C_O_list = []
-            for _f in FINGERTIPS:
-                d_pos = _pos_probe_sum[_f] / n_p - _pos_gentle_sum[_f] / n_g
-                d_F   = _force_probe_sum[_f] / n_p - _force_gentle_sum[_f] / n_g
-                nF    = float(np.linalg.norm(d_F))
-                if nF > 1e-9:
-                    C_O_list.append(float(np.linalg.norm(d_pos) / nF))
-            if C_O_list:
-                _C_O_mean = float(np.mean(C_O_list))
+            n_g   = max(1, _sense_count)
+            n_p   = max(1, _probe_count)
+            d_pos = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
+            d_F   = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
+            nF    = float(np.linalg.norm(d_F))
+            if nF > 1e-9:
+                _C_O_mean = float(np.linalg.norm(d_pos) / nF)
                 k_raw     = K_GAIN / _C_O_mean if _C_O_mean > 1e-12 else K_MAX
             else:
                 _C_O_mean = 0.0
