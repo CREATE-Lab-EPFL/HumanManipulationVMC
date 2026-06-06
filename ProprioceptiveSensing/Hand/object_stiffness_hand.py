@@ -35,7 +35,7 @@ from hand_config import (
     PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
-    K_TIP_GENTLE, K_TIP_SWEEP, K_TIP_HOLD,
+    K_TIP_GENTLE, K_TIP_SWEEP, K_TIP_HOLD, N_RUNS,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     SETTLE_TIME, RAMP_DURATION,
@@ -111,9 +111,12 @@ K_JOINT_DICT_MODEL = {
 }
 
 # =============================================================================
-# Object sequencing (all objects run back-to-back in one session)
+# Object sequencing — N_RUNS independent trials per object (data collection),
+# or a single pass (video / COLLECTED_DATA = True).
 # =============================================================================
 _obj_idx    = 0
+_run_idx    = 0
+_n_runs     = N_RUNS if not COLLECTED_DATA else 1
 OBJECT_NAME = OBJECTS[_obj_idx]
 
 # =============================================================================
@@ -166,7 +169,8 @@ controller.get_logger().info('UR5 connected')
 def _output_path():
     folder = os.path.join(_HERE, 'outputs', 'object_stiffness_hand')
     os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, f'object_stiffness_hand_{OBJECT_NAME}.csv')
+    suffix = f'_run{_run_idx + 1}' if _n_runs > 1 else ''
+    return os.path.join(folder, f'object_stiffness_hand_{OBJECT_NAME}{suffix}.csv')
 
 
 def _csv_header():
@@ -313,8 +317,9 @@ STATE_SWEEP_REC     = 8
 STATE_UNLOAD        = 9
 STATE_RAMP_TO_HOME  = 10
 STATE_RETURN        = 11
-STATE_CONFIRM_NEXT  = 12
-STATE_DONE          = 13
+STATE_CONFIRM_NEXT     = 12
+STATE_CONFIRM_NEXT_RUN = 13
+STATE_DONE             = 14
 
 state             = STATE_INIT_ARM
 _state_start      = time.time()
@@ -350,29 +355,35 @@ def _ask_confirm_async(prompt):
     threading.Thread(target=_run, daemon=True).start()
 
 
+def _reset_state():
+    """Reset per-trial state (shared by _reset_trial and _reset_run)."""
+    global _experiment_start, _converge_ticks, _converged
+    global _sweep_idx, _current_k_tip, _use_task_vmc
+    global _log_tick, _confirm_ready, _confirm_pending
+    _experiment_start = time.time()
+    _converge_ticks   = 0
+    _converged        = False
+    _sweep_idx        = 0
+    _current_k_tip    = K_TIP_GENTLE
+    _use_task_vmc     = False
+    _log_tick         = 0
+    _confirm_ready    = False
+    _confirm_pending  = False
+    _finger_hold_pos.clear()
+    for _f in FINGERTIPS:
+        _d_ref_model_dict[_f] = D_REF[_f].copy()
+
+
 def _reset_trial():
-    global _obj_idx, OBJECT_NAME, _experiment_start
-    global _csv_path, _csv_file, _csv_writer
-    global _converge_ticks, _converged, _sweep_idx, _current_k_tip
-    global _use_task_vmc, _log_tick, _confirm_ready, _confirm_pending
+    """Advance to the next object within the current run."""
+    global _obj_idx, OBJECT_NAME, _csv_path, _csv_file, _csv_writer
 
     if _csv_file is not None and not _csv_file.closed:
         _csv_file.close()
 
-    _obj_idx       += 1
-    OBJECT_NAME     = OBJECTS[_obj_idx]
-    _experiment_start = time.time()
-    _converge_ticks = 0
-    _converged      = False
-    _sweep_idx      = 0
-    _current_k_tip  = K_TIP_GENTLE
-    _use_task_vmc   = False
-    _log_tick       = 0
-    _confirm_ready  = False
-    _confirm_pending = False
-    _finger_hold_pos.clear()
-    for _f in FINGERTIPS:
-        _d_ref_model_dict[_f] = D_REF[_f].copy()
+    _obj_idx    += 1
+    OBJECT_NAME  = OBJECTS[_obj_idx]
+    _reset_state()
 
     if not COLLECTED_DATA:
         _csv_path   = _output_path()
@@ -380,6 +391,26 @@ def _reset_trial():
         _csv_writer = csv.writer(_csv_file)
         _csv_writer.writerow(_csv_header())
         controller.get_logger().info(f'Saving to: {_csv_path}')
+
+
+def _reset_run():
+    """Start a new run: reset object index and open CSV for first object."""
+    global _run_idx, _obj_idx, OBJECT_NAME, _csv_path, _csv_file, _csv_writer
+
+    if _csv_file is not None and not _csv_file.closed:
+        _csv_file.close()
+
+    _run_idx    += 1
+    _obj_idx     = 0
+    OBJECT_NAME  = OBJECTS[0]
+    _reset_state()
+
+    if not COLLECTED_DATA:
+        _csv_path   = _output_path()
+        _csv_file   = open(_csv_path, 'w', newline='')
+        _csv_writer = csv.writer(_csv_file)
+        _csv_writer.writerow(_csv_header())
+        controller.get_logger().info(f'Run {_run_idx + 1}/{_n_runs} — saving to: {_csv_path}')
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -662,11 +693,19 @@ def control_callback():
                 state        = STATE_CONFIRM_NEXT
                 _state_start = now
                 controller.get_logger().info(
-                    f'Object {_obj_idx + 1}/{len(OBJECTS)} done. '
+                    f'Object {_obj_idx + 1}/{len(OBJECTS)} done '
+                    f'(run {_run_idx + 1}/{_n_runs}). '
                     f'Place next object and press ENTER …')
+            elif _run_idx + 1 < _n_runs:
+                state        = STATE_CONFIRM_NEXT_RUN
+                _state_start = now
+                controller.get_logger().info(
+                    f'Run {_run_idx + 1}/{_n_runs} complete. '
+                    f'Reposition objects for run {_run_idx + 2} and press ENTER …')
             else:
                 state = STATE_DONE
-                controller.get_logger().info('All objects complete.')
+                controller.get_logger().info(
+                    f'All {_n_runs} run(s) complete.')
 
     elif state == STATE_CONFIRM_NEXT:
         if not _confirm_pending:
@@ -674,7 +713,16 @@ def control_callback():
                 f'\n[Confirm] Place {OBJECTS[_obj_idx + 1]} and press ENTER to continue …\n')
         elif _confirm_ready:
             _reset_trial()
-            # _reset_trial() resets _confirm_ready/_confirm_pending to False
+            _state_start = now
+            state        = STATE_CLOSE_CONFIRM
+
+    elif state == STATE_CONFIRM_NEXT_RUN:
+        if not _confirm_pending:
+            _ask_confirm_async(
+                f'\n[Confirm] Run {_run_idx + 1}/{_n_runs} done. '
+                f'Reposition for run {_run_idx + 2} — place {OBJECTS[0]} and press ENTER …\n')
+        elif _confirm_ready:
+            _reset_run()
             _state_start = now
             state        = STATE_CLOSE_CONFIRM
             controller.get_logger().info(
@@ -690,10 +738,11 @@ def control_callback():
 timer_period = 1.0 / CONTROL_FREQUENCY
 controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
-    f'Object stiffness hand — objects: {OBJECTS} | '
+    f'Object stiffness hand — objects: {OBJECTS} | runs: {_n_runs} | '
     f'k_rot = {K_ROT} N·m/rad | '
     f'k_tip gentle = {K_TIP_GENTLE} N/m | '
-    f'sweep = {K_TIP_SWEEP} N/m | '
+    f'thumb sweep = {K_TIP_SWEEP} N/m | '
+    f'fingers hold = {K_TIP_HOLD} N/m | '
     f'k_return = {K_RETURN} N·m/rad')
 
 try:
