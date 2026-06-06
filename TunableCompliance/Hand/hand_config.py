@@ -10,7 +10,7 @@ import numpy as np
 UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along APPROACH_DIRECTION.
-UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.06, -1.48, -1.04, -1.64])
+UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.06, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
 INHAND_PC1_THUMB  = np.deg2rad([40.0, -40, 90.0, 90.0])
@@ -26,7 +26,7 @@ INHAND_PC1_RING   = np.deg2rad([65.0, 75.0, 75.0])
 INHAND_PC1_PINKY  = np.deg2rad([65.0, 75.0, 75.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
-GRASP_PC1_THUMB  = np.deg2rad([30.0, -40, 70.0, 70.0])
+GRASP_PC1_THUMB  = np.deg2rad([30.0, -60.0, 90.0, 90.0])
 GRASP_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
