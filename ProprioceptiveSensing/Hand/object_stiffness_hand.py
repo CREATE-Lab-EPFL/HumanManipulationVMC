@@ -78,6 +78,9 @@ D_REF = {
     'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
+# Centroid of all fingertip FK positions — used as common task-spring target.
+D_REF_CENTER = np.mean([D_REF[f] for f in FINGERTIPS], axis=0)
+
 THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_THUMB,
     [PC1_SPREAD['index']],
@@ -128,7 +131,7 @@ vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
     vmc_task.dampers[_f].damping      = np.full(3, B_TIP)
-    vmc_task.targets[_f]              = D_REF[_f].copy()
+    vmc_task.targets[_f]              = D_REF_CENTER.copy()
     vmc_task.attachment_points[_f]    = FINGER_TIP_OFFSETS[_f].copy()
 
 vmc_task.springs['palm'].stiffness = np.full(3, K_TIP_GENTLE)
