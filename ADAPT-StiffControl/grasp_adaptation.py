@@ -114,6 +114,11 @@ D_REF = {
     'palm':   np.array(FK_motor2palm(np.zeros(3))[1]),
 }
 
+# Centroid of all fingertip FK positions — used as common task-spring target.
+D_REF_CENTER = np.mean([D_REF[f] for f in FINGERTIPS], axis=0)
+D_REF_CENTER_DICT = {f: D_REF_CENTER.copy() for f in FINGERTIPS}
+D_REF_CENTER_DICT['palm'] = D_REF['palm'].copy()
+
 THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_THUMB,
     [PC1_SPREAD['index']], [PC1_SPREAD['middle']],
@@ -153,7 +158,7 @@ vmc_task = TaskVMC()
 
 for _f in FINGERTIPS:
     vmc_task.dampers[_f].damping    = np.full(3, B_TIP)
-    vmc_task.targets[_f]            = D_REF[_f].copy()
+    vmc_task.targets[_f]            = D_REF_CENTER.copy()
     vmc_task.attachment_points[_f]  = FINGER_TIP_OFFSETS[_f].copy()
 
 vmc_task.springs['palm'].stiffness = np.full(3, K_TIP_GENTLE)
@@ -253,7 +258,7 @@ def _tip_force(finger, q, k_tip):
     K_task_now = {f: k_tip * np.eye(3) for f in FINGERTIPS}
     K_task_now['palm'] = k_tip * np.eye(3)
     return np.asarray(stiff_model.tip_force(
-        finger, q, THETA_REF_DEG, D_REF, K_JOINT_DICT_MODEL, K_task_now))
+        finger, q, THETA_REF_DEG, D_REF_CENTER_DICT, K_JOINT_DICT_MODEL, K_task_now))
 
 
 def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
@@ -280,7 +285,7 @@ def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
         disp = pos - ref
         mag  = float(np.linalg.norm(disp))
 
-        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF,
+        f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, D_REF_CENTER_DICT,
                                       K_JOINT_DICT_MODEL, K_task_now)
         K1   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now)
         eig1 = np.linalg.eigvalsh(K1)
@@ -288,7 +293,7 @@ def _compute_row(q, q_dot, phase, k_tip, C_O, k_applied, converged):
         # Force is linear in spring deflections; CCT modifies only stiffness.
         f2   = f1
         K2   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now,
-                                          d_ref_dict=D_REF, f_ext=f1)
+                                          d_ref_dict=D_REF_CENTER_DICT, f_ext=f1)
         eig2 = np.linalg.eigvalsh(K2)
 
         row += [f'{v:.6f}' for v in pos]
