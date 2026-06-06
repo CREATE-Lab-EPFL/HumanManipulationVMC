@@ -6,13 +6,11 @@ PLACEHOLDER — tune UR5 poses to the actual setup before running.
 import numpy as np
 
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
-# inhand_manipulation.py — hand horizontal, fingers down over the in-hand
-# reorientation fixture. Independent from ProprioceptiveSensing's
-# UR5_POSE_SQUEEZING (object-stiffness fixture) — edit them separately.
+# inhand_manipulation.py — hand horizontal, fingers down over the in- reorientation
 UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along +X.
-UR5_POSE_BOTTLE_START = np.array([-0.30, 0.52, 0.12, -0.71, -1.52, -1.66])
+UR5_POSE_BOTTLE_START = np.array([-0.04, 0.78, 0.07, -1.48, -1.04, -1.64])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
 INHAND_PC1_THUMB  = np.deg2rad([40.0, -40, 90.0, 90.0])
