@@ -16,10 +16,10 @@ PC1_SPREAD = {
     'ring':   np.deg2rad(0.0),
     'pinky':  np.deg2rad(0.0),
 }
-PC1_INDEX  = np.deg2rad([70.0, 95.0, 95.0])
-PC1_MIDDLE = np.deg2rad([70.0, 95.0, 95.0])
-PC1_RING   = np.deg2rad([70.0, 95.0, 95.0])
-PC1_PINKY  = np.deg2rad([70.0, 95.0, 95.0])
+PC1_INDEX  = np.deg2rad([80.0, 95.0, 95.0])
+PC1_MIDDLE = np.deg2rad([80.0, 95.0, 95.0])
+PC1_RING   = np.deg2rad([80.0, 95.0, 95.0])
+PC1_PINKY  = np.deg2rad([80.0, 95.0, 95.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_THUMB  = np.zeros(4)
@@ -31,7 +31,7 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
 # ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 10.0            # [N/m]   gentle-grasp stiffness (baseline)
+K_TIP_GENTLE = 20.0            # [N/m]   gentle-grasp stiffness (baseline)
 K_TIP_SWEEP  = [100, 200, 300]  # [N/m]   stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
@@ -40,12 +40,12 @@ B_ROT          = 0.001     # [N·m·s/rad]
 B_TIP          = 0.01      # [N·s/m]
 K_RETURN       = 0.15      # [N·m/rad]    joint stiffness for ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.03    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]
 RAMP_DURATION    = 1.0   # [s]
 CONVERGE_VEL_THR = 0.02  # [rad/s]
 CONVERGE_HOLD    = 1.0   # [s]
-CONVERGE_TIMEOUT = 5.0  # [s]
+CONVERGE_TIMEOUT = 8.0  # [s]
 RECORD_DURATION  = 5.0   # [s]
