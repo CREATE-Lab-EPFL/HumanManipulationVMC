@@ -13,7 +13,7 @@ UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_THUMB  = np.deg2rad([60.0, -60, 90.0, 90.0])
+INHAND_PC1_THUMB  = np.deg2rad([60.0, -90, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': 0.0,
@@ -86,11 +86,11 @@ HOME_DURATION    = 5.0   # [s]     time to hold home targets before shutdown
 # At startup (before UR5 moves), thumb CMC1 is driven to its final PC1 target;
 # CMC2 is pre-bent to this fraction of its PC1 target.  MCP/IP stay at HOME
 # until _close_hand() fires.  Regulated with K_ROT / B_ROT.
-CMC2_PREGRIP_FRAC = 0.5  # [0–1]  fraction of PC1_THUMB[1] to pre-set at start
+CMC2_PREGRIP_FRAC = 0.7  # [0–1]  fraction of PC1_THUMB[1] to pre-set at start
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
 APPROACH_DIRECTION   = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
-APPROACH_SPEED       = 0.025  # [m/s]
+APPROACH_SPEED       = 0.05   # [m/s]
 APPROACH_ACCELERATION = 0.10  # [m/s²]  2× UR5_INIT_ACCELERATION (0.05) for this experiment
 TOTAL_DISTANCE  = 0.40   # [m]   total displacement along APPROACH_DIRECTION
 CLOSE_DISTANCE  = 0.15   # [m]   displacement at which the hand closes to PC1
