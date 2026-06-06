@@ -38,16 +38,15 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # Two-point compliance estimation: settle at K_TIP_GENTLE, then push at
 # K_TIP_PROBE.  Per finger:  C_O = ||Δpos|| / ||Δforce||.  Average across
 # fingers, then  k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX).
-K_TIP_GENTLE = 10.0     # [N/m]   first sensing stiffness
-K_TIP_PROBE  = 50.0     # [N/m]   second sensing stiffness (must differ from gentle)
-K_GAIN       = 5.0      # [-]     proportionality of k_applied to 1/C_O
-K_MIN        = 5.0      # [N/m]   lower bound on adapted stiffness
-K_MAX        = 150.0    # [N/m]   upper bound on adapted stiffness
+K_GENTLE = 0.1    # [N·m/rad]  gentle-grasp flexion stiffness (first sensing point)
+K_PROBE  = 0.5    # [N·m/rad]  probe flexion stiffness (second sensing point)
+K_GAIN   = 0.5    # [-]        k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
+K_MIN    = 0.05   # [N·m/rad]  lower bound on adapted stiffness
+K_MAX    = 1.0    # [N·m/rad]  upper bound on adapted stiffness
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
 B_ROT          = 0.0001    # [N·m·s/rad]  background joint damping
-B_TIP          = 0.001     # [N·s/m]      task-space damping
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness during ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides hand_params default)

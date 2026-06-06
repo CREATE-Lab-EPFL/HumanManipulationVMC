@@ -30,16 +30,15 @@ HOME_FINGER = np.zeros(3)
 FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard', 'medium', 'soft']
 
-# ── Tip stiffness levels ──────────────────────────────────────────────────────
-K_TIP_GENTLE = 20.0            # [N/m]   gentle-grasp stiffness (baseline)
-K_TIP_SWEEP  = [100, 200, 300]  # [N/m]   stiffness levels for the sweep
+# ── Joint flexion stiffness levels (joint-space, N·m/rad) ─────────────────────
+K_GENTLE = 0.1              # [N·m/rad]  gentle-grasp flexion stiffness (baseline)
+K_SWEEP  = [0.2, 0.4, 0.8]  # [N·m/rad]  stiffness levels for the sweep
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.05      # [N·m/rad]
 B_ROT          = 0.001     # [N·m·s/rad]
-B_TIP          = 0.01      # [N·s/m]
 K_RETURN       = 0.15      # [N·m/rad]    joint stiffness for ramp back to HOME
-B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
+B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping during experiment
 FRICTION_TAU_MAX = 0.03    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
@@ -47,5 +46,5 @@ SETTLE_TIME      = 3.0   # [s]
 RAMP_DURATION    = 1.0   # [s]
 CONVERGE_VEL_THR = 0.02  # [rad/s]
 CONVERGE_HOLD    = 1.0   # [s]
-CONVERGE_TIMEOUT = 8.0  # [s]
+CONVERGE_TIMEOUT = 8.0   # [s]
 RECORD_DURATION  = 5.0   # [s]
