@@ -53,7 +53,7 @@ import rtde_control
 # =============================================================================
 # Constants
 # =============================================================================
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 B_RETURN       = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 LOG_EVERY      = max(1, int(CONTROL_FREQUENCY / 30))   # baseline  ~30 Hz
