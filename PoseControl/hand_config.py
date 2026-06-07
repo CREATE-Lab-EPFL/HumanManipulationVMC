@@ -40,7 +40,7 @@ POSES = [
                        "middle": np.array([0.0]),
                        "ring":   np.array([np.deg2rad( 1.0)]),
                        "pinky":  np.array([np.deg2rad( 1.0)])},
-        "middle":     np.deg2rad([25.0, 45.0, 45.0]),
+        "middle":     np.deg2rad([25.0, 50.0, 50.0]),
         "ring_pinky": np.deg2rad([55.0, 65.0, 65.0]),
         "index":      np.deg2rad([25.0, 40.0, 40.0]),
     },

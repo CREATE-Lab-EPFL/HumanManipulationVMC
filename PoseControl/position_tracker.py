@@ -31,7 +31,7 @@ from hand_config import (
 # =============================================================================
 # Collected data
 # =============================================================================
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))   # ~30 Hz
 
