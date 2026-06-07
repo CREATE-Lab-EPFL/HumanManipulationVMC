@@ -7,7 +7,7 @@ import numpy as np
 # ── VMC parameters ─────────────────────────────────────────────────────────────
 STIFFNESS        = 0.4    # [N·m/rad]
 DAMPING          = 0.001  # [N·m·s/rad]
-FRICTION_TAU_MAX = 0.05   # [N·m]  max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.08   # [N·m]  max stiction compensation (overrides hand_params default)
 
 # Lower gains used when ramping back to home (smoother, less overshoot)
 RETURN_STIFFNESS = 0.15  # [N·m/rad]
@@ -40,9 +40,9 @@ POSES = [
                        "middle": np.array([0.0]),
                        "ring":   np.array([np.deg2rad( 1.0)]),
                        "pinky":  np.array([np.deg2rad( 1.0)])},
-        "middle":     np.deg2rad([25.0, 35.0, 35.0]),
+        "middle":     np.deg2rad([25.0, 40.0, 40.0]),
         "ring_pinky": np.deg2rad([55.0, 65.0, 65.0]),
-        "index":      np.deg2rad([25.0, 35.0, 40.0]),
+        "index":      np.deg2rad([25.0, 40.0, 40.0]),
     },
 ]
 
