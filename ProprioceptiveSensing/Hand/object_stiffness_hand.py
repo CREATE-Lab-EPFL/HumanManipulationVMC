@@ -114,9 +114,25 @@ K_JOINT_DICT_MODEL = {
 # Object sequencing — N_RUNS independent trials per object (data collection),
 # or a single pass (video / COLLECTED_DATA = True).
 # =============================================================================
-_obj_idx    = 0
-_run_idx    = 0
-_n_runs     = N_RUNS if not COLLECTED_DATA else 1
+_obj_idx = 0
+_n_runs  = N_RUNS if not COLLECTED_DATA else 1
+
+def _find_resume_run():
+    if _n_runs <= 1:
+        return 0
+    folder = os.path.join(_HERE, 'outputs', 'object_stiffness_hand')
+    if not os.path.isdir(folder):
+        return 0
+    for run in range(_n_runs - 1, -1, -1):
+        suffix = f'_run{run + 1}'
+        if all(
+            os.path.isfile(os.path.join(folder, f'object_stiffness_hand_{obj}{suffix}.csv'))
+            for obj in OBJECTS
+        ):
+            return run + 1
+    return 0
+
+_run_idx    = _find_resume_run()
 OBJECT_NAME = OBJECTS[_obj_idx]
 
 # =============================================================================
