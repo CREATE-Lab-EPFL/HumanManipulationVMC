@@ -7,7 +7,7 @@ import numpy as np
 # ── VMC parameters ─────────────────────────────────────────────────────────────
 STIFFNESS        = 0.4    # [N·m/rad]
 DAMPING          = 0.001  # [N·m·s/rad]
-FRICTION_TAU_MAX = 0.07   # [N·m]  max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.05   # [N·m]  max stiction compensation (overrides hand_params default)
 
 # Lower gains used when ramping back to home (smoother, less overshoot)
 RETURN_STIFFNESS = 0.15  # [N·m/rad]
