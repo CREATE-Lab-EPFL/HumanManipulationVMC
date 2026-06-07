@@ -9,7 +9,7 @@ import numpy as np
 UR5_POSE_SQUEEZING = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([100.0, -70.0, 120.0, 120.0])
+PC1_THUMB  = np.deg2rad([100.0, -70.0, 110.0, 110.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),
