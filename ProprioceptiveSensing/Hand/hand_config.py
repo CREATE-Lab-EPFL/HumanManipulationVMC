@@ -42,7 +42,7 @@ B_ROT          = 0.001     # [N·m·s/rad]
 B_TIP          = 0.01      # [N·s/m]      task-space damping
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness for ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.05    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]
