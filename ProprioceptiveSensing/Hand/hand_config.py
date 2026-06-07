@@ -51,9 +51,3 @@ CONVERGE_VEL_THR = 0.02  # [rad/s]
 CONVERGE_HOLD    = 1.0   # [s]
 CONVERGE_TIMEOUT = 5.0   # [s]
 RECORD_DURATION  = 5.0   # [s]
-
-# ── object_stiffness_dynamic.py — dynamic ramp parameters ────────────────────
-K_TIP_PROBE        = 100.0              # [N/m]  ramp target for the thumb probe
-RAMP_DURATIONS     = list(np.round(np.logspace(np.log10(0.01), np.log10(RAMP_DURATION), 8), 4))  # [s]
-POST_RAMP_DURATION = 1.0               # [s]  record window after reaching K_TIP_PROBE
-BASELINE_DURATION  = 2.0              # [s]  baseline window before each ramp
