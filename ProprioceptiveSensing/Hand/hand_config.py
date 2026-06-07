@@ -44,6 +44,12 @@ K_RETURN       = 0.2       # [N·m/rad]    joint stiffness for ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
 FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation (overrides hand_params default)
 
+# ── object_stiffness_dynamic.py — dynamic ramp parameters ────────────────────
+K_TIP_PROBE        = 100.0              # [N/m]  ramp target for the thumb probe
+RAMP_DURATIONS     = [0.2, 0.5, 1.0, 3.0, 5.0]  # [s]  compared ramp speeds
+POST_RAMP_DURATION = 5.0               # [s]  record window after reaching K_TIP_PROBE
+BASELINE_DURATION  = 2.0              # [s]  baseline window before each ramp
+
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]
 RAMP_DURATION    = 1.0   # [s]
