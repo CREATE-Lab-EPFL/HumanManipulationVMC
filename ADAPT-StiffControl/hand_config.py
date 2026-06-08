@@ -8,8 +8,8 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.5103,        0.6022, 0.0818, -0.2289, -1.9969, -2.374]),
-    'soft_obj': np.array([-0.5103 + 0.05, 0.6022, 0.0818, -0.2289, -1.9969, -2.374]),  # PLACEHOLDER: tune XY offset
+    'hard_obj': np.array([-0.4766,  0.5524,  0.0578,  0.3137, -1.6283, -2.242]),
+    'soft_obj': np.array([-0.4766 - 0.10, 0.6022 + 0.10, 0.0818, 0.3137, -1.6283, -2.242]),
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
