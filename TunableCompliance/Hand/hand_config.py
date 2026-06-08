@@ -10,7 +10,7 @@ import numpy as np
 UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along APPROACH_DIRECTION.
-UR5_POSE_BOTTLE_START = np.array([0.00, 0.64, 0.055, -1.37, -1.09, -1.79])
+UR5_POSE_BOTTLE_START = np.array([0.02, 0.64, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
 INHAND_PC1_THUMB  = np.deg2rad([60.0, -180, 90.0, 90.0])
@@ -60,12 +60,12 @@ B_TIP          = 0.01     # [N·s/m]      task-space damping
 FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM      = 40.0   # [N/m]  baseline uniform tip stiffness
-K_HIGH         = 200.0  # [N/m]  stiff-side stiffness
+K_UNIFORM      = 30.0   # [N/m]  baseline uniform tip stiffness
+K_HIGH         = 150.0  # [N/m]  stiff-side stiffness
 K_LOW          = 0.1    # [N/m]  compliant-side stiffness
 THUMB_ASYM_RATIO = 4    # [-]    thumb stiffness divisor during asymmetric phases (K_UNIFORM/RATIO)
 K_RETURN       = 0.1    # [N·m/rad]  joint stiffness for ramp back to HOME
-K_BACKGROUND_IH = 0.001 # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
+K_BACKGROUND_IH = 0.1   # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
 SETTLE_TIME      = 1.0   # [s]
