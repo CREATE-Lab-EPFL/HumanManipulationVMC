@@ -15,7 +15,7 @@ Protocol:
   5. Ramp thumb K → K_TIP_PROBE             (second sensing point)
   6. Wait convergence; average pos_probe, F_probe over SENSE_DURATION
   7. Compute C_O = ||Δpos|| / ||ΔF||; f_des = F_GAIN / C_O (direction = initial force)
-  8. Run gradient descent for ADAPT_DURATION (stiffness_descent or ref_descent)
+  8. Run gradient descent until |f_meas − f_des| < F_CONVERGE_THR (stiffness_descent or ref_descent)
   9. UR5 lifts +10 cm; UR5 returns to GRASP_POSE
   10. Release hand (k=0); UR5 retracts to ABOVE_POSE
 """
@@ -806,7 +806,7 @@ controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
     f'Grasp adaptation | object: {OBJECT_NAME} | mode: {MODE} | '
     f'K_TIP_GENTLE={K_TIP_GENTLE} N/m | K_TIP_PROBE={K_TIP_PROBE} N/m | '
-    f'F_GAIN={F_GAIN} | GD_LR={GD_LR} | ADAPT_DURATION={ADAPT_DURATION} s')
+    f'F_GAIN={F_GAIN} | GD_LR={GD_LR} | F_CONVERGE_THR={F_CONVERGE_THR} N')
 
 try:
     while rclpy.ok() and state != STATE_DONE:
