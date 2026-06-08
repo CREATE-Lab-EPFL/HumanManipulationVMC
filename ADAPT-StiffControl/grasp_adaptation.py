@@ -4,8 +4,8 @@ ADAPT Hand — grasp adaptation via compliance sensing + stiffness-descent GD.
 stiffness_descent: K_joint + K_task for the thumb updated each tick to drive
 analytic tip force → f_des = F_GAIN / C_O.
 
-Protocol (arm already at GRASP_POSE before running):
-  1. Settle SETTLE_TIME s; hand ramps HOME → PC1 at K_TIP_GENTLE
+Protocol:
+  1. UR5 → GRASP_POSE; settle SETTLE_TIME s; hand ramps HOME → PC1 at K_TIP_GENTLE
   2. Repeat N_PROBE_ROUNDS times:
        a. Ramp thumb K → K_TIP_PROBE; wait convergence
        b. Record pos_probe, F_probe for SENSE_DURATION s
