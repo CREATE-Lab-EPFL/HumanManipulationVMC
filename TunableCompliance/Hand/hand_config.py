@@ -10,7 +10,7 @@ import numpy as np
 UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 
 # dynamic_grasp.py — hand open, aligned with the bottle; UR5 slides along APPROACH_DIRECTION.
-UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
+UR5_POSE_BOTTLE_START = np.array([0.00, 0.64, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
 INHAND_PC1_THUMB  = np.deg2rad([60.0, -180, 90.0, 90.0])
@@ -60,7 +60,7 @@ B_TIP          = 0.01     # [N·s/m]      task-space damping
 FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
-K_UNIFORM      = 10.0   # [N/m]  baseline uniform tip stiffness
+K_UNIFORM      = 40.0   # [N/m]  baseline uniform tip stiffness
 K_HIGH         = 200.0  # [N/m]  stiff-side stiffness
 K_LOW          = 0.1    # [N/m]  compliant-side stiffness
 THUMB_ASYM_RATIO = 4    # [-]    thumb stiffness divisor during asymmetric phases (K_UNIFORM/RATIO)
@@ -77,8 +77,8 @@ RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
 K_BACKGROUND_DG  = 0.01  # [N·m/rad]  uniform background stiffness on all joints
-K_SOFT           = 5.0   # [N/m]   very compliant tip spring
-K_STIFF          = 100.0 # [N/m]   very stiff tip spring
+K_SOFT           = 15.0   # [N/m]   very compliant tip spring
+K_STIFF          = 150.0 # [N/m]   very stiff tip spring
 SOFT_DURATION    = 0.5   # [s]     (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0   # [s]     (adaptive) stiffness ramp duration
 HOME_DURATION    = 5.0   # [s]     time to hold home targets before shutdown
@@ -87,12 +87,12 @@ HOME_DURATION    = 5.0   # [s]     time to hold home targets before shutdown
 # At startup (before UR5 moves), thumb CMC1 is driven to its final PC1 target;
 # CMC2 is pre-bent to this fraction of its PC1 target.  MCP/IP stay at HOME
 # until _close_hand() fires.  Regulated with K_ROT / B_ROT.
-CMC2_PREGRIP_FRAC = 0.7  # [0–1]  fraction of PC1_THUMB[1] to pre-set at start
+CMC2_PREGRIP_FRAC = 0.9  # [0–1]  fraction of PC1_THUMB[1] to pre-set at start
 
 # ── dynamic_grasp.py — UR5 motion ────────────────────────────────────────────
 APPROACH_DIRECTION   = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
-APPROACH_SPEED       = 0.05   # [m/s]
-APPROACH_ACCELERATION = 0.10  # [m/s²]  2× UR5_INIT_ACCELERATION (0.05) for this experiment
-TOTAL_DISTANCE  = 0.40   # [m]   total displacement along APPROACH_DIRECTION
-CLOSE_DISTANCE  = 0.15   # [m]   displacement at which the hand closes to PC1
+APPROACH_SPEED       = 0.08   # [m/s]
+APPROACH_ACCELERATION = 0.20  # [m/s²]  2× UR5_INIT_ACCELERATION (0.05) for this experiment
+TOTAL_DISTANCE  = 0.50   # [m]   total displacement along APPROACH_DIRECTION
+CLOSE_DISTANCE  = 0.20   # [m]   displacement at which the hand closes to PC1
 K_HOME          = 0.15   # [N·m/rad]  stiffness for hand return to HOME
