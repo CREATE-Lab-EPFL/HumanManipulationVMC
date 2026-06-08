@@ -364,7 +364,7 @@ STATE_RAMP_HOME       = 13  # snap joint targets, ramp to HOME + retract arm
 STATE_RETRACT         = 14  # arm moving to START_POSE; hand ramping
 STATE_DONE            = 15
 
-state             = STATE_SETTLE
+state             = STATE_APPROACH
 _state_start      = time.time()
 _experiment_start = time.time()
 _arm_moving       = False
@@ -521,7 +521,12 @@ def control_callback():
     elapsed = now - _state_start
 
     # ------------------------------------------------------------------
-    if state == STATE_SETTLE:
+    if state == STATE_APPROACH:
+        if not _arm_moving:
+            controller.get_logger().info('Moving to grasp pose …')
+            _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_SETTLE)
+
+    elif state == STATE_SETTLE:
         if elapsed >= SETTLE_TIME:
             controller.get_logger().info(
                 f'Settled. Ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
