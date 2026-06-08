@@ -51,7 +51,7 @@ from hand_config import (
     F_GAIN, GD_LR, F_CONVERGE_THR,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
-    APPROACH_HEIGHT,
+    APPROACH_HEIGHT, PRESS_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
     CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME, N_PROBE_ROUNDS,
     PROBE_RAMP_DURATION, PROBE_CONVERGE_HOLD,
@@ -70,7 +70,9 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 # UR5 poses
 # =============================================================================
 _z_below = np.array([0.0, 0.0, -APPROACH_HEIGHT, 0.0, 0.0, 0.0])
+_z_press = np.array([0.0, 0.0, -PRESS_HEIGHT,    0.0, 0.0, 0.0])
 UR5_START_POSE = {k: v + _z_below for k, v in UR5_POSE_GRASP_OBJ.items()}
+UR5_PRESS_POSE = {k: v + _z_press for k, v in UR5_POSE_GRASP_OBJ.items()}
 
 # =============================================================================
 # Object selection
@@ -84,8 +86,8 @@ OBJECT_NAME = OBJECTS[_sel]
 print(f'Selected: {OBJECT_NAME}\n')
 
 GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
-PRESS_POSE = UR5_START_POSE[OBJECT_NAME]   # 10 cm below grasp — presses into object
-START_POSE = UR5_START_POSE[OBJECT_NAME]   # same position, used for approach/retract
+PRESS_POSE = UR5_PRESS_POSE[OBJECT_NAME]   # 15 cm below grasp — presses into object
+START_POSE = UR5_START_POSE[OBJECT_NAME]   # 10 cm below grasp — approach/retract
 
 # =============================================================================
 # PC1 motor targets and task-space references

@@ -8,7 +8,7 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.52,  0.31,  0.34,  -1.54, -1.64, 0.90]),
+    'hard_obj': np.array([-0.52,  0.31,  0.25,  -1.54, -1.64, 0.90]),
     'soft_obj': np.array([-0.4766, 0.60220, 0.34, -1.54, -1.64, 0.90]),
 }
 
@@ -61,7 +61,7 @@ FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides 
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
 APPROACH_HEIGHT = 0.10   # [m] Z offset below grasp pose (start and retract)
-LIFT_HEIGHT     = 0.10   # [m] Z lift after adaptation (same offset as approach)
+PRESS_HEIGHT    = 0.15   # [m] Z press below grasp pose (force demonstration)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
