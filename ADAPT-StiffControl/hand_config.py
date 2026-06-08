@@ -69,13 +69,15 @@ RAMP_DURATION    = 5.0   # [s]      joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]  velocity threshold for "converged"
 CONVERGE_HOLD    = 1.0   # [s]      time below threshold to declare convergence
 CONVERGE_TIMEOUT = 12.0  # [s]      max wait before forcing transition
-SENSE_DURATION   = 2.0   # [s]      sensing window per round (δ averaged over this)
-N_PROBE_ROUNDS   = 3     # [-]      number of K_GENTLE→K_PROBE round-trips to average
-HOLD_TIME        = 3.0   # [s]      hold at lifted pose
+SENSE_DURATION        = 2.0   # [s]      sensing window per round (δ averaged over this)
+N_PROBE_ROUNDS        = 3     # [-]      number of K_GENTLE→K_PROBE round-trips to average
+PROBE_RAMP_DURATION   = 0.5   # [s]      K ramp up/down per probe round (fast — no joint motion)
+PROBE_CONVERGE_HOLD   = 0.5   # [s]      sustained-velocity threshold for probe convergence
+HOLD_TIME             = 3.0   # [s]      hold at lifted pose
 
 # ── Disturbance experiment ─────────────────────────────────────────────────────
 # A fixed opening torque is applied to CMC1 (motor 0) after GD converges,
 # then removed, to compare the thumb's stiffness response across modes/objects.
-DISTURBANCE_TORQUE   = -0.2   # [N·m]  opening torque on CMC1 (negative = opens/abducts)
+DISTURBANCE_TORQUE   = -0.3   # [N·m]  opening torque on CMC1 (negative = opens/abducts)
 DISTURBANCE_DURATION = 1.0    # [s]    how long the disturbance is applied
 RECOVERY_DURATION    = 2.0    # [s]    recording window after disturbance is removed

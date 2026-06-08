@@ -59,6 +59,7 @@ from hand_config import (
     APPROACH_HEIGHT, LIFT_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
     CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME, N_PROBE_ROUNDS,
+    PROBE_RAMP_DURATION, PROBE_CONVERGE_HOLD,
     DISTURBANCE_TORQUE, DISTURBANCE_DURATION, RECOVERY_DURATION,
 )
 import rtde_control
@@ -390,8 +391,9 @@ state             = STATE_START
 _state_start      = time.time()
 _experiment_start = time.time()
 _arm_moving       = False
-_converge_ticks   = 0
-_CONVERGE_TICKS   = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
+_converge_ticks        = 0
+_CONVERGE_TICKS        = int(CONVERGE_HOLD       * CONTROL_FREQUENCY)
+_PROBE_CONVERGE_TICKS  = int(PROBE_CONVERGE_HOLD * CONTROL_FREQUENCY)
 _log_tick         = 0
 _converged        = False
 _use_task_vmc     = False
@@ -503,7 +505,7 @@ def _begin_k_ramp(k_start, k_end):
 
 def _step_k_ramp(now):
     global _current_k
-    alpha      = min(1.0, (now - _k_ramp_t0) / RAMP_DURATION)
+    alpha      = min(1.0, (now - _k_ramp_t0) / PROBE_RAMP_DURATION)
     _current_k = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
     vmc_task.springs['thumb'].stiffness = np.full(3, _current_k)
     return alpha >= 1.0
@@ -639,7 +641,7 @@ def control_callback():
             _converge_ticks += 1
         else:
             _converge_ticks = 0
-        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
+        if (_converge_ticks >= _PROBE_CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
             if not _converged:
                 _converged   = True
                 _log_tick    = 0
