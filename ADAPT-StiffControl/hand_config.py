@@ -15,10 +15,10 @@ UR5_POSE_GRASP_OBJ = {
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
 PC1_THUMB  = np.deg2rad([90.0, -60.0, 90.0, 90.0])
 PC1_SPREAD = {
-    'index':  np.deg2rad(0.0),
+    'index':  np.deg2rad(-5.0),
     'middle': np.deg2rad(0.0),
-    'ring':   np.deg2rad(0.0),
-    'pinky':  np.deg2rad(0.0),
+    'ring':   np.deg2rad(5.0),
+    'pinky':  np.deg2rad(5.0),
 }
 PC1_INDEX  = np.deg2rad([70.0, 95.0, 95.0])
 PC1_MIDDLE = np.deg2rad([70.0, 95.0, 95.0])
@@ -78,6 +78,6 @@ HOLD_TIME             = 3.0   # [s]      hold at lifted pose
 # ── Disturbance experiment ─────────────────────────────────────────────────────
 # A fixed opening torque is applied to CMC1 (motor 0) after GD converges,
 # then removed, to compare the thumb's stiffness response across modes/objects.
-DISTURBANCE_TORQUE   = -0.3   # [N·m]  opening torque on CMC1 (negative = opens/abducts)
+DISTURBANCE_TORQUE   = -0.2   # [N·m]  opening torque on CMC1 (negative = opens/abducts)
 DISTURBANCE_DURATION = 1.0    # [s]    how long the disturbance is applied
 RECOVERY_DURATION    = 2.0    # [s]    recording window after disturbance is removed
