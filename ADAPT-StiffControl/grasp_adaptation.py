@@ -4,18 +4,16 @@ ADAPT Hand — grasp adaptation via compliance sensing + stiffness-descent GD.
 stiffness_descent: K_joint + K_task for the thumb updated each tick to drive
 analytic tip force → f_des = F_GAIN / C_O.
 
-Protocol:
-  1. UR5 → START_POSE  (GRASP_POSE − APPROACH_HEIGHT on Z)
-  2. UR5 → GRASP_POSE
-  3. Hand ramps HOME → PC1 at K_TIP_GENTLE  (first sensing point, SENSE_DURATION s)
-  4. Repeat N_PROBE_ROUNDS times:
+Protocol (arm already at GRASP_POSE before running):
+  1. Settle SETTLE_TIME s; hand ramps HOME → PC1 at K_TIP_GENTLE
+  2. Repeat N_PROBE_ROUNDS times:
        a. Ramp thumb K → K_TIP_PROBE; wait convergence
        b. Record pos_probe, F_probe for SENSE_DURATION s
        c. (if more rounds) ramp K back to K_TIP_GENTLE; wait
-  5. Compute C_O = avg(||Δpos||/||ΔF||); f_des = F_GAIN / C_O
-  6. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
-  7. UR5 presses −APPROACH_HEIGHT (shows force); UR5 returns to GRASP_POSE
-  10. Release hand (k=0); UR5 retracts to START_POSE
+  3. Compute C_O = avg(||Δpos||/||ΔF||); f_des = F_GAIN / C_O
+  4. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
+  5. UR5 presses −PRESS_HEIGHT (shows force); UR5 returns to GRASP_POSE
+  6. Release hand (k=0); UR5 retracts to START_POSE
 """
 
 import numpy as np
@@ -349,25 +347,23 @@ PC1_POSE_TARGETS = {
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_START           = 0   # trigger UR5 → START_POSE
-STATE_DESCEND         = 1   # trigger UR5 → GRASP_POSE
-STATE_SETTLE          = 2   # wait SETTLE_TIME
-STATE_RAMP_CLOSE      = 3   # hand ramps HOME → PC1 at K_TIP_GENTLE
-STATE_SENSE_CONV      = 4   # wait convergence at K_TIP_GENTLE
-STATE_SENSE_REC       = 5   # average pos_gentle, F_gentle
-STATE_PROBE_RAMP      = 6   # ramp thumb K → K_TIP_PROBE
-STATE_PROBE_CONV      = 7   # wait convergence at K_TIP_PROBE
-STATE_PROBE_REC       = 8   # record probe; if rounds left → back ramp, else compute C_O
-STATE_PROBE_BACK_RAMP = 9   # ramp thumb K back to K_TIP_GENTLE between rounds
-STATE_ADAPT_GD        = 10  # gradient descent until force converges
-STATE_PRESS           = 11  # UR5 pressing down −10 cm (shows exerted force)
-STATE_RAISE           = 12  # trigger UR5 → GRASP_POSE
-STATE_RELEASE         = 13  # k=0, wait CONVERGE_HOLD
-STATE_RAMP_HOME       = 14  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT         = 15  # arm moving to START_POSE; hand ramping
-STATE_DONE            = 16
+STATE_SETTLE          = 0   # wait SETTLE_TIME (arm already at GRASP_POSE)
+STATE_RAMP_CLOSE      = 1   # hand ramps HOME → PC1 at K_TIP_GENTLE
+STATE_SENSE_CONV      = 2   # wait convergence at K_TIP_GENTLE
+STATE_SENSE_REC       = 3   # average pos_gentle, F_gentle
+STATE_PROBE_RAMP      = 4   # ramp thumb K → K_TIP_PROBE
+STATE_PROBE_CONV      = 5   # wait convergence at K_TIP_PROBE
+STATE_PROBE_REC       = 6   # record probe; if rounds left → back ramp, else compute C_O
+STATE_PROBE_BACK_RAMP = 7   # ramp thumb K back to K_TIP_GENTLE between rounds
+STATE_ADAPT_GD        = 8   # gradient descent until force converges
+STATE_PRESS           = 9   # UR5 pressing down −15 cm (shows exerted force)
+STATE_RAISE           = 10  # trigger UR5 → GRASP_POSE
+STATE_RELEASE         = 11  # k=0, wait CONVERGE_HOLD
+STATE_RAMP_HOME       = 12  # snap joint targets, ramp to HOME + retract arm
+STATE_RETRACT         = 13  # arm moving to START_POSE; hand ramping
+STATE_DONE            = 14
 
-state             = STATE_START
+state             = STATE_SETTLE
 _state_start      = time.time()
 _experiment_start = time.time()
 _arm_moving       = False
@@ -524,20 +520,10 @@ def control_callback():
     elapsed = now - _state_start
 
     # ------------------------------------------------------------------
-    if state == STATE_START:
-        if not _arm_moving:
-            controller.get_logger().info('Moving to above pose …')
-            _move_arm_async(START_POSE, UR5_INIT_SPEED, STATE_DESCEND)
-
-    elif state == STATE_DESCEND:
-        if not _arm_moving:
-            controller.get_logger().info('Descending to grasp pose …')
-            _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_SETTLE)
-
-    elif state == STATE_SETTLE:
+    if state == STATE_SETTLE:
         if elapsed >= SETTLE_TIME:
             controller.get_logger().info(
-                f'Arm settled. Ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
+                f'Settled. Ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
             _begin_ramp(PC1_POSE_TARGETS)
             _state_start = now
             state        = STATE_RAMP_CLOSE

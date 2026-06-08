@@ -20,10 +20,10 @@ PC1_SPREAD = {
     'ring':   np.deg2rad(5.0),
     'pinky':  np.deg2rad(5.0),
 }
-PC1_INDEX  = np.deg2rad([70.0, 95.0, 95.0])
-PC1_MIDDLE = np.deg2rad([70.0, 95.0, 95.0])
-PC1_RING   = np.deg2rad([70.0, 95.0, 95.0])
-PC1_PINKY  = np.deg2rad([70.0, 95.0, 95.0])
+PC1_INDEX  = np.deg2rad([70.0, 110.0, 110.0])
+PC1_MIDDLE = np.deg2rad([70.0, 110.0, 110.0])
+PC1_RING   = np.deg2rad([70.0, 110.0, 110.0])
+PC1_PINKY  = np.deg2rad([70.0, 110.0, 110.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_THUMB  = np.zeros(4)
@@ -61,7 +61,7 @@ FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides 
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
 APPROACH_HEIGHT = 0.10   # [m] Z offset below grasp pose (start and retract)
-PRESS_HEIGHT    = 0.15   # [m] Z press below grasp pose (force demonstration)
+PRESS_HEIGHT    = 0.10   # [m] Z press below grasp pose (force demonstration)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
