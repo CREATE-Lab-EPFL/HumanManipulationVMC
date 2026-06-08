@@ -69,7 +69,8 @@ RAMP_DURATION    = 5.0   # [s]      joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]  velocity threshold for "converged"
 CONVERGE_HOLD    = 1.0   # [s]      time below threshold to declare convergence
 CONVERGE_TIMEOUT = 12.0  # [s]      max wait before forcing transition
-SENSE_DURATION   = 5.0   # [s]      sensing window (δ averaged over this)
+SENSE_DURATION   = 2.0   # [s]      sensing window per round (δ averaged over this)
+N_PROBE_ROUNDS   = 3     # [-]      number of K_GENTLE→K_PROBE round-trips to average
 HOLD_TIME        = 3.0   # [s]      hold at lifted pose
 
 # ── Disturbance experiment ─────────────────────────────────────────────────────

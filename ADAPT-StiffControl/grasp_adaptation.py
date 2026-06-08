@@ -55,7 +55,8 @@ from hand_config import (
     FRICTION_TAU_MAX,
     APPROACH_HEIGHT, LIFT_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
-    CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME,
+    CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME, N_PROBE_ROUNDS,
+    DISTURBANCE_TORQUE, DISTURBANCE_DURATION, RECOVERY_DURATION,
 )
 import rtde_control
 
@@ -89,6 +90,18 @@ print(f'Selected: {OBJECT_NAME}\n')
 GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
 LIFT_POSE  = UR5_LIFT_POSE[OBJECT_NAME]
 START_POSE = UR5_START_POSE[OBJECT_NAME]
+
+# =============================================================================
+# Mode selection
+# =============================================================================
+MODES_AVAILABLE = ['stiffness', 'ref']
+print('Select mode:')
+for i, m in enumerate(MODES_AVAILABLE):
+    print(f'  {i + 1}) {m}')
+_sel_mode = int(input('Enter number: ')) - 1
+assert 0 <= _sel_mode < len(MODES_AVAILABLE), 'Invalid selection'
+MODE = MODES_AVAILABLE[_sel_mode]
+print(f'Mode: {MODE}\n')
 
 # =============================================================================
 # PC1 motor targets and task-space references
