@@ -35,9 +35,11 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard_obj', 'soft_obj']
 
 # ── Grasp adaptation rule (grasp_adaptation.py) ───────────────────────────────
-# Two-point compliance estimation: 4 fingers clamped at K_TIP_HOLD (frozen
-# position), thumb probes from K_TIP_GENTLE to K_TIP_PROBE.
-# C_O = ||Δpos_thumb|| / ||ΔF_thumb||; k_applied = clip(K_GAIN/C_O, K_MIN, K_MAX).
+# Two-point compliance sensing: 4 fingers clamped at K_TIP_HOLD (frozen
+# position), thumb probes from K_TIP_GENTLE → K_TIP_PROBE.
+# C_O = ||Δpos_thumb|| / ||ΔF_thumb||; then gradient descent drives
+# tip force toward f_des = F_GAIN / C_O (MODE='stiffness': updates K;
+# MODE='ref': updates virtual equilibrium positions).
 K_TIP_GENTLE = 10.0    # [N/m]   gentle baseline stiffness (thumb)
 K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
@@ -58,8 +60,8 @@ B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring tak
 FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
-APPROACH_HEIGHT = 0.10   # [m] Z offset above grasp pose for safe approach
-LIFT_HEIGHT     = 0.20   # [m] Z lift after adaptation
+APPROACH_HEIGHT = 0.10   # [m] Z offset above grasp pose (approach and retract)
+LIFT_HEIGHT     = 0.10   # [m] Z lift after adaptation (same offset as approach)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
