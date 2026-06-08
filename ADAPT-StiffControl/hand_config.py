@@ -41,9 +41,13 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 K_TIP_GENTLE = 10.0    # [N/m]   gentle baseline stiffness (thumb)
 K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
-K_GAIN       = 6.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
-K_MIN        = 5.0     # [N/m]   lower bound on adapted stiffness
-K_MAX        = 250.0   # [N/m]   upper bound on adapted stiffness
+
+# ── Gradient-descent adaptation ───────────────────────────────────────────────
+# Target force magnitude: f_des = F_GAIN / C_O.
+# With C_O ∈ [0.015, 0.045] m/N (15–45 mm/N) this maps to ≈ [1.7, 5] N.
+F_GAIN         = 0.075  # [N·m]   tune to set the desired force range
+GD_LR          = 1e-7   # [-]     gradient-descent learning rate (stiffness & ref modes)
+ADAPT_DURATION = 10.0   # [s]     how long gradient descent runs after sensing
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
