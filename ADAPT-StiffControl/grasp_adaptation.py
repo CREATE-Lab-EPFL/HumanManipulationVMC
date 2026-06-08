@@ -8,7 +8,7 @@ Two modes (set MODE below):
                 for the thumb are updated each tick to drive tip force → f_des.
 
 Protocol:
-  1. UR5 → ABOVE_POSE  (GRASP_POSE − 10 cm Z, hand at HOME)
+  1. UR5 → START_POSE  (GRASP_POSE − 10 cm Z, hand at HOME)
   2. UR5 → GRASP_POSE
   3. Hand ramps HOME → PC1 at K_TIP_GENTLE  (first sensing point)
   4. Wait convergence; average pos_gentle, F_gentle over SENSE_DURATION
@@ -17,7 +17,7 @@ Protocol:
   7. Compute C_O = ||Δpos|| / ||ΔF||; f_des = F_GAIN / C_O (direction = initial force)
   8. Run gradient descent until |f_meas − f_des| < F_CONVERGE_THR (stiffness_descent or ref_descent)
   9. UR5 lifts +10 cm; UR5 returns to GRASP_POSE
-  10. Release hand (k=0); UR5 retracts to ABOVE_POSE
+  10. Release hand (k=0); UR5 retracts to START_POSE
 """
 
 # ── Select experiment mode ────────────────────────────────────────────────────
@@ -73,10 +73,10 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 # =============================================================================
 # UR5 poses
 # =============================================================================
-_z_offset  = np.array([0.0, 0.0, LIFT_HEIGHT, 0.0, 0.0, 0.0])
-_z_above   = np.array([0.0, 0.0, APPROACH_HEIGHT, 0.0, 0.0, 0.0])
-UR5_LIFT_POSE  = {k: v + _z_offset for k, v in UR5_POSE_GRASP_OBJ.items()}
-UR5_ABOVE_POSE = {k: v + _z_above  for k, v in UR5_POSE_GRASP_OBJ.items()}
+_z_lift  = np.array([0.0, 0.0,  LIFT_HEIGHT,     0.0, 0.0, 0.0])
+_z_below = np.array([0.0, 0.0, -APPROACH_HEIGHT, 0.0, 0.0, 0.0])
+UR5_LIFT_POSE  = {k: v + _z_lift  for k, v in UR5_POSE_GRASP_OBJ.items()}
+UR5_START_POSE = {k: v + _z_below for k, v in UR5_POSE_GRASP_OBJ.items()}
 
 # =============================================================================
 # Object selection
@@ -91,7 +91,7 @@ print(f'Selected: {OBJECT_NAME}\n')
 
 GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
 LIFT_POSE  = UR5_LIFT_POSE[OBJECT_NAME]
-ABOVE_POSE = UR5_ABOVE_POSE[OBJECT_NAME]
+START_POSE = UR5_START_POSE[OBJECT_NAME]
 
 # =============================================================================
 # PC1 motor targets and task-space references
@@ -353,7 +353,7 @@ PC1_POSE_TARGETS = {
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_ABOVE      = 0   # trigger UR5 → ABOVE_POSE
+STATE_START      = 0   # trigger UR5 → START_POSE
 STATE_DESCEND    = 1   # trigger UR5 → GRASP_POSE
 STATE_SETTLE     = 2   # wait SETTLE_TIME
 STATE_RAMP_CLOSE = 3   # hand ramps HOME → PC1 at K_TIP_GENTLE
@@ -367,10 +367,10 @@ STATE_LIFT       = 10  # UR5 moving up +10 cm
 STATE_LOWER      = 11  # trigger UR5 → GRASP_POSE
 STATE_RELEASE    = 12  # k=0, wait CONVERGE_HOLD
 STATE_RAMP_HOME  = 13  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT    = 14  # arm moving to ABOVE_POSE; hand ramping
+STATE_RETRACT    = 14  # arm moving to START_POSE; hand ramping
 STATE_DONE       = 15
 
-state             = STATE_ABOVE
+state             = STATE_START
 _state_start      = time.time()
 _experiment_start = time.time()
 _arm_moving       = False
@@ -524,10 +524,10 @@ def control_callback():
     elapsed = now - _state_start
 
     # ------------------------------------------------------------------
-    if state == STATE_ABOVE:
+    if state == STATE_START:
         if not _arm_moving:
             controller.get_logger().info('Moving to above pose …')
-            _move_arm_async(ABOVE_POSE, UR5_INIT_SPEED, STATE_DESCEND)
+            _move_arm_async(START_POSE, UR5_INIT_SPEED, STATE_DESCEND)
 
     elif state == STATE_DESCEND:
         if not _arm_moving:
@@ -787,7 +787,7 @@ def control_callback():
             vmc_joint.ring_pinky_target = FK_motor2finger(q, 'ring')
             _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
             _begin_ramp(HOME_POSE_TARGETS)
-            _move_arm_async(ABOVE_POSE, UR5_INIT_SPEED, STATE_DONE)
+            _move_arm_async(START_POSE, UR5_INIT_SPEED, STATE_DONE)
             _state_start = now
             state        = STATE_RETRACT
 

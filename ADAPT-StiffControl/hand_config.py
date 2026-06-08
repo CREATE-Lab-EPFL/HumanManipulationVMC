@@ -60,7 +60,7 @@ B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring tak
 FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
-APPROACH_HEIGHT = 0.10   # [m] Z offset above grasp pose (approach and retract)
+APPROACH_HEIGHT = 0.10   # [m] Z offset below grasp pose (start and retract)
 LIFT_HEIGHT     = 0.10   # [m] Z lift after adaptation (same offset as approach)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
