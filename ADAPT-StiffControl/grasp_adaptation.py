@@ -347,8 +347,9 @@ PC1_POSE_TARGETS = {
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_SETTLE          = 0   # wait SETTLE_TIME (arm already at GRASP_POSE)
-STATE_RAMP_CLOSE      = 1   # hand ramps HOME → PC1 at K_TIP_GENTLE
+STATE_APPROACH        = 0   # trigger UR5 → GRASP_POSE
+STATE_SETTLE          = 1   # wait SETTLE_TIME
+STATE_RAMP_CLOSE      = 2   # hand ramps HOME → PC1 at K_TIP_GENTLE
 STATE_SENSE_CONV      = 2   # wait convergence at K_TIP_GENTLE
 STATE_SENSE_REC       = 3   # average pos_gentle, F_gentle
 STATE_PROBE_RAMP      = 4   # ramp thumb K → K_TIP_PROBE
