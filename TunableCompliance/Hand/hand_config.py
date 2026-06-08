@@ -53,11 +53,17 @@ SIDE_B_SOFT = ['index', 'middle']
 # dynamic_grasp.py — available compliance conditions.
 CONDITIONS  = ['soft', 'stiff', 'adaptive']
 
-# ── Shared joint regulation (both experiments) ────────────────────────────────
+# ── inhand_manipulation.py — joint regulation ────────────────────────────────
 K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
 B_ROT          = 0.01     # [N·m·s/rad]  background joint damping
 B_TIP          = 0.01     # [N·s/m]      task-space damping
-FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation
+
+# ── dynamic_grasp.py — joint regulation ──────────────────────────────────────
+DG_K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
+DG_B_ROT          = 0.001    # [N·m·s/rad]  background joint damping
+DG_B_TIP          = 0.01     # [N·s/m]      task-space damping
+DG_FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM      = 30.0   # [N/m]  baseline uniform tip stiffness
@@ -76,8 +82,8 @@ CONVERGE_TIMEOUT = 8.0  # [s]
 RECORD_DURATION  = 5.0   # [s]
 
 # ── dynamic_grasp.py — stiffness levels ──────────────────────────────────────
-K_BACKGROUND_DG  = 0.01  # [N·m/rad]  uniform background stiffness on all joints
-K_SOFT           = 15.0   # [N/m]   very compliant tip spring
+K_BACKGROUND_DG  = 0.1   # [N·m/rad]  uniform background stiffness on all joints
+K_SOFT           = 40.0   # [N/m]   very compliant tip spring
 K_STIFF          = 150.0 # [N/m]   very stiff tip spring
 SOFT_DURATION    = 0.5   # [s]     (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0   # [s]     (adaptive) stiffness ramp duration
