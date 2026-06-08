@@ -62,7 +62,7 @@ FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides h
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM      = 10.0   # [N/m]  baseline uniform tip stiffness
 K_HIGH         = 100.0  # [N/m]  stiff-side stiffness
-K_LOW          = 2.0    # [N/m]  compliant-side stiffness
+K_LOW          = 0.5    # [N/m]  compliant-side stiffness
 K_RETURN       = 0.1    # [N·m/rad]  joint stiffness for ramp back to HOME
 K_BACKGROUND_IH = 0.01  # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
 
