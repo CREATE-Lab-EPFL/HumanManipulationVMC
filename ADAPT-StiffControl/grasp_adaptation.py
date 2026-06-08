@@ -1,11 +1,8 @@
 """
-ADAPT Hand — grasp adaptation via compliance sensing and gradient descent.
+ADAPT Hand — grasp adaptation via compliance sensing + stiffness-descent GD.
 
-Modes (selected interactively at startup):
-  'stiffness' — stiffness_descent: K_joint + K_task for the thumb are updated
-                each tick to drive analytic tip force → f_des.
-  'ref'       — ref_descent: virtual equilibrium positions (theta_ref, d_ref)
-                for the thumb are updated each tick to drive tip force → f_des.
+stiffness_descent: K_joint + K_task for the thumb updated each tick to drive
+analytic tip force → f_des = F_GAIN / C_O.
 
 Protocol:
   1. UR5 → START_POSE  (GRASP_POSE − APPROACH_HEIGHT on Z)
@@ -94,18 +91,6 @@ print(f'Selected: {OBJECT_NAME}\n')
 GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
 LIFT_POSE  = UR5_LIFT_POSE[OBJECT_NAME]
 START_POSE = UR5_START_POSE[OBJECT_NAME]
-
-# =============================================================================
-# Mode selection
-# =============================================================================
-MODES_AVAILABLE = ['stiffness', 'ref']
-print('Select mode:')
-for i, m in enumerate(MODES_AVAILABLE):
-    print(f'  {i + 1}) {m}')
-_sel_mode = int(input('Enter number: ')) - 1
-assert 0 <= _sel_mode < len(MODES_AVAILABLE), 'Invalid selection'
-MODE = MODES_AVAILABLE[_sel_mode]
-print(f'Mode: {MODE}\n')
 
 # =============================================================================
 # PC1 motor targets and task-space references
@@ -204,7 +189,7 @@ controller.get_logger().info(f'UR5 connected | mode: {MODE}')
 def _output_path():
     folder = os.path.join(_HERE, 'outputs', 'grasp_adaptation')
     os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, f'grasp_{OBJECT_NAME}_{MODE}.csv')
+    return os.path.join(folder, f'grasp_{OBJECT_NAME}.csv')
 
 
 def _csv_header():
