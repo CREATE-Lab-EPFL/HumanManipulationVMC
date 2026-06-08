@@ -13,7 +13,7 @@ UR5_POSE_INHAND = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
 UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_THUMB  = np.deg2rad([90.0, -90, 120.0, 120.0])
+INHAND_PC1_THUMB  = np.deg2rad([90.0, -80, 80.0, 80.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': 0.0,
