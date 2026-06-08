@@ -48,7 +48,7 @@ FINGERTIPS  = ['thumb', 'index', 'middle', 'ring', 'pinky']
 
 # inhand_manipulation.py — asymmetric stiffness sides.
 SIDE_A_SOFT = ['pinky', 'ring']
-SIDE_B_SOFT = ['thumb', 'index', 'middle']
+SIDE_B_SOFT = ['index', 'middle']
 
 # dynamic_grasp.py — available compliance conditions.
 CONDITIONS  = ['soft', 'stiff', 'adaptive']
@@ -61,7 +61,7 @@ FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides h
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM      = 10.0   # [N/m]  baseline uniform tip stiffness
-K_HIGH         = 100.0  # [N/m]  stiff-side stiffness
+K_HIGH         = 150.0  # [N/m]  stiff-side stiffness
 K_LOW          = 0.1    # [N/m]  compliant-side stiffness
 K_RETURN       = 0.1    # [N·m/rad]  joint stiffness for ramp back to HOME
 K_BACKGROUND_IH = 0.01  # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
