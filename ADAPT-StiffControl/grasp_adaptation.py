@@ -643,15 +643,11 @@ def control_callback():
             if not _converged:
                 _converged   = True
                 _log_tick    = 0
-                _probe_count = 0
-                for _f in FINGERTIPS:
-                    _pos_probe_sum[_f]   = np.zeros(3)
-                    _force_probe_sum[_f] = np.zeros(3)
                 _state_start = now
                 state        = STATE_PROBE_REC
                 controller.get_logger().info(
-                    f'Probe converged at {elapsed:.1f} s. Recording probe point '
-                    f'({K_TIP_PROBE} N/m) for {SENSE_DURATION:.1f} s …')
+                    f'Probe round {_probe_round + 1}/{N_PROBE_ROUNDS} converged at {elapsed:.1f} s. '
+                    f'Recording ({K_TIP_PROBE} N/m) for {SENSE_DURATION:.1f} s …')
 
     elif state == STATE_PROBE_REC:
         _log_tick += 1
@@ -675,10 +671,10 @@ def control_callback():
 
             if _probe_round < N_PROBE_ROUNDS - 1:
                 # More rounds: ramp K back to K_TIP_GENTLE then repeat probe
-                _probe_round += 1
                 controller.get_logger().info(
-                    f'Probe round {_probe_round}/{N_PROBE_ROUNDS} done. '
+                    f'Probe round {_probe_round + 1}/{N_PROBE_ROUNDS} done. '
                     f'Ramping back to K_TIP_GENTLE …')
+                _probe_round += 1
                 _begin_k_ramp(K_TIP_PROBE, K_TIP_GENTLE)
                 _converge_ticks = 0
                 _converged      = False
