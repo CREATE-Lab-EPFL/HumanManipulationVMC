@@ -47,7 +47,7 @@ from hand_config import (
     INHAND_PC1_PINKY  as PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, SIDE_A_SOFT, SIDE_B_SOFT,
-    K_UNIFORM, K_HIGH, K_LOW,
+    K_UNIFORM, K_HIGH, K_LOW, THUMB_ASYM_RATIO,
     K_ROT, B_ROT, B_TIP, K_RETURN, K_BACKGROUND_IH,
     FRICTION_TAU_MAX,
     SETTLE_TIME, RAMP_DURATION,
@@ -114,9 +114,9 @@ K_JOINT_DICT_MODEL = {
 # Thumb is held at K_UNIFORM in all phases; only index/middle vs ring/pinky alternate.
 K_DICT_UNIFORM = {f: K_UNIFORM for f in FINGERTIPS}
 K_DICT_ASYM_A  = {f: (K_LOW  if f in SIDE_A_SOFT else K_HIGH) for f in FINGERTIPS}
-K_DICT_ASYM_A['thumb'] = K_UNIFORM
+K_DICT_ASYM_A['thumb'] = K_UNIFORM / THUMB_ASYM_RATIO
 K_DICT_ASYM_B  = {f: (K_LOW  if f in SIDE_B_SOFT else K_HIGH) for f in FINGERTIPS}
-K_DICT_ASYM_B['thumb'] = K_UNIFORM
+K_DICT_ASYM_B['thumb'] = K_UNIFORM / THUMB_ASYM_RATIO
 
 # =============================================================================
 # ROS2 + controller initialisation
