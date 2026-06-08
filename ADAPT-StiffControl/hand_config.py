@@ -41,7 +41,7 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 K_TIP_GENTLE = 10.0    # [N/m]   gentle baseline stiffness (thumb)
 K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
-K_GAIN       = 8.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
+K_GAIN       = 6.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
 K_MIN        = 5.0     # [N/m]   lower bound on adapted stiffness
 K_MAX        = 250.0   # [N/m]   upper bound on adapted stiffness
 
