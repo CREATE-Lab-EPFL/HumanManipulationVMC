@@ -14,9 +14,7 @@ Protocol:
        c. (if more rounds) ramp K back to K_TIP_GENTLE; wait
   5. Compute C_O = avg(||Δpos||/||ΔF||); f_des = F_GAIN / C_O
   6. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
-  7. Apply DISTURBANCE_TORQUE on CMC1 for DISTURBANCE_DURATION s; record
-  8. Remove disturbance; record RECOVERY_DURATION s
-  9. UR5 lifts +LIFT_HEIGHT; UR5 returns to GRASP_POSE
+  7. UR5 presses −APPROACH_HEIGHT (shows force); UR5 returns to GRASP_POSE
   10. Release hand (k=0); UR5 retracts to START_POSE
 """
 
@@ -53,11 +51,10 @@ from hand_config import (
     F_GAIN, GD_LR, F_CONVERGE_THR,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
-    APPROACH_HEIGHT, LIFT_HEIGHT,
+    APPROACH_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
     CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME, N_PROBE_ROUNDS,
     PROBE_RAMP_DURATION, PROBE_CONVERGE_HOLD,
-    DISTURBANCE_TORQUE, DISTURBANCE_DURATION, RECOVERY_DURATION,
 )
 import rtde_control
 
@@ -72,9 +69,7 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 # =============================================================================
 # UR5 poses
 # =============================================================================
-_z_lift  = np.array([0.0, 0.0,  LIFT_HEIGHT,     0.0, 0.0, 0.0])
 _z_below = np.array([0.0, 0.0, -APPROACH_HEIGHT, 0.0, 0.0, 0.0])
-UR5_LIFT_POSE  = {k: v + _z_lift  for k, v in UR5_POSE_GRASP_OBJ.items()}
 UR5_START_POSE = {k: v + _z_below for k, v in UR5_POSE_GRASP_OBJ.items()}
 
 # =============================================================================
@@ -89,8 +84,8 @@ OBJECT_NAME = OBJECTS[_sel]
 print(f'Selected: {OBJECT_NAME}\n')
 
 GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
-LIFT_POSE  = UR5_LIFT_POSE[OBJECT_NAME]
-START_POSE = UR5_START_POSE[OBJECT_NAME]
+PRESS_POSE = UR5_START_POSE[OBJECT_NAME]   # 10 cm below grasp — presses into object
+START_POSE = UR5_START_POSE[OBJECT_NAME]   # same position, used for approach/retract
 
 # =============================================================================
 # PC1 motor targets and task-space references
@@ -363,14 +358,12 @@ STATE_PROBE_CONV      = 7   # wait convergence at K_TIP_PROBE
 STATE_PROBE_REC       = 8   # record probe; if rounds left → back ramp, else compute C_O
 STATE_PROBE_BACK_RAMP = 9   # ramp thumb K back to K_TIP_GENTLE between rounds
 STATE_ADAPT_GD        = 10  # gradient descent until force converges
-STATE_DISTURB_ON      = 11  # apply DISTURBANCE_TORQUE on CMC1
-STATE_DISTURB_OFF     = 12  # remove disturbance, record recovery
-STATE_LIFT            = 13  # UR5 moving up +10 cm
-STATE_LOWER           = 14  # trigger UR5 → GRASP_POSE
-STATE_RELEASE         = 15  # k=0, wait CONVERGE_HOLD
-STATE_RAMP_HOME       = 16  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT         = 17  # arm moving to START_POSE; hand ramping
-STATE_DONE            = 18
+STATE_PRESS           = 11  # UR5 pressing down −10 cm (shows exerted force)
+STATE_RAISE           = 12  # trigger UR5 → GRASP_POSE
+STATE_RELEASE         = 13  # k=0, wait CONVERGE_HOLD
+STATE_RAMP_HOME       = 14  # snap joint targets, ramp to HOME + retract arm
+STATE_RETRACT         = 15  # arm moving to START_POSE; hand ramping
+STATE_DONE            = 16
 
 state             = STATE_START
 _state_start      = time.time()
@@ -411,8 +404,7 @@ _gd_f_des           = np.zeros(3)
 _gd_f_meas          = np.zeros(3)
 _gd_converge_ticks  = 0
 
-_tau_disturb  = np.zeros(13)   # disturbance torque injected during STATE_DISTURB_ON
-_probe_round  = 0               # which probe round we are on (0-indexed)
+_probe_round  = 0   # which probe round we are on (0-indexed)
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -515,7 +507,6 @@ def control_callback():
     global _current_k
     global _gd_K_joint, _gd_K_task, _gd_theta_ref_deg, _gd_d_ref
     global _gd_f_des, _gd_f_meas, _gd_converge_ticks
-    global _tau_disturb
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -525,7 +516,7 @@ def control_callback():
     tau_vmc   = tau_joint + tau_task
     tau_comp  = grav_lim.compute_compensation_torques(
         q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
-    controller.publish_torques(tau_vmc + tau_comp + _tau_disturb)
+    controller.publish_torques(tau_vmc + tau_comp)
 
     now     = time.time()
     elapsed = now - _state_start
@@ -755,57 +746,24 @@ def control_callback():
                 _csv_file.flush()
             controller.get_logger().info(
                 f'GD {"converged" if gd_converged else "timed out"} at {elapsed:.1f} s. '
-                f'|f_meas - f_des| = {f_err:.4f} N. Applying disturbance …')
-            _tau_disturb         = np.zeros(13)
-            _tau_disturb[0]      = DISTURBANCE_TORQUE
+                f'|f_meas - f_des| = {f_err:.4f} N. Pressing down …')
             _log_tick    = 0
             _state_start = now
-            state        = STATE_DISTURB_ON
+            _move_arm_async(PRESS_POSE, UR5_INIT_SPEED, STATE_RAISE)
+            state        = STATE_PRESS
 
-    elif state == STATE_DISTURB_ON:
+    elif state == STATE_PRESS:
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             extras = _gd_log_extras()
             _csv_writer.writerow(_compute_row(
-                q, q_dot, 'disturb_on', _C_O_mean,
-                _gd_f_des, _gd_f_meas,
-                *extras, converged=True))
-        if elapsed >= DISTURBANCE_DURATION:
-            controller.get_logger().info('Disturbance off. Recording recovery …')
-            _tau_disturb = np.zeros(13)
-            _log_tick    = 0
-            _state_start = now
-            state        = STATE_DISTURB_OFF
-
-    elif state == STATE_DISTURB_OFF:
-        _log_tick += 1
-        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
-            extras = _gd_log_extras()
-            _csv_writer.writerow(_compute_row(
-                q, q_dot, 'disturb_off', _C_O_mean,
-                _gd_f_des, _gd_f_meas,
-                *extras, converged=True))
-        if elapsed >= RECOVERY_DURATION:
-            if not COLLECTED_DATA:
-                _csv_file.flush()
-            controller.get_logger().info('Recovery done. Lifting …')
-            _log_tick    = 0
-            _state_start = now
-            _move_arm_async(LIFT_POSE, UR5_INIT_SPEED, STATE_LOWER)
-            state        = STATE_LIFT
-
-    elif state == STATE_LIFT:
-        _log_tick += 1
-        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
-            extras = _gd_log_extras()
-            _csv_writer.writerow(_compute_row(
-                q, q_dot, 'lift', _C_O_mean,
+                q, q_dot, 'press', _C_O_mean,
                 _gd_f_des, _gd_f_meas,
                 *extras, converged=True))
 
-    elif state == STATE_LOWER:
+    elif state == STATE_RAISE:
         if not _arm_moving:
-            controller.get_logger().info('Lowering back to grasp pose …')
+            controller.get_logger().info('Raising back to grasp pose …')
             _log_tick = 0
             _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_RELEASE)
 
@@ -814,7 +772,7 @@ def control_callback():
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             extras = _gd_log_extras()
             _csv_writer.writerow(_compute_row(
-                q, q_dot, 'lower', _C_O_mean,
+                q, q_dot, 'raise', _C_O_mean,
                 _gd_f_des, _gd_f_meas,
                 *extras, converged=True))
         if not _arm_moving:
