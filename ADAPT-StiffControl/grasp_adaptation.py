@@ -362,7 +362,7 @@ STATE_SENSE_REC  = 5   # average pos_gentle, F_gentle
 STATE_PROBE_RAMP = 6   # ramp thumb K → K_TIP_PROBE
 STATE_PROBE_CONV = 7   # wait convergence at K_TIP_PROBE
 STATE_PROBE_REC  = 8   # average pos_probe, F_probe; compute C_O; init GD
-STATE_ADAPT_GD   = 9   # gradient descent for ADAPT_DURATION
+STATE_ADAPT_GD   = 9   # gradient descent until force converges
 STATE_LIFT       = 10  # UR5 moving up +10 cm
 STATE_LOWER      = 11  # trigger UR5 → GRASP_POSE
 STATE_RELEASE    = 12  # k=0, wait CONVERGE_HOLD
