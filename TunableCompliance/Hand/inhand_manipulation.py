@@ -6,8 +6,8 @@ then the stiffness is shifted asymmetrically between hand sides to induce
 controlled object rolling/sliding:
 
   UNIFORM  — all five fingertips at K_UNIFORM
-  ASYM_A   — pinky + ring at K_LOW;  thumb + index + middle at K_HIGH
-  ASYM_B   — thumb + index + middle at K_LOW; pinky + ring at K_HIGH
+  ASYM_A   — pinky + ring at K_LOW;  index + middle at K_HIGH  (thumb always K_UNIFORM)
+  ASYM_B   — index + middle at K_LOW; pinky + ring at K_HIGH   (thumb always K_UNIFORM)
 
 Each phase is held until convergence, then recorded for RECORD_DURATION seconds.
 
@@ -111,9 +111,12 @@ K_JOINT_DICT_MODEL = {
 }
 
 # Stiffness dicts for each experimental phase.
+# Thumb is held at K_UNIFORM in all phases; only index/middle vs ring/pinky alternate.
 K_DICT_UNIFORM = {f: K_UNIFORM for f in FINGERTIPS}
 K_DICT_ASYM_A  = {f: (K_LOW  if f in SIDE_A_SOFT else K_HIGH) for f in FINGERTIPS}
+K_DICT_ASYM_A['thumb'] = K_UNIFORM
 K_DICT_ASYM_B  = {f: (K_LOW  if f in SIDE_B_SOFT else K_HIGH) for f in FINGERTIPS}
+K_DICT_ASYM_B['thumb'] = K_UNIFORM
 
 # =============================================================================
 # ROS2 + controller initialisation
@@ -520,7 +523,7 @@ def control_callback():
         if not _confirm_pending:
             _ask_confirm_async(
                 f'\n[Confirm] Press ENTER to start ASYM_A '
-                f'(pinky+ring → {K_LOW} N/m, thumb+index+middle → {K_HIGH} N/m) …')
+                f'(pinky+ring → {K_LOW} N/m, index+middle → {K_HIGH} N/m, thumb → {K_UNIFORM} N/m) …')
         elif _confirm_ready:
             _confirm_pending = False
             _begin_k_ramp(K_DICT_UNIFORM, K_DICT_ASYM_A, STATE_ASYM_A_CONV)
@@ -528,7 +531,7 @@ def control_callback():
             _state_start = now
             controller.get_logger().info(
                 f'Ramping to ASYM_A (pinky+ring → {K_LOW} N/m, '
-                f'thumb+index+middle → {K_HIGH} N/m) over {RAMP_DURATION:.1f} s …')
+                f'index+middle → {K_HIGH} N/m, thumb → {K_UNIFORM} N/m) over {RAMP_DURATION:.1f} s …')
 
     elif state == STATE_ASYM_A_RAMP:
         if _step_k_ramp(now):
@@ -561,15 +564,15 @@ def control_callback():
         if not _confirm_pending:
             _ask_confirm_async(
                 f'\n[Confirm] Press ENTER to start ASYM_B '
-                f'(thumb+index+middle → {K_LOW} N/m, pinky+ring → {K_HIGH} N/m) …')
+                f'(index+middle → {K_LOW} N/m, pinky+ring → {K_HIGH} N/m, thumb → {K_UNIFORM} N/m) …')
         elif _confirm_ready:
             _confirm_pending = False
             _begin_k_ramp(K_DICT_ASYM_A, K_DICT_ASYM_B, STATE_ASYM_B_CONV)
             state        = STATE_ASYM_B_RAMP
             _state_start = now
             controller.get_logger().info(
-                f'Ramping to ASYM_B (thumb+index+middle → {K_LOW} N/m, '
-                f'pinky+ring → {K_HIGH} N/m) over {RAMP_DURATION:.1f} s …')
+                f'Ramping to ASYM_B (index+middle → {K_LOW} N/m, '
+                f'pinky+ring → {K_HIGH} N/m, thumb → {K_UNIFORM} N/m) over {RAMP_DURATION:.1f} s …')
 
     elif state == STATE_ASYM_B_RAMP:
         if _step_k_ramp(now):
