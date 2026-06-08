@@ -180,7 +180,7 @@ print()
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.setTcp([0, 0, 0, 0, 0, 0])
 arm.endTeachMode()
-controller.get_logger().info(f'UR5 connected | mode: {MODE}')
+controller.get_logger().info('UR5 connected')
 
 # =============================================================================
 # CSV
@@ -193,7 +193,7 @@ def _output_path():
 
 
 def _csv_header():
-    cols = ['time_s', 'phase', 'mode', 'C_O_m_per_N',
+    cols = ['time_s', 'phase', 'C_O_m_per_N',
             'f_des_x_N', 'f_des_y_N', 'f_des_z_N', 'f_des_mag_N',
             'f_meas_gd_x_N', 'f_meas_gd_y_N', 'f_meas_gd_z_N', 'f_meas_gd_mag_N',
             'converged']
@@ -278,7 +278,7 @@ def _compute_row(q, q_dot, phase, C_O, f_des, f_meas_gd,
                  converged):
     K_task_now = _thumb_K_task(_current_k)
 
-    row = [f'{time.time() - _experiment_start:.4f}', phase, MODE,
+    row = [f'{time.time() - _experiment_start:.4f}', phase,
            f'{C_O:.6e}']
     row += [f'{v:.6f}' for v in f_des]
     row.append(f'{float(np.linalg.norm(f_des)):.6f}')
@@ -700,7 +700,7 @@ def control_callback():
                 controller.get_logger().info(
                     f'All {N_PROBE_ROUNDS} probe rounds done. '
                     f'C_O = {_C_O_mean * 1e3:.2f} mm/N  '
-                    f'→ f_des = {f_des_mag:.3f} N  mode: {MODE}')
+                    f'→ f_des = {f_des_mag:.3f} N')
                 _gd_converge_ticks = 0
                 _log_tick          = 0
                 _state_start       = now
@@ -724,27 +724,16 @@ def control_callback():
             'thumb', q, _gd_theta_ref_deg, _gd_d_ref,
             _gd_K_joint, _gd_K_task))
 
-        if MODE == 'stiffness':
-            _gd_K_joint, _gd_K_task = stiff_model.stiffness_descent(
-                'thumb', q, _gd_theta_ref_deg, _gd_d_ref,
-                _gd_K_joint, _gd_K_task, _gd_f_meas, _gd_f_des,
-                lr_joint=GD_LR, lr_task=GD_LR)
-            # Apply diagonals to VMC (keep non-negative)
-            k_task_diag = np.maximum(np.diag(_gd_K_task['thumb']), 0.0)
-            vmc_task.springs['thumb'].stiffness = k_task_diag
-            _current_k = float(np.mean(k_task_diag))
-            k_jt = np.diag(_gd_K_joint['thumb'])
-            vmc_joint.stiffness['thumb'] = np.maximum(
-                np.array([k_jt[0], k_jt[1], 0.0, 0.0]), 0.0)
-
-        else:  # MODE == 'ref'
-            _gd_theta_ref_deg, _gd_d_ref = stiff_model.ref_descent(
-                'thumb', q, _gd_theta_ref_deg, _gd_d_ref,
-                _gd_K_joint, _gd_K_task, _gd_f_meas, _gd_f_des,
-                lr_joint=GD_LR, lr_task=GD_LR)
-            # Apply updated equilibrium to VMC
-            vmc_joint.thumb         = np.radians(_gd_theta_ref_deg)
-            vmc_task.targets['thumb'] = _gd_d_ref['thumb']
+        _gd_K_joint, _gd_K_task = stiff_model.stiffness_descent(
+            'thumb', q, _gd_theta_ref_deg, _gd_d_ref,
+            _gd_K_joint, _gd_K_task, _gd_f_meas, _gd_f_des,
+            lr_joint=GD_LR, lr_task=GD_LR)
+        k_task_diag = np.maximum(np.diag(_gd_K_task['thumb']), 0.0)
+        vmc_task.springs['thumb'].stiffness = k_task_diag
+        _current_k = float(np.mean(k_task_diag))
+        k_jt = np.diag(_gd_K_joint['thumb'])
+        vmc_joint.stiffness['thumb'] = np.maximum(
+            np.array([k_jt[0], k_jt[1], 0.0, 0.0]), 0.0)
 
         f_err = float(np.linalg.norm(_gd_f_meas - _gd_f_des))
         if f_err < F_CONVERGE_THR:
@@ -865,7 +854,7 @@ def control_callback():
 timer_period = 1.0 / CONTROL_FREQUENCY
 controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
-    f'Grasp adaptation | object: {OBJECT_NAME} | mode: {MODE} | '
+    f'Grasp adaptation | object: {OBJECT_NAME} | '
     f'K_TIP_GENTLE={K_TIP_GENTLE} N/m | K_TIP_PROBE={K_TIP_PROBE} N/m | '
     f'F_GAIN={F_GAIN} | GD_LR={GD_LR} | F_CONVERGE_THR={F_CONVERGE_THR} N')
 
