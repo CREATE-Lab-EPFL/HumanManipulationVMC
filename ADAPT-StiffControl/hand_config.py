@@ -71,3 +71,10 @@ CONVERGE_HOLD    = 1.0   # [s]      time below threshold to declare convergence
 CONVERGE_TIMEOUT = 12.0  # [s]      max wait before forcing transition
 SENSE_DURATION   = 5.0   # [s]      sensing window (δ averaged over this)
 HOLD_TIME        = 3.0   # [s]      hold at lifted pose
+
+# ── Disturbance experiment ─────────────────────────────────────────────────────
+# A fixed opening torque is applied to CMC1 (motor 0) after GD converges,
+# then removed, to compare the thumb's stiffness response across modes/objects.
+DISTURBANCE_TORQUE   = -0.2   # [N·m]  opening torque on CMC1 (negative = opens/abducts)
+DISTURBANCE_DURATION = 1.0    # [s]    how long the disturbance is applied
+RECOVERY_DURATION    = 2.0    # [s]    recording window after disturbance is removed

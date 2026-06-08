@@ -20,9 +20,6 @@ Protocol:
   10. Release hand (k=0); UR5 retracts to START_POSE
 """
 
-# ── Select experiment mode ────────────────────────────────────────────────────
-MODE = 'stiffness'   # 'stiffness' | 'ref'
-
 import numpy as np
 import rclpy
 import sys
