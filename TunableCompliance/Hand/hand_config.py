@@ -13,7 +13,7 @@ UR5_POSE_INHAND = np.array([-0.381, 0.55, 0.29, -1.86, -0.12, 0.59])
 UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_THUMB  = np.deg2rad([60.0, -80.0, 80.0, 80.0])
+INHAND_PC1_THUMB  = np.deg2rad([90.0, -90, 120.0, 120.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': 0.0,
@@ -61,7 +61,7 @@ FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides h
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM      = 15.0   # [N/m]  baseline uniform tip stiffness
-K_HIGH         = 150.0  # [N/m]  stiff-side stiffness
+K_HIGH         = 100.0  # [N/m]  stiff-side stiffness
 K_LOW          = 0.0    # [N/m]  compliant-side stiffness
 K_RETURN       = 0.1    # [N·m/rad]  joint stiffness for ramp back to HOME
 K_BACKGROUND_IH = 0.001 # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
