@@ -350,19 +350,19 @@ PC1_POSE_TARGETS = {
 STATE_APPROACH        = 0   # trigger UR5 → GRASP_POSE
 STATE_SETTLE          = 1   # wait SETTLE_TIME
 STATE_RAMP_CLOSE      = 2   # hand ramps HOME → PC1 at K_TIP_GENTLE
-STATE_SENSE_CONV      = 2   # wait convergence at K_TIP_GENTLE
-STATE_SENSE_REC       = 3   # average pos_gentle, F_gentle
-STATE_PROBE_RAMP      = 4   # ramp thumb K → K_TIP_PROBE
-STATE_PROBE_CONV      = 5   # wait convergence at K_TIP_PROBE
-STATE_PROBE_REC       = 6   # record probe; if rounds left → back ramp, else compute C_O
-STATE_PROBE_BACK_RAMP = 7   # ramp thumb K back to K_TIP_GENTLE between rounds
-STATE_ADAPT_GD        = 8   # gradient descent until force converges
-STATE_PRESS           = 9   # UR5 pressing down −15 cm (shows exerted force)
-STATE_RAISE           = 10  # trigger UR5 → GRASP_POSE
-STATE_RELEASE         = 11  # k=0, wait CONVERGE_HOLD
-STATE_RAMP_HOME       = 12  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT         = 13  # arm moving to START_POSE; hand ramping
-STATE_DONE            = 14
+STATE_SENSE_CONV      = 3   # wait convergence at K_TIP_GENTLE
+STATE_SENSE_REC       = 4   # average pos_gentle, F_gentle
+STATE_PROBE_RAMP      = 5   # ramp thumb K → K_TIP_PROBE
+STATE_PROBE_CONV      = 6   # wait convergence at K_TIP_PROBE
+STATE_PROBE_REC       = 7   # record probe; if rounds left → back ramp, else compute C_O
+STATE_PROBE_BACK_RAMP = 8   # ramp thumb K back to K_TIP_GENTLE between rounds
+STATE_ADAPT_GD        = 9   # gradient descent until force converges
+STATE_PRESS           = 10  # UR5 pressing down −15 cm (shows exerted force)
+STATE_RAISE           = 11  # trigger UR5 → GRASP_POSE
+STATE_RELEASE         = 12  # k=0, wait CONVERGE_HOLD
+STATE_RAMP_HOME       = 13  # snap joint targets, ramp to HOME + retract arm
+STATE_RETRACT         = 14  # arm moving to START_POSE; hand ramping
+STATE_DONE            = 15
 
 state             = STATE_SETTLE
 _state_start      = time.time()
