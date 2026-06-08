@@ -53,7 +53,7 @@ from hand_config import (
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
     K_TIP_GENTLE, K_TIP_PROBE, K_TIP_HOLD,
-    F_GAIN, GD_LR, ADAPT_DURATION,
+    F_GAIN, GD_LR, F_CONVERGE_THR,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     APPROACH_HEIGHT, LIFT_HEIGHT,
@@ -404,8 +404,9 @@ _gd_K_joint        = {k: v.copy() for k, v in _GD_K_JOINT_INIT.items()}
 _gd_K_task         = {'thumb': K_TIP_GENTLE * np.eye(3)}
 _gd_theta_ref_deg  = _GD_THETA_THUMB_DEG.copy()
 _gd_d_ref          = {'thumb': D_REF['thumb'].copy()}
-_gd_f_des          = np.zeros(3)
-_gd_f_meas         = np.zeros(3)
+_gd_f_des           = np.zeros(3)
+_gd_f_meas          = np.zeros(3)
+_gd_converge_ticks  = 0
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -507,7 +508,7 @@ def control_callback():
     global _sense_count, _probe_count
     global _current_k
     global _gd_K_joint, _gd_K_task, _gd_theta_ref_deg, _gd_d_ref
-    global _gd_f_des, _gd_f_meas
+    global _gd_f_des, _gd_f_meas, _gd_converge_ticks
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -684,9 +685,10 @@ def control_callback():
                 f'C_O = {_C_O_mean * 1e3:.2f} mm/N  '
                 f'→ f_des = {f_des_mag:.3f} N (|dir| checked)  '
                 f'mode: {MODE}')
-            _log_tick    = 0
-            _state_start = now
-            state        = STATE_ADAPT_GD
+            _gd_converge_ticks = 0
+            _log_tick          = 0
+            _state_start       = now
+            state              = STATE_ADAPT_GD
 
     elif state == STATE_ADAPT_GD:
         # Compute analytic tip force with current GD parameters
@@ -716,21 +718,27 @@ def control_callback():
             vmc_joint.thumb         = np.radians(_gd_theta_ref_deg)
             vmc_task.targets['thumb'] = _gd_d_ref['thumb']
 
+        f_err = float(np.linalg.norm(_gd_f_meas - _gd_f_des))
+        if f_err < F_CONVERGE_THR:
+            _gd_converge_ticks += 1
+        else:
+            _gd_converge_ticks = 0
+        gd_converged = _gd_converge_ticks >= _CONVERGE_TICKS
+
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             extras = _gd_log_extras()
             _csv_writer.writerow(_compute_row(
                 q, q_dot, 'adapt_gd', _C_O_mean,
                 _gd_f_des, _gd_f_meas,
-                *extras, converged=False))
+                *extras, converged=gd_converged))
 
-        if elapsed >= ADAPT_DURATION:
+        if gd_converged or elapsed >= CONVERGE_TIMEOUT:
             if not COLLECTED_DATA:
                 _csv_file.flush()
             controller.get_logger().info(
-                f'GD done ({ADAPT_DURATION:.0f} s). '
-                f'|f_meas - f_des| = {float(np.linalg.norm(_gd_f_meas - _gd_f_des)):.4f} N. '
-                f'Lifting …')
+                f'GD {"converged" if gd_converged else "timed out"} at {elapsed:.1f} s. '
+                f'|f_meas - f_des| = {f_err:.4f} N. Lifting …')
             _log_tick    = 0
             _state_start = now
             _move_arm_async(LIFT_POSE, UR5_INIT_SPEED, STATE_LOWER)
