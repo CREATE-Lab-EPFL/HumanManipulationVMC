@@ -26,7 +26,7 @@ INHAND_PC1_RING   = np.deg2rad([120.0, 70.0, 70.0])
 INHAND_PC1_PINKY  = np.deg2rad([120.0, 70.0, 70.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
-GRASP_PC1_THUMB  = np.deg2rad([30.0, -60.0, 60.0, 60.0])
+GRASP_PC1_THUMB  = np.deg2rad([40.0, -90.0, 60.0, 60.0])
 GRASP_PC1_SPREAD = {
     'index':  np.deg2rad(-2.0),
     'middle': 0.0,
