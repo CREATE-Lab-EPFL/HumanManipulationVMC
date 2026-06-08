@@ -47,7 +47,7 @@ import rtde_control
 # =============================================================================
 # Collected data
 # =============================================================================
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 
