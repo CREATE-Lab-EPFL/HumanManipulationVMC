@@ -8,8 +8,8 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.4766,  0.5524,  0.0578,  0.3137, -1.6283, -2.242]),
-    'soft_obj': np.array([-0.4766 - 0.10, 0.6022 + 0.10, 0.0818, 0.3137, -1.6283, -2.242]),
+    'hard_obj': np.array([-0.4766,  0.5524,  0.057,  0.3137, -1.6283, -2.242]),
+    'soft_obj': np.array([-0.4766 - 0.10, 0.6022 + 0.10, 0.057, 0.3137, -1.6283, -2.242]),
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
@@ -39,11 +39,11 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # position), thumb probes from K_TIP_GENTLE to K_TIP_PROBE.
 # C_O = ||Δpos_thumb|| / ||ΔF_thumb||; k_applied = clip(K_GAIN/C_O, K_MIN, K_MAX).
 K_TIP_GENTLE = 10.0    # [N/m]   gentle baseline stiffness (thumb)
-K_TIP_PROBE  = 100.0   # [N/m]   probe stiffness (thumb)
+K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
-K_GAIN       = 5.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
+K_GAIN       = 8.0     # [-]     k_applied = clip(K_GAIN / C_O_mean, K_MIN, K_MAX)
 K_MIN        = 5.0     # [N/m]   lower bound on adapted stiffness
-K_MAX        = 150.0   # [N/m]   upper bound on adapted stiffness
+K_MAX        = 250.0   # [N/m]   upper bound on adapted stiffness
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
