@@ -1,22 +1,25 @@
 """
 ADAPT Hand — grasp adaptation via compliance sensing and gradient descent.
 
-Two modes (set MODE below):
+Modes (selected interactively at startup):
   'stiffness' — stiffness_descent: K_joint + K_task for the thumb are updated
                 each tick to drive analytic tip force → f_des.
   'ref'       — ref_descent: virtual equilibrium positions (theta_ref, d_ref)
                 for the thumb are updated each tick to drive tip force → f_des.
 
 Protocol:
-  1. UR5 → START_POSE  (GRASP_POSE − 10 cm Z, hand at HOME)
+  1. UR5 → START_POSE  (GRASP_POSE − APPROACH_HEIGHT on Z)
   2. UR5 → GRASP_POSE
-  3. Hand ramps HOME → PC1 at K_TIP_GENTLE  (first sensing point)
-  4. Wait convergence; average pos_gentle, F_gentle over SENSE_DURATION
-  5. Ramp thumb K → K_TIP_PROBE             (second sensing point)
-  6. Wait convergence; average pos_probe, F_probe over SENSE_DURATION
-  7. Compute C_O = ||Δpos|| / ||ΔF||; f_des = F_GAIN / C_O (direction = initial force)
-  8. Run gradient descent until |f_meas − f_des| < F_CONVERGE_THR (stiffness_descent or ref_descent)
-  9. UR5 lifts +10 cm; UR5 returns to GRASP_POSE
+  3. Hand ramps HOME → PC1 at K_TIP_GENTLE  (first sensing point, SENSE_DURATION s)
+  4. Repeat N_PROBE_ROUNDS times:
+       a. Ramp thumb K → K_TIP_PROBE; wait convergence
+       b. Record pos_probe, F_probe for SENSE_DURATION s
+       c. (if more rounds) ramp K back to K_TIP_GENTLE; wait
+  5. Compute C_O = avg(||Δpos||/||ΔF||); f_des = F_GAIN / C_O
+  6. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
+  7. Apply DISTURBANCE_TORQUE on CMC1 for DISTURBANCE_DURATION s; record
+  8. Remove disturbance; record RECOVERY_DURATION s
+  9. UR5 lifts +LIFT_HEIGHT; UR5 returns to GRASP_POSE
   10. Release hand (k=0); UR5 retracts to START_POSE
 """
 
@@ -363,22 +366,25 @@ PC1_POSE_TARGETS = {
 # =============================================================================
 # State machine
 # =============================================================================
-STATE_START      = 0   # trigger UR5 → START_POSE
-STATE_DESCEND    = 1   # trigger UR5 → GRASP_POSE
-STATE_SETTLE     = 2   # wait SETTLE_TIME
-STATE_RAMP_CLOSE = 3   # hand ramps HOME → PC1 at K_TIP_GENTLE
-STATE_SENSE_CONV = 4   # wait convergence at K_TIP_GENTLE
-STATE_SENSE_REC  = 5   # average pos_gentle, F_gentle
-STATE_PROBE_RAMP = 6   # ramp thumb K → K_TIP_PROBE
-STATE_PROBE_CONV = 7   # wait convergence at K_TIP_PROBE
-STATE_PROBE_REC  = 8   # average pos_probe, F_probe; compute C_O; init GD
-STATE_ADAPT_GD   = 9   # gradient descent until force converges
-STATE_LIFT       = 10  # UR5 moving up +10 cm
-STATE_LOWER      = 11  # trigger UR5 → GRASP_POSE
-STATE_RELEASE    = 12  # k=0, wait CONVERGE_HOLD
-STATE_RAMP_HOME  = 13  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT    = 14  # arm moving to START_POSE; hand ramping
-STATE_DONE       = 15
+STATE_START           = 0   # trigger UR5 → START_POSE
+STATE_DESCEND         = 1   # trigger UR5 → GRASP_POSE
+STATE_SETTLE          = 2   # wait SETTLE_TIME
+STATE_RAMP_CLOSE      = 3   # hand ramps HOME → PC1 at K_TIP_GENTLE
+STATE_SENSE_CONV      = 4   # wait convergence at K_TIP_GENTLE
+STATE_SENSE_REC       = 5   # average pos_gentle, F_gentle
+STATE_PROBE_RAMP      = 6   # ramp thumb K → K_TIP_PROBE
+STATE_PROBE_CONV      = 7   # wait convergence at K_TIP_PROBE
+STATE_PROBE_REC       = 8   # record probe; if rounds left → back ramp, else compute C_O
+STATE_PROBE_BACK_RAMP = 9   # ramp thumb K back to K_TIP_GENTLE between rounds
+STATE_ADAPT_GD        = 10  # gradient descent until force converges
+STATE_DISTURB_ON      = 11  # apply DISTURBANCE_TORQUE on CMC1
+STATE_DISTURB_OFF     = 12  # remove disturbance, record recovery
+STATE_LIFT            = 13  # UR5 moving up +10 cm
+STATE_LOWER           = 14  # trigger UR5 → GRASP_POSE
+STATE_RELEASE         = 15  # k=0, wait CONVERGE_HOLD
+STATE_RAMP_HOME       = 16  # snap joint targets, ramp to HOME + retract arm
+STATE_RETRACT         = 17  # arm moving to START_POSE; hand ramping
+STATE_DONE            = 18
 
 state             = STATE_START
 _state_start      = time.time()
@@ -417,6 +423,9 @@ _gd_d_ref          = {'thumb': D_REF['thumb'].copy()}
 _gd_f_des           = np.zeros(3)
 _gd_f_meas          = np.zeros(3)
 _gd_converge_ticks  = 0
+
+_tau_disturb  = np.zeros(13)   # disturbance torque injected during STATE_DISTURB_ON
+_probe_round  = 0               # which probe round we are on (0-indexed)
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -515,10 +524,11 @@ def control_callback():
     global state, _state_start
     global _converge_ticks, _log_tick, _converged
     global _use_task_vmc, _C_O_mean
-    global _sense_count, _probe_count
+    global _sense_count, _probe_count, _probe_round
     global _current_k
     global _gd_K_joint, _gd_K_task, _gd_theta_ref_deg, _gd_d_ref
     global _gd_f_des, _gd_f_meas, _gd_converge_ticks
+    global _tau_disturb
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -528,7 +538,7 @@ def control_callback():
     tau_vmc   = tau_joint + tau_task
     tau_comp  = grav_lim.compute_compensation_torques(
         q, q_dot, tau_vmc, recv.get_tcp_rotation_matrix())
-    controller.publish_torques(tau_vmc + tau_comp)
+    controller.publish_torques(tau_vmc + tau_comp + _tau_disturb)
 
     now     = time.time()
     elapsed = now - _state_start
@@ -663,42 +673,67 @@ def control_callback():
             if not COLLECTED_DATA:
                 _csv_file.flush()
 
-            # Compliance estimate from thumb only
-            n_g   = max(1, _sense_count)
-            n_p   = max(1, _probe_count)
-            d_pos = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
-            d_F   = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
-            nF    = float(np.linalg.norm(d_F))
-            if nF > 1e-9:
-                _C_O_mean = float(np.linalg.norm(d_pos) / nF)
+            if _probe_round < N_PROBE_ROUNDS - 1:
+                # More rounds: ramp K back to K_TIP_GENTLE then repeat probe
+                _probe_round += 1
+                controller.get_logger().info(
+                    f'Probe round {_probe_round}/{N_PROBE_ROUNDS} done. '
+                    f'Ramping back to K_TIP_GENTLE …')
+                _begin_k_ramp(K_TIP_PROBE, K_TIP_GENTLE)
+                _converge_ticks = 0
+                _converged      = False
+                _log_tick       = 0
+                _state_start    = now
+                state           = STATE_PROBE_BACK_RAMP
             else:
-                _C_O_mean = 0.0
-            f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
+                # All rounds done: compute C_O and start GD
+                n_g   = max(1, _sense_count)
+                n_p   = max(1, _probe_count)
+                d_pos = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
+                d_F   = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
+                nF    = float(np.linalg.norm(d_F))
+                if nF > 1e-9:
+                    _C_O_mean = float(np.linalg.norm(d_pos) / nF)
+                else:
+                    _C_O_mean = 0.0
+                f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
 
-            # Set f_des direction from initial tip force at probe stiffness
-            f_init = np.asarray(stiff_model.tip_force(
-                'thumb', q, _GD_THETA_THUMB_DEG, {'thumb': _d_ref_model_dict['thumb']},
-                _GD_K_JOINT_INIT, {'thumb': K_TIP_PROBE * np.eye(3)}))
-            f_init_mag = float(np.linalg.norm(f_init))
-            if f_init_mag > 1e-9:
-                _gd_f_des = f_des_mag * f_init / f_init_mag
-            else:
-                _gd_f_des = np.array([0.0, 0.0, -f_des_mag])
+                # Set f_des direction from initial tip force at probe stiffness
+                f_init = np.asarray(stiff_model.tip_force(
+                    'thumb', q, _GD_THETA_THUMB_DEG, {'thumb': _d_ref_model_dict['thumb']},
+                    _GD_K_JOINT_INIT, {'thumb': K_TIP_PROBE * np.eye(3)}))
+                f_init_mag = float(np.linalg.norm(f_init))
+                if f_init_mag > 1e-9:
+                    _gd_f_des = f_des_mag * f_init / f_init_mag
+                else:
+                    _gd_f_des = np.array([0.0, 0.0, -f_des_mag])
 
-            # Initialise GD state (both modes use same K; ref mode keeps K fixed)
-            _gd_K_joint       = {'thumb': K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])}
-            _gd_K_task        = {'thumb': K_TIP_PROBE * np.eye(3)}
-            _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
-            _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
+                # Initialise GD state (both modes use same K; ref mode keeps K fixed)
+                _gd_K_joint       = {'thumb': K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])}
+                _gd_K_task        = {'thumb': K_TIP_PROBE * np.eye(3)}
+                _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
+                _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
 
+                controller.get_logger().info(
+                    f'All {N_PROBE_ROUNDS} probe rounds done. '
+                    f'C_O = {_C_O_mean * 1e3:.2f} mm/N  '
+                    f'→ f_des = {f_des_mag:.3f} N  mode: {MODE}')
+                _gd_converge_ticks = 0
+                _log_tick          = 0
+                _state_start       = now
+                state              = STATE_ADAPT_GD
+
+    elif state == STATE_PROBE_BACK_RAMP:
+        if _step_k_ramp(now):
+            # K is back at K_TIP_GENTLE — start next probe ramp
             controller.get_logger().info(
-                f'C_O = {_C_O_mean * 1e3:.2f} mm/N  '
-                f'→ f_des = {f_des_mag:.3f} N (|dir| checked)  '
-                f'mode: {MODE}')
-            _gd_converge_ticks = 0
-            _log_tick          = 0
-            _state_start       = now
-            state              = STATE_ADAPT_GD
+                f'Starting probe round {_probe_round + 1}/{N_PROBE_ROUNDS} …')
+            _begin_k_ramp(K_TIP_GENTLE, K_TIP_PROBE)
+            _converge_ticks = 0
+            _converged      = False
+            _log_tick       = 0
+            _state_start    = now
+            state           = STATE_PROBE_RAMP
 
     elif state == STATE_ADAPT_GD:
         # Compute analytic tip force with current GD parameters
@@ -748,11 +783,44 @@ def control_callback():
                 _csv_file.flush()
             controller.get_logger().info(
                 f'GD {"converged" if gd_converged else "timed out"} at {elapsed:.1f} s. '
-                f'|f_meas - f_des| = {f_err:.4f} N. Lifting …')
+                f'|f_meas - f_des| = {f_err:.4f} N. Applying disturbance …')
+            _tau_disturb         = np.zeros(13)
+            _tau_disturb[0]      = DISTURBANCE_TORQUE
+            _log_tick    = 0
+            _state_start = now
+            state        = STATE_DISTURB_ON
+
+    elif state == STATE_DISTURB_ON:
+        _log_tick += 1
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
+            extras = _gd_log_extras()
+            _csv_writer.writerow(_compute_row(
+                q, q_dot, 'disturb_on', _C_O_mean,
+                _gd_f_des, _gd_f_meas,
+                *extras, converged=True))
+        if elapsed >= DISTURBANCE_DURATION:
+            controller.get_logger().info('Disturbance off. Recording recovery …')
+            _tau_disturb = np.zeros(13)
+            _log_tick    = 0
+            _state_start = now
+            state        = STATE_DISTURB_OFF
+
+    elif state == STATE_DISTURB_OFF:
+        _log_tick += 1
+        if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
+            extras = _gd_log_extras()
+            _csv_writer.writerow(_compute_row(
+                q, q_dot, 'disturb_off', _C_O_mean,
+                _gd_f_des, _gd_f_meas,
+                *extras, converged=True))
+        if elapsed >= RECOVERY_DURATION:
+            if not COLLECTED_DATA:
+                _csv_file.flush()
+            controller.get_logger().info('Recovery done. Lifting …')
             _log_tick    = 0
             _state_start = now
             _move_arm_async(LIFT_POSE, UR5_INIT_SPEED, STATE_LOWER)
-            state = STATE_LIFT
+            state        = STATE_LIFT
 
     elif state == STATE_LIFT:
         _log_tick += 1
