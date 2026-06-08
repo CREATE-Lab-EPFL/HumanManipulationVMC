@@ -47,9 +47,9 @@ from hand_config import (
     FINGERTIPS,
     K_BACKGROUND_DG,
     K_SOFT, K_STIFF, SOFT_DURATION, K_RAMP_DURATION,
-    DG_K_ROT as K_ROT, DG_B_ROT as B_ROT, DG_B_TIP as B_TIP, K_HOME,
-    DG_FRICTION_TAU_MAX as FRICTION_TAU_MAX,
-    CMC2_PREGRIP_FRAC,
+    K_ROT, B_ROT, B_TIP, K_HOME,
+    FRICTION_TAU_MAX,
+    CMC2_PREGRIP_FRAC, FINGER_PREGRIP_FRAC,
     APPROACH_DIRECTION, APPROACH_SPEED, APPROACH_ACCELERATION,
     TOTAL_DISTANCE, CLOSE_DISTANCE, HOME_DURATION,
 )
@@ -135,12 +135,18 @@ _PREGRIP_THUMB = HOME_THUMB.copy()
 _PREGRIP_THUMB[0] = PC1_THUMB[0]                      # CMC1: full final target
 _PREGRIP_THUMB[1] = PC1_THUMB[1] * CMC2_PREGRIP_FRAC  # CMC2: fraction of final
 
-vmc_joint.thumb             = _PREGRIP_THUMB.copy()
+_PREGRIP_FINGER = PC1_INDEX  * FINGER_PREGRIP_FRAC    # same flexion fraction for all fingers
+_PREGRIP_SPREAD = {f: np.array([PC1_SPREAD[f]]) for f in ['index', 'middle', 'ring', 'pinky']}
+
+vmc_joint.thumb              = _PREGRIP_THUMB.copy()
 vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
-vmc_joint.spread            = {f: HOME_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
-vmc_joint.index_target      = HOME_FINGER.copy()
-vmc_joint.middle_target     = HOME_FINGER.copy()
-vmc_joint.ring_pinky_target = HOME_FINGER.copy()
+vmc_joint.spread             = {f: _PREGRIP_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
+vmc_joint.index_target       = _PREGRIP_FINGER.copy()
+vmc_joint.middle_target      = _PREGRIP_FINGER.copy()
+vmc_joint.ring_pinky_target  = _PREGRIP_FINGER.copy()
+for _f in ['index', 'middle', 'ring', 'pinky']:
+    vmc_joint.stiffness[_f] = np.full(3, K_ROT)
+    vmc_joint.damping[_f]   = np.full(3, B_ROT)
 
 vmc_task = TaskVMC()
 
@@ -330,9 +336,16 @@ def _reset_trial():
     CONDITION = CONDITIONS_ORDER[_cond_idx]
     _experiment_start = time.time()
     _csv_path, _csv_file, _csv_writer = _open_csv(CONDITION)
-    # Restore thumb pre-grip position for the next trial.
-    vmc_joint.thumb = _PREGRIP_THUMB.copy()
+    # Restore pre-grip posture for the next trial.
+    vmc_joint.thumb              = _PREGRIP_THUMB.copy()
     vmc_joint.stiffness['thumb'] = np.full(4, K_ROT)
+    vmc_joint.spread             = {f: _PREGRIP_SPREAD[f].copy() for f in ['index', 'middle', 'ring', 'pinky']}
+    vmc_joint.index_target       = _PREGRIP_FINGER.copy()
+    vmc_joint.middle_target      = _PREGRIP_FINGER.copy()
+    vmc_joint.ring_pinky_target  = _PREGRIP_FINGER.copy()
+    for _f in ['index', 'middle', 'ring', 'pinky']:
+        vmc_joint.stiffness[_f] = np.full(3, K_ROT)
+        vmc_joint.damping[_f]   = np.full(3, B_ROT)
 
 
 # =============================================================================

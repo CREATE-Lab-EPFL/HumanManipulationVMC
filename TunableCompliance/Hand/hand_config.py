@@ -11,6 +11,12 @@ HOME_SPREAD = {f: np.zeros(1) for f in ['index', 'middle', 'ring', 'pinky']}
 HOME_FINGER = np.zeros(3)
 FINGERTIPS  = ['thumb', 'index', 'middle', 'ring', 'pinky']
 
+# ── Shared joint regulation (both experiments) ────────────────────────────────
+K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
+B_ROT          = 0.01     # [N·m·s/rad]  background joint damping
+B_TIP          = 0.01     # [N·s/m]      task-space damping
+FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation
+
 # =============================================================================
 # inhand_manipulation.py
 # =============================================================================
@@ -35,12 +41,6 @@ INHAND_PC1_PINKY  = np.deg2rad([120.0, 70.0, 70.0])
 SIDE_A_SOFT = ['pinky', 'ring']   # K_LOW in ASYM_A, K_HIGH in ASYM_B
 SIDE_B_SOFT = ['index', 'middle'] # K_LOW in ASYM_B, K_HIGH in ASYM_A
 
-# ── Joint regulation ──────────────────────────────────────────────────────────
-K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
-B_ROT          = 0.01     # [N·m·s/rad]  background joint damping
-B_TIP          = 0.01     # [N·s/m]      task-space damping
-FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation
-
 # ── Stiffness levels ──────────────────────────────────────────────────────────
 K_UNIFORM        = 30.0   # [N/m]        baseline uniform tip stiffness
 K_HIGH           = 150.0  # [N/m]        stiff-side stiffness
@@ -62,7 +62,7 @@ RECORD_DURATION  = 5.0    # [s]
 # =============================================================================
 
 # ── UR5 pose ──────────────────────────────────────────────────────────────────
-UR5_POSE_BOTTLE_START = np.array([0.01, 0.66, 0.055, -1.37, -1.09, -1.79])
+UR5_POSE_BOTTLE_START = np.array([0.01, 0.67, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose ────────────────────────────────────────────────────────────
 GRASP_PC1_THUMB  = np.deg2rad([40.0, -90.0, 60.0, 60.0])
@@ -80,15 +80,9 @@ GRASP_PC1_PINKY  = np.deg2rad([120.0, 120.0, 120.0])
 # ── Conditions ────────────────────────────────────────────────────────────────
 CONDITIONS = ['soft', 'stiff', 'adaptive']
 
-# ── Joint regulation ──────────────────────────────────────────────────────────
-DG_K_ROT           = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
-DG_B_ROT           = 0.001    # [N·m·s/rad]  background joint damping
-DG_B_TIP           = 0.01     # [N·s/m]      task-space damping
-DG_FRICTION_TAU_MAX = 0.06    # [N·m]        max stiction compensation
-
 # ── Stiffness levels ──────────────────────────────────────────────────────────
-K_BACKGROUND_DG  = 0.1    # [N·m/rad]    uniform background stiffness on all joints
-K_SOFT           = 40.0   # [N/m]        very compliant tip spring
+K_BACKGROUND_DG  = 0.05   # [N·m/rad]    uniform background stiffness on all joints
+K_SOFT           = 0.05   # [N/m]        very compliant tip spring
 K_STIFF          = 150.0  # [N/m]        very stiff tip spring
 SOFT_DURATION    = 0.5    # [s]          (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]          (adaptive) stiffness ramp duration
@@ -97,8 +91,9 @@ HOME_DURATION    = 5.0    # [s]          time to hold home targets before shutdo
 # ── Thumb pre-grip ────────────────────────────────────────────────────────────
 # At startup (before UR5 moves), thumb CMC1 is driven to its final PC1 target;
 # CMC2 is pre-bent to this fraction of its PC1 target.  MCP/IP stay at HOME
-# until _close_hand() fires.  Regulated with DG_K_ROT / DG_B_ROT.
-CMC2_PREGRIP_FRAC = 0.9   # [0–1]        fraction of PC1_THUMB[1] to pre-set at start
+# until _close_hand() fires.  Regulated with K_ROT / B_ROT.
+CMC2_PREGRIP_FRAC    = 0.9   # [0–1]  fraction of thumb PC1_CMC2 to pre-set at start
+FINGER_PREGRIP_FRAC  = 0.15  # [0–1]  fraction of finger PC1 flexion to pre-set at start
 
 # ── UR5 motion ────────────────────────────────────────────────────────────────
 APPROACH_DIRECTION    = np.array([-1.0, 0.0, 0.0])  # unit vector for sliding direction
