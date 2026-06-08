@@ -13,17 +13,17 @@ UR5_POSE_INHAND = np.array([-0.30, 0.70, 0.34, -0.26, 1.05, 2.80])
 UR5_POSE_BOTTLE_START = np.array([0.00, 0.65, 0.055, -1.37, -1.09, -1.79])
 
 # ── PC1 grasp pose for in-hand manipulation ───────────────────────────────────
-INHAND_PC1_THUMB  = np.deg2rad([60.0, -90, 90.0, 90.0])
+INHAND_PC1_THUMB  = np.deg2rad([60.0, -180, 90.0, 90.0])
 INHAND_PC1_SPREAD = {
     'index':  np.deg2rad(-10.0),
     'middle': 0.0,
     'ring':   np.deg2rad(10.0),
     'pinky':  np.deg2rad(10.0),
 }
-INHAND_PC1_INDEX  = np.deg2rad([70.0, 90.0, 90.0])
-INHAND_PC1_MIDDLE = np.deg2rad([70.0, 90.0, 90.0])
-INHAND_PC1_RING   = np.deg2rad([70.0, 90.0, 90.0])
-INHAND_PC1_PINKY  = np.deg2rad([70.0, 90.0, 90.0])
+INHAND_PC1_INDEX  = np.deg2rad([120.0, 70.0, 70.0])
+INHAND_PC1_MIDDLE = np.deg2rad([120.0, 70.0, 70.0])
+INHAND_PC1_RING   = np.deg2rad([120.0, 70.0, 70.0])
+INHAND_PC1_PINKY  = np.deg2rad([120.0, 70.0, 70.0])
 
 # ── PC1 grasp pose for dynamic grasping ───────────────────────────────────────
 GRASP_PC1_THUMB  = np.deg2rad([30.0, -60.0, 60.0, 60.0])
@@ -57,15 +57,15 @@ CONDITIONS  = ['soft', 'stiff', 'adaptive']
 K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
 B_ROT          = 0.01     # [N·m·s/rad]  background joint damping
 B_TIP          = 0.01     # [N·s/m]      task-space damping
-FRICTION_TAU_MAX = 0.08   # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.05   # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── inhand_manipulation.py — stiffness levels ────────────────────────────────
 K_UNIFORM      = 10.0   # [N/m]  baseline uniform tip stiffness
 K_HIGH         = 200.0  # [N/m]  stiff-side stiffness
 K_LOW          = 0.1    # [N/m]  compliant-side stiffness
-THUMB_ASYM_RATIO = 3    # [-]    thumb stiffness divisor during asymmetric phases (K_UNIFORM/RATIO)
+THUMB_ASYM_RATIO = 4    # [-]    thumb stiffness divisor during asymmetric phases (K_UNIFORM/RATIO)
 K_RETURN       = 0.1    # [N·m/rad]  joint stiffness for ramp back to HOME
-K_BACKGROUND_IH = 0.01  # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
+K_BACKGROUND_IH = 0.001 # [N·m/rad]  background stiffness on passive joints (MCP/IP, flex)
 
 # ── inhand_manipulation.py — timing ──────────────────────────────────────────
 SETTLE_TIME      = 1.0   # [s]
