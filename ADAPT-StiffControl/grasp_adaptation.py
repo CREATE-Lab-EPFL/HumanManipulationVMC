@@ -350,13 +350,14 @@ STATE_SENSE_CONV      = 3   # wait convergence at K_TIP_GENTLE
 STATE_SENSE_REC       = 4   # average pos_gentle, F_gentle
 STATE_PROBE_RAMP      = 5   # ramp thumb K → K_TIP_PROBE
 STATE_PROBE_CONV      = 6   # wait convergence at K_TIP_PROBE
-STATE_PROBE_REC       = 7   # record probe; compute C_O; init GD
-STATE_ADAPT_GD        = 8   # gradient descent until force converges
-STATE_PRESS           = 9   # UR5 pressing down; hold at PRESS_POSE
-STATE_RELEASE         = 10  # k=0 at PRESS_POSE; wait HOLD_TIME
-STATE_RAMP_HOME       = 11  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT         = 12  # arm retracting to GRASP_POSE; hand ramping
-STATE_DONE            = 13
+STATE_PROBE_REC       = 7   # record probe; accumulate C_O for this round
+STATE_RETURN_RAMP     = 8   # between rounds: ramp thumb K back to K_TIP_GENTLE
+STATE_ADAPT_GD        = 9   # gradient descent until force converges
+STATE_PRESS           = 10  # UR5 pressing down; hold at PRESS_POSE
+STATE_RELEASE         = 11  # k=0 at PRESS_POSE; wait HOLD_TIME
+STATE_RAMP_HOME       = 12  # snap joint targets, ramp to HOME
+STATE_RETRACT         = 13  # hand ramping to HOME; arm stays at PRESS_POSE
+STATE_DONE            = 14
 
 state             = STATE_APPROACH
 _state_start      = time.time()
@@ -376,8 +377,10 @@ _k_ramp_t0    = None
 _k_ramp_start = None
 _k_ramp_end   = None
 
-_current_k = K_TIP_GENTLE
-_C_O_mean  = 0.0
+_current_k   = K_TIP_GENTLE
+_C_O_mean    = 0.0
+_probe_round = 0   # current round index (0 … N_PROBES-1)
+_C_O_list    = []  # C_O from each completed round
 
 # Per-finger accumulators for the two-point compliance estimate
 _pos_gentle_sum   = {f: np.zeros(3) for f in FINGERTIPS}
@@ -493,6 +496,7 @@ def control_callback():
     global _converge_ticks, _log_tick, _converged
     global _use_task_vmc, _C_O_mean
     global _sense_count, _probe_count
+    global _probe_round, _C_O_list
     global _current_k
     global _gd_K_joint, _gd_K_task, _gd_theta_ref_deg, _gd_d_ref
     global _gd_f_des, _gd_f_meas, _gd_converge_ticks
