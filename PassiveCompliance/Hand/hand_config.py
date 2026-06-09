@@ -35,7 +35,7 @@ GUITAR_FINGER_CLOSED_POSE = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
 GUITAR_CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 GUITAR_SPREAD_ANGLE_DEG   = 0.0
 
-TORSIONAL_SPRINGS       = [0.01, 0.08, 0.3]    # [N·m/rad]  compared conditions
+TORSIONAL_SPRINGS       = [0.01, 0.10, 0.50]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.6           # [N·m/rad]  approach stiffness (used only to close fingers; replaced by condition K after ramp)
 GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
 GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
