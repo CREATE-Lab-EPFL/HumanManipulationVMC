@@ -52,7 +52,7 @@ from hand_config import (
     APPROACH_HEIGHT, PRESS_HEIGHT,
     SETTLE_TIME, RAMP_DURATION, CONVERGE_VEL_THR, CONVERGE_HOLD,
     CONVERGE_TIMEOUT, SENSE_DURATION, HOLD_TIME, N_PROBE_ROUNDS,
-    PROBE_RAMP_DURATION, PROBE_CONVERGE_HOLD,
+    PROBE_RAMP_DURATION,
 )
 import rtde_control
 
@@ -356,20 +356,19 @@ STATE_PROBE_RAMP      = 5   # ramp thumb K → K_TIP_PROBE (transitions directly
 STATE_PROBE_REC       = 6   # record probe; if rounds left → back ramp, else compute C_O
 STATE_PROBE_BACK_RAMP = 7   # ramp thumb K back to K_TIP_GENTLE between rounds
 STATE_ADAPT_GD        = 8   # gradient descent until force converges
-STATE_PRESS           = 10  # UR5 pressing down −15 cm (shows exerted force)
-STATE_RAISE           = 11  # trigger UR5 → GRASP_POSE
-STATE_RELEASE         = 12  # k=0, wait CONVERGE_HOLD
-STATE_RAMP_HOME       = 13  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT         = 14  # arm moving to START_POSE; hand ramping
-STATE_DONE            = 15
+STATE_PRESS           = 9   # UR5 pressing down −15 cm (shows exerted force)
+STATE_RAISE           = 10  # trigger UR5 → GRASP_POSE
+STATE_RELEASE         = 11  # k=0, wait CONVERGE_HOLD
+STATE_RAMP_HOME       = 12  # snap joint targets, ramp to HOME + retract arm
+STATE_RETRACT         = 13  # arm moving to START_POSE; hand ramping
+STATE_DONE            = 14
 
 state             = STATE_APPROACH
 _state_start      = time.time()
 _experiment_start = time.time()
 _arm_moving       = False
 _converge_ticks        = 0
-_CONVERGE_TICKS        = int(CONVERGE_HOLD       * CONTROL_FREQUENCY)
-_PROBE_CONVERGE_TICKS  = int(PROBE_CONVERGE_HOLD * CONTROL_FREQUENCY)
+_CONVERGE_TICKS = int(CONVERGE_HOLD * CONTROL_FREQUENCY)
 _log_tick         = 0
 _converged        = False
 _use_task_vmc     = False
@@ -599,26 +598,12 @@ def control_callback():
 
     elif state == STATE_PROBE_RAMP:
         if _step_k_ramp(now):
-            _converge_ticks = 0
-            _converged      = False
-            _log_tick       = 0
-            _state_start    = now
-            state           = STATE_PROBE_CONV
-
-    elif state == STATE_PROBE_CONV:
-        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
-            _converge_ticks += 1
-        else:
-            _converge_ticks = 0
-        if (_converge_ticks >= _PROBE_CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
-            if not _converged:
-                _converged   = True
-                _log_tick    = 0
-                _state_start = now
-                state        = STATE_PROBE_REC
-                controller.get_logger().info(
-                    f'Probe round {_probe_round + 1}/{N_PROBE_ROUNDS} converged at {elapsed:.1f} s. '
-                    f'Recording ({K_TIP_PROBE} N/m) for {SENSE_DURATION:.1f} s …')
+            controller.get_logger().info(
+                f'Probe round {_probe_round + 1}/{N_PROBE_ROUNDS}: '
+                f'K={K_TIP_PROBE} N/m. Recording for {SENSE_DURATION:.1f} s …')
+            _log_tick    = 0
+            _state_start = now
+            state        = STATE_PROBE_REC
 
     elif state == STATE_PROBE_REC:
         _log_tick += 1
