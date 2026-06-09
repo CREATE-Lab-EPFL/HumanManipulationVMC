@@ -1,11 +1,11 @@
-"""Shared constants for the guitar experiment (ADAPT Hand + UR5 + microphone).
+"""Shared constants for the guitar experiment (ADAPT Hand + UR5).
 
 All fingers except the thumb are held closed at FINGER_CLOSED_POSE by a torsional
 (joint-space) spring. The experiment compares TORSIONAL_SPRINGS values: for each,
 the UR5 strums SWEEP_VECTOR on the XY plane N_RUNS times. After each strum the arm
 lifts by LIFT, returns to the start position at height, then descends — fingers
 stay closed throughout. Stiffness is changed online between conditions.
-No friction compensation, as in the piano experiment.
+Audio is captured externally via the camera microphone. No friction compensation.
 """
 
 import numpy as np
@@ -30,20 +30,12 @@ CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 SPREAD_ANGLE_DEG   = 0.0
 
 TORSIONAL_SPRINGS  = [0.1, 0.3]   # [N·m/rad]  compared conditions
-B_ROT              = 0.01   # [N·m·s/rad]  uniform joint damping (as in piano)
+B_ROT              = 0.01   # [N·m·s/rad]  uniform joint damping
 K_ROT              = 0.4    # [N·m/rad]  ramp / background stiffness
 
-FRICTION_TAU_MAX   = 0.0    # no friction compensation (as in piano)
+FRICTION_TAU_MAX   = 0.0    # no friction compensation
 
 RAMP_DURATION  = 3.0    # [s]  stiffness / pose ramp duration
 SETTLE_TIME    = 2.0    # [s]  settle after initial close, before first run
 K_RETURN       = 0.8    # [N·m/rad]  stiffness used during return-to-home ramp
 N_RUNS         = 3      # strums per stiffness condition
-
-# ── Microphone / audio ──────────────────────────────────────────────────────────
-SAMPLE_RATE      = 44100  # [Hz]
-AUDIO_CHANNELS   = 1      # mono
-AUDIO_BLOCKSIZE  = 1024   # frames per callback block (~23 ms at 44.1 kHz)
-MIC_DEVICE       = None   # None = default input device, or a name substring
-ONSET_THRESHOLD  = 0.05   # RMS level (0..1) for onset detection in mic_controller
-ONSET_REFRACTORY = 0.10   # [s]  minimum gap between detected onsets

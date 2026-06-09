@@ -8,8 +8,7 @@ lifts by LIFT, returns to the start position at height, then descends — finger
 stay closed throughout. Stiffness is changed online between conditions. A manual
 ENTER is required only between stiffness conditions.
 
-Prerequisite — verify the microphone:
-    python3 HelperGuitar/mic_controller.py
+Audio intensity is captured externally via the camera microphone.
 
 Output: outputs/guitar_playing_hand/data_K<ktors>.csv
 """
@@ -33,10 +32,7 @@ from guitar_config import (
     FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
     TORSIONAL_SPRINGS, B_ROT, K_ROT,
     RAMP_DURATION, SETTLE_TIME, K_RETURN, N_RUNS, FRICTION_TAU_MAX,
-    SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_BLOCKSIZE, MIC_DEVICE,
-    ONSET_THRESHOLD, ONSET_REFRACTORY,
 )
-from mic_controller import MicrophoneController
 import rtde_control
 
 # Pre-compute the four UR5 waypoints used every run
@@ -51,7 +47,7 @@ END_LIFTED   = END.copy();             END_LIFTED[2]    += LIFT
 _S_COLS = ([f'q_{i}'    for i in range(13)] +
            [f'qdot_{i}' for i in range(13)] +
            [f'tau_{i}'  for i in range(13)])
-FIELDS  = ['time_s', 'k_torsional', 'run', 'phase'] + _S_COLS + ['mic_level']
+FIELDS  = ['time_s', 'k_torsional', 'run', 'phase'] + _S_COLS
 
 def _out_path(ktors):
     d = os.path.join(_HERE, 'outputs', 'guitar_playing_hand')
@@ -84,21 +80,6 @@ vmc_joint.ring_target   = np.zeros(3)
 vmc_joint.pinky_target  = np.zeros(3)
 
 # =============================================================================
-# Microphone
-# =============================================================================
-try:
-    mic = MicrophoneController(MIC_DEVICE, samplerate=SAMPLE_RATE, channels=AUDIO_CHANNELS,
-                               blocksize=AUDIO_BLOCKSIZE, onset_threshold=ONSET_THRESHOLD,
-                               refractory=ONSET_REFRACTORY)
-    print(f'Microphone: "{mic.device_name}"')
-except Exception as _mic_err:
-    print(f'WARNING: microphone unavailable ({_mic_err}). Logging mic_level = 0.')
-    class _DummyMic:
-        def get_level(self): return 0.0
-        def close(self): pass
-    mic = _DummyMic()
-
-# =============================================================================
 # Control loop  (background thread — runs throughout the experiment)
 # =============================================================================
 _lock     = threading.Lock()
@@ -120,8 +101,7 @@ def _control_loop():
         if step % LOG_EVERY == 0:
             with _lock:
                 _buf.append([f'{time.time()-_t0:.4f}', _phase]
-                            + list(q) + list(qd) + list(tau)
-                            + [f'{mic.get_level():.6f}'])
+                            + list(q) + list(qd) + list(tau))
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
 
@@ -130,7 +110,7 @@ def _flush(writer, ktors, run):
         rows = _buf.copy(); _buf.clear()
     for r in rows:
         writer.writerow({'time_s': r[0], 'k_torsional': ktors, 'run': run, 'phase': r[1],
-                         **dict(zip(_S_COLS, r[2:-1])), 'mic_level': r[-1]})
+                         **dict(zip(_S_COLS, r[2:]))})
 
 # =============================================================================
 # Ramp helpers
@@ -229,7 +209,6 @@ finally:
     arm.stopScript()
     print('Returning to home…')
     _ramp_to_home()
-    mic.close()
     _running = False
     ctrl_thread.join(timeout=1.0)
     vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)

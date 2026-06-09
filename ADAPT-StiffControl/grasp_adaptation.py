@@ -160,6 +160,14 @@ arm.setTcp([0, 0, 0, 0, 0, 0])
 arm.endTeachMode()
 controller.get_logger().info('UR5 connected')
 
+# Move to press position first so the user can verify the workspace, then lift to grasp pose
+controller.get_logger().info('Moving to press position …')
+arm.moveL(PRESS_POSE.tolist(), UR5_INIT_SPEED, UR5_INIT_ACCELERATION)
+input('Arm at press position. Press ENTER to lift to grasp pose …')
+controller.get_logger().info('Lifting to grasp pose …')
+arm.moveL(GRASP_POSE.tolist(), UR5_INIT_SPEED, UR5_INIT_ACCELERATION)
+controller.get_logger().info('At grasp pose. Starting experiment …')
+
 # =============================================================================
 # CSV
 # =============================================================================
@@ -304,7 +312,7 @@ STATE_RAMP_HOME  = 7   # snap joint targets, ramp to HOME
 STATE_RETRACT    = 8   # hand ramping to HOME; arm stays at PRESS_POSE
 STATE_DONE       = 9
 
-state             = STATE_APPROACH
+state             = STATE_SETTLE
 _state_start      = time.time()
 _experiment_start = time.time()
 _arm_moving       = False
@@ -406,12 +414,7 @@ def control_callback():
     now     = time.time()
     elapsed = now - _state_start
 
-    if state == STATE_APPROACH:
-        if not _arm_moving:
-            controller.get_logger().info('Moving to grasp pose …')
-            _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_SETTLE)
-
-    elif state == STATE_SETTLE:
+    if state == STATE_SETTLE:
         if elapsed >= SETTLE_TIME:
             controller.get_logger().info(
                 f'Settled. Ramping HOME → PC1 over {RAMP_DURATION:.1f} s …')
