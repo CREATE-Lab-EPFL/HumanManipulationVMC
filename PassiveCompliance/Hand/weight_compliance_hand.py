@@ -33,6 +33,9 @@ from hand_config import (
     WEIGHT_FRICTION_TAU_MAX,
 )
 
+# Set to True once data is collected — reruns the protocol without saving.
+COLLECTED_DATA = False
+
 # =============================================================================
 # CSV schema
 # =============================================================================
