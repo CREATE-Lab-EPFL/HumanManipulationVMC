@@ -182,9 +182,6 @@ def _ramp_to_home():
 # =============================================================================
 # Run
 # =============================================================================
-# Set to True once data is collected — reruns the protocol without saving.
-COLLECTED_DATA = False
-
 input('Press ENTER to connect the UR5 and approach the guitar…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
