@@ -510,10 +510,6 @@ def control_callback():
                 _ratio = float(np.clip(F_DES_MAG / _f_meas_mag,
                                        1.0 - GD_KTASK_STEP, 1.0 + GD_KTASK_STEP))
                 _gd_K_task[_f] = np.maximum(_gd_K_task[_f] * _ratio, 0.0)
-                if _f == 'thumb':
-                    # Also scale CMC joint stiffness so the rotational contribution
-                    # to tip stiffness tracks the same target.
-                    _gd_K_joint['thumb'] = np.maximum(_gd_K_joint['thumb'] * _ratio, 0.0)
 
             vmc_task.springs[_f].stiffness = np.diag(_gd_K_task[_f])
             f_errs.append(float(np.linalg.norm(_gd_f_meas[_f] - _gd_f_des[_f])))
