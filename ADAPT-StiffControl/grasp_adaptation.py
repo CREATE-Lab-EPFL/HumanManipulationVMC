@@ -242,11 +242,14 @@ def _csv_header():
     return cols
 
 
-_csv_path   = _output_path()
-_csv_file   = open(_csv_path, 'w', newline='')
-_csv_writer = csv.writer(_csv_file)
-_csv_writer.writerow(_csv_header())
-controller.get_logger().info(f'Saving to: {_csv_path}')
+_csv_file   = None
+_csv_writer = None
+if not COLLECTED_DATA:
+    _csv_path   = _output_path()
+    _csv_file   = open(_csv_path, 'w', newline='')
+    _csv_writer = csv.writer(_csv_file)
+    _csv_writer.writerow(_csv_header())
+    controller.get_logger().info(f'Saving to: {_csv_path}')
 
 # =============================================================================
 # Computation helpers
