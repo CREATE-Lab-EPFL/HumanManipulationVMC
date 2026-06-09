@@ -1,24 +1,26 @@
 """
-Extract and clean audio from a Canon video recording.
+Extract and isolate guitar notes from a Canon video recording.
 
-Two-stage denoising:
-  1. Butterworth bandpass (LOW_HZ – HIGH_HZ): removes everything outside the
-     guitar frequency range (sub-bass rumble, ultrasonic hiss, etc.).
-  2. Spectral gating (noisereduce): subtracts the stationary noise floor that
-     remains inside the guitar band (HVAC, room hum, electronics).
-     Profile is taken from the first NOISE_PROFILE_S seconds — keep the room
-     quiet (no playing) for at least that long at the start of each recording.
+Two-stage pipeline:
+  1. HPSS (Harmonic-Percussive Source Separation): keeps only sustained tonal
+     content (string resonance, harmonics) and discards broadband noise,
+     transients, and room clutter.
+  2. Butterworth bandpass C3–C6 (130.8 – 1046.5 Hz): restricts to the central
+     three octaves of the keyboard, removing sub-bass and high-frequency content
+     that is not musically relevant for the guitar strumming task.
+
+No quiet-room profiling is required.
 
 Usage:
     python extract_audio.py <video_file>
 
 Output:
-    <base>.wav          — raw extracted audio (next to the video file)
-    <base>_clean.wav    — bandpass + spectral-gated audio
+    <base>.wav       — raw extracted audio (next to the video file)
+    <base>_clean.wav — HPSS + bandpass filtered audio
 
 Dependencies:
     sudo apt install ffmpeg
-    pip install soundfile scipy numpy noisereduce
+    pip install librosa soundfile scipy numpy
 """
 
 import subprocess
@@ -26,16 +28,16 @@ import sys
 import os
 import numpy as np
 import soundfile as sf
+import librosa
 from scipy.signal import butter, sosfilt
-import noisereduce as nr
 
-# Guitar range: open low-E (82 Hz) to ~8 kHz (harmonics + body resonance).
-LOW_HZ  = 80
-HIGH_HZ = 8000
-FILTER_ORDER = 4       # gentle roll-off avoids ringing artefacts
+# Central three octaves: C3 to C6
+LOW_HZ  = 130.8   # C3
+HIGH_HZ = 1046.5  # C6
+FILTER_ORDER = 4  # gentle Butterworth roll-off, avoids ringing
 
-# Quiet seconds at the start of the recording used to profile noise.
-NOISE_PROFILE_S = 2.0
+# librosa native sample rate for HPSS processing
+LIBROSA_SR = 22050
 
 
 def _bandpass(audio, sr):
@@ -44,19 +46,6 @@ def _bandpass(audio, sr):
     if audio.ndim == 1:
         return sosfilt(sos, audio)
     return np.stack([sosfilt(sos, audio[:, ch]) for ch in range(audio.shape[1])], axis=1)
-
-
-def _spectral_gate(audio, sr):
-    n_profile = int(NOISE_PROFILE_S * sr)
-    if audio.ndim == 1:
-        noise = audio[:n_profile]
-        return nr.reduce_noise(y=audio, sr=sr, y_noise=noise, stationary=True, prop_decrease=0.9)
-    channels = []
-    for ch in range(audio.shape[1]):
-        noise = audio[:n_profile, ch]
-        channels.append(nr.reduce_noise(y=audio[:, ch], sr=sr, y_noise=noise,
-                                        stationary=True, prop_decrease=0.9))
-    return np.stack(channels, axis=1)
 
 
 if len(sys.argv) != 2:
@@ -81,20 +70,20 @@ subprocess.run([
 ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 print(f'  Raw audio → {raw_path}')
 
-# ── Step 2: bandpass filter ────────────────────────────────────────────────────
-print(f'Bandpass {LOW_HZ}–{HIGH_HZ} Hz…')
-audio, sr = sf.read(raw_path)
-audio     = audio.astype(np.float64)
-filtered  = _bandpass(audio, sr)
+# ── Step 2: HPSS — keep harmonic component only ───────────────────────────────
+print('Running HPSS (harmonic-percussive separation)…')
+# librosa loads mono at LIBROSA_SR for HPSS; we re-read the original sr for output
+y_mono, _ = librosa.load(raw_path, sr=LIBROSA_SR, mono=True)
+harmonic, _ = librosa.effects.hpss(y_mono)
 
-# ── Step 3: spectral gating on the bandpass result ────────────────────────────
-print(f'Spectral gating (noise profile from first {NOISE_PROFILE_S:.1f} s)…')
-clean = _spectral_gate(filtered, sr)
+# ── Step 3: bandpass to central three octaves (C3–C6) ─────────────────────────
+print(f'Bandpass {LOW_HZ:.1f}–{HIGH_HZ:.1f} Hz (C3–C6)…')
+clean = _bandpass(harmonic.astype(np.float64), LIBROSA_SR)
 
 # Normalise to avoid clipping
 peak = np.max(np.abs(clean))
 if peak > 0:
     clean /= peak
 
-sf.write(clean_path, clean, sr)
+sf.write(clean_path, clean, LIBROSA_SR)
 print(f'  Clean audio → {clean_path}')
