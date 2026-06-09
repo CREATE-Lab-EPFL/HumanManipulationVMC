@@ -238,7 +238,7 @@ try:
             f = writer = None
 
         for run in range(1, N_RUNS + 1):
-            print(f'  Run {run}/{N_RUNS}')
+            input(f'  Run {run}/{N_RUNS} — Press ENTER to strum…')
             _restabilize(ktors)
             with _lock: _buf.clear()
             _phase = 'sweep';   arm.moveL(list(END),          SWEEP_SPEED,  SWEEP_ACCEL)
