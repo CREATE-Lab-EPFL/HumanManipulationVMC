@@ -58,13 +58,13 @@ GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 # =============================================================================
 # Weight compliance experiment
 # =============================================================================
-UR5_POSE_WEIGHT         = np.array([-0.3964,  0.5314,  0.0639,  0.8173, -0.9609, -1.521 ])  # TODO: set actual parking pose for weight trials
-
+UR5_POSE_WEIGHT         = np.array([-0.3554,  0.4908,  0.3358, -2.3652, -0.4837,  0.2694])
+                                   
 WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
-WEIGHT_INDEX  = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
-WEIGHT_MIDDLE = np.deg2rad([35.0, 35.0, 35.0])
-WEIGHT_RING   = np.deg2rad([35.0, 35.0, 35.0])
-WEIGHT_PINKY  = np.deg2rad([30.0, 30.0, 30.0])
+WEIGHT_INDEX  = np.deg2rad([40.0, 40.0, 40.0])   # [MCP, PIP, DIP]
+WEIGHT_MIDDLE = np.deg2rad([45.0, 45.0, 45.0])
+WEIGHT_RING   = np.deg2rad([50.0, 45.0, 45.0])
+WEIGHT_PINKY  = np.deg2rad([40.0, 40.0, 40.0])
 WEIGHT_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),
