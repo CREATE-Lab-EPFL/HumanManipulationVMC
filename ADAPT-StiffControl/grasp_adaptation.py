@@ -747,14 +747,13 @@ def control_callback():
             vmc_joint.ring_pinky_target = FK_motor2finger(q, 'ring')
             _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
             _begin_ramp(HOME_POSE_TARGETS)
-            _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_DONE)
             _state_start = now
             state        = STATE_RETRACT
 
     elif state == STATE_RETRACT:
-        done = _step_ramp(now)
-        if done and _log_tick == 0:
+        if _step_ramp(now):
             controller.get_logger().info('Hand home.')
+            state = STATE_DONE
             _log_tick = 1
 
     elif state == STATE_DONE:
