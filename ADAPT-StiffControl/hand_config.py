@@ -48,7 +48,7 @@ K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fing
 # Target force magnitude: f_des = F_GAIN / C_O.
 # With C_O ∈ [0.015, 0.045] m/N (15–45 mm/N) this maps to ≈ [1.7, 5] N.
 F_GAIN          = 0.075  # [N·m]   tune to set the desired force range
-GD_LR           = 1e-7   # [-]     gradient-descent learning rate (stiffness & ref modes)
+GD_LR           = 1e-6   # [-]     gradient-descent learning rate (stiffness & ref modes)
 F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD converged
 
 # ── Background joint regulation ───────────────────────────────────────────────
@@ -60,7 +60,7 @@ B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring tak
 FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
-PRESS_HEIGHT = 0.10   # [m] Z press below grasp pose (force demonstration)
+PRESS_HEIGHT = 0.15   # [m] Z press below grasp pose (force demonstration)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
