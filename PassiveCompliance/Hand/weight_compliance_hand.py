@@ -225,8 +225,8 @@ finally:
     _running = False
     ctrl_thread.join(timeout=1.0)
     for f in WEIGHT_FINGERS:
-        vmc_joint.stiffness[f][:] = 0.0
-        vmc_joint.damping[f][:]   = 0.0
+        vmc_joint.stiffness[f][:] = STIFFNESS_CONDITIONS[0]
+        vmc_joint.damping[f][:]   = WEIGHT_B_ROT
     controller.publish_torques(np.zeros(13))
     if recv is not None: recv.disconnect()
     controller.destroy_node()
