@@ -690,6 +690,17 @@ def control_callback():
                 _state_start       = now
                 state              = STATE_ADAPT_GD
 
+    elif state == STATE_RETURN_RAMP:
+        if _step_k_ramp(now):
+            controller.get_logger().info(
+                f'Returned to K_TIP_GENTLE. '
+                f'Waiting convergence for round {_probe_round + 1}/{N_PROBES} …')
+            _converge_ticks = 0
+            _converged      = False
+            _log_tick       = 0
+            _state_start    = now
+            state           = STATE_SENSE_CONV
+
     elif state == STATE_ADAPT_GD:
         # Compute analytic tip force with current GD parameters
         _gd_f_meas = np.asarray(stiff_model.tip_force(
