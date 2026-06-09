@@ -165,6 +165,9 @@ def _ramp_to_home():
 # =============================================================================
 # Run
 # =============================================================================
+# Set to True once data is collected — reruns the protocol without saving.
+COLLECTED_DATA = False
+
 input('Press ENTER to start the control loop…')
 
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
@@ -178,8 +181,11 @@ try:
             _ramp_stiffness(k)
 
         input(f'\n=== K = {k:.3f} N·m/rad — remove all weights, then press ENTER ===')
-        fh     = open(_out_path(k), 'w', newline='')
-        writer = csv.DictWriter(fh, fieldnames=FIELDS); writer.writeheader()
+        if not COLLECTED_DATA:
+            fh     = open(_out_path(k), 'w', newline='')
+            writer = csv.DictWriter(fh, fieldnames=FIELDS); writer.writeheader()
+        else:
+            fh = writer = None
 
         try:
             for w in WEIGHTS_G:
@@ -187,10 +193,12 @@ try:
                 time.sleep(WEIGHT_SETTLE_TIME)
                 with _lock: _buf.clear()
                 time.sleep(WEIGHT_LOG_DURATION)
-                _flush(writer, k, w)
-                print(f'  Logged {w} g')
+                if not COLLECTED_DATA:
+                    _flush(writer, k, w)
+                    print(f'  Logged {w} g')
         finally:
-            fh.close()
+            if fh is not None:
+                fh.close()
 
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
