@@ -20,3 +20,11 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Video / audio recordings
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.m4a
+*.M4A
