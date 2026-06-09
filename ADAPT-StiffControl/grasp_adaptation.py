@@ -351,9 +351,9 @@ STATE_SETTLE          = 1   # wait SETTLE_TIME
 STATE_RAMP_CLOSE      = 2   # hand ramps HOME → PC1 at K_TIP_GENTLE
 STATE_SENSE_CONV      = 3   # wait convergence at K_TIP_GENTLE
 STATE_SENSE_REC       = 4   # average pos_gentle, F_gentle
-STATE_PROBE_RAMP      = 5   # ramp thumb K → K_TIP_PROBE (transitions directly to REC)
-STATE_PROBE_REC       = 6   # record probe; if rounds left → back ramp, else compute C_O
-STATE_PROBE_BACK_RAMP = 7   # ramp thumb K back to K_TIP_GENTLE between rounds
+STATE_PROBE_RAMP      = 5   # ramp thumb K → K_TIP_PROBE
+STATE_PROBE_CONV      = 6   # wait convergence at K_TIP_PROBE
+STATE_PROBE_REC       = 7   # record probe; compute C_O; init GD
 STATE_ADAPT_GD        = 8   # gradient descent until force converges
 STATE_PRESS           = 9   # UR5 pressing down −15 cm (shows exerted force)
 STATE_RAISE           = 10  # trigger UR5 → GRASP_POSE
@@ -478,7 +478,7 @@ def _begin_k_ramp(k_start, k_end):
 
 def _step_k_ramp(now):
     global _current_k
-    alpha      = min(1.0, (now - _k_ramp_t0) / PROBE_RAMP_DURATION)
+    alpha      = min(1.0, (now - _k_ramp_t0) / RAMP_DURATION)
     _current_k = (1 - alpha) * _k_ramp_start + alpha * _k_ramp_end
     vmc_task.springs['thumb'].stiffness = np.full(3, _current_k)
     return alpha >= 1.0
