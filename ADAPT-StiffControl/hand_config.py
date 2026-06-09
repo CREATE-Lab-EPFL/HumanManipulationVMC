@@ -50,7 +50,7 @@ N_PROBES     = 1       # [-]     gentle→probe rounds (1 = single probe, no ave
 C_O_THR    = 0.025  # [m/N]  compliance threshold (25 mm/N)
 F_DES_HARD = 0.3    # [N]    target force when C_O < C_O_THR (stiff object)
 F_DES_SOFT = 0.05   # [N]    target force when C_O ≥ C_O_THR (soft object)
-GD_LR           = 1e-6   # [-]     gradient-descent learning rate
+GD_LR           = 1e-4   # [-]     gradient-descent learning rate (matches stiffness_descent default)
 F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD converged
 
 # ── Background joint regulation ───────────────────────────────────────────────
