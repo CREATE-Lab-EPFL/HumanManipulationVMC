@@ -329,7 +329,7 @@ pip install numpy scipy sympy pandas matplotlib scienceplots \
             scikit-learn tqdm pynput \
             rtde-control rtde-receive \
             pyserial \
-            librosa soundfile
+            noisereduce soundfile
 ```
 
 | Package | Used for |
@@ -345,7 +345,7 @@ pip install numpy scipy sympy pandas matplotlib scienceplots \
 | `pynput` | keyboard input for teleoperation scripts |
 | `rtde-control` / `rtde-receive` | UR5 robot arm RTDE interface |
 | `pyserial` | Arduino load cell over USB |
-| `librosa` | HPSS note isolation + audio loading (guitar audio extraction) |
+| `noisereduce` | spectral gating noise removal (guitar audio extraction) |
 | `soundfile` | WAV audio I/O (guitar audio extraction) |
 
 ### Local modules (included in repo, no install needed)
