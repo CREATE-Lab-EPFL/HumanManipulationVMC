@@ -224,9 +224,11 @@ time.sleep(SETTLE_TIME)
 
 try:
     for i, ktors in enumerate(TORSIONAL_SPRINGS):
-        if i > 0:
+        if i == 0:
+            input(f'\n=== K = {ktors:.1f} N·m/rad — Press ENTER to start {N_RUNS} runs ===')
+        else:
             _ramp_stiffness(ktors)
-        print(f'\n=== K = {ktors:.1f} N·m/rad — starting {N_RUNS} runs ===')
+            print(f'\n=== K = {ktors:.1f} N·m/rad — starting {N_RUNS} runs ===')
 
         if not COLLECTED_DATA:
             f      = open(_out_path(ktors), 'w', newline='')

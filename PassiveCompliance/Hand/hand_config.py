@@ -23,7 +23,7 @@ B_THUMB = 0.001  # [N·m·s/rad]
 # Guitar experiment
 # =============================================================================
 UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.0602,  0.8344, -0.976, -1.5152 ])  # [x,y,z,rx,ry,rz]
-SWEEP_VECTOR    = np.array([0.10, 0.0, 0.0])   # [m] XYZ displacement per strum
+SWEEP_VECTOR    = np.array([0.15, 0.0, 0.0])   # [m] XYZ displacement per strum
 LIFT            = 0.05    # [m]  Z clearance for the return trip
 
 SWEEP_SPEED    = 0.05    # [m/s]  strum speed (contact phase)
