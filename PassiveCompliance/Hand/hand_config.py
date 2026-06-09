@@ -22,7 +22,7 @@ B_THUMB = 0.001  # [N·m·s/rad]
 # =============================================================================
 # Guitar experiment
 # =============================================================================
-UR5_POSE_GUITAR = np.array([-0.3964, 0.5314, 0.2458, 1.3352, -1.4089, -1.2771])  # [x,y,z,rx,ry,rz]
+UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.0639,  0.8173, -0.9609, -1.521 ])  # [x,y,z,rx,ry,rz]
 SWEEP_VECTOR    = np.array([0.10, 0.0, 0.0])   # [m] XYZ displacement per strum
 LIFT            = 0.05    # [m]  Z clearance for the return trip
 
@@ -36,7 +36,7 @@ GUITAR_CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 GUITAR_SPREAD_ANGLE_DEG   = 0.0
 
 TORSIONAL_SPRINGS       = [0.01, 0.08, 0.3]    # [N·m/rad]  compared conditions
-GUITAR_K_ROT            = 0.4           # [N·m/rad]  ramp / background stiffness
+GUITAR_K_ROT            = 0.6           # [N·m/rad]  approach stiffness (used only to close fingers; replaced by condition K after ramp)
 GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
 GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
 GUITAR_K_RETURN         = 0.15          # [N·m/rad]  return-to-home stiffness (matches dynamic_grasp K_HOME)
@@ -45,7 +45,7 @@ GUITAR_RESTAB_DURATION  = 1.0           # [s]  per-run re-stabilisation ramp dur
 GUITAR_RESTAB_TIME      = 1.0           # [s]  settle at K_ROT during per-run stabilisation
 GUITAR_SETTLE_TIME      = 2.0           # [s]  settle after initial close
 GUITAR_N_RUNS           = 3             # strums per stiffness condition
-GUITAR_FRICTION_TAU_MAX = 0.01          # [N·m]
+GUITAR_FRICTION_TAU_MAX = 0.03          # [N·m]
 
 # =============================================================================
 # Weight compliance experiment
@@ -57,7 +57,7 @@ WEIGHT_SPREAD_ANGLE_DEG = 0.0
 STIFFNESS_CONDITIONS    = [0.05, 0.1, 0.2, 0.4]   # [N·m/rad]  swept stiffness values
 WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
 
-WEIGHT_K_ROT            = 0.4    # [N·m/rad]  ramp / background stiffness
+WEIGHT_K_ROT            = 0.4    # [N·m/rad]  approach stiffness (used only to reach pose; replaced by condition K after ramp)
 WEIGHT_B_ROT            = 0.01   # [N·m·s/rad]  normal damping
 WEIGHT_B_SETTLE         = 0.05   # [N·m·s/rad]  higher damping for initial ramp-to-pose
 WEIGHT_K_RETURN         = 0.15   # [N·m/rad]  return-to-home stiffness (matches dynamic_grasp K_HOME)
