@@ -76,7 +76,7 @@ for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
 
 for _f in WEIGHT_FINGERS:
-    vmc_joint.spread[_f] = np.array([np.deg2rad(WEIGHT_SPREAD_ANGLE_DEG)])
+    vmc_joint.spread[_f] = np.array([WEIGHT_SPREAD[_f]])
 
 vmc_joint.thumb                    = np.deg2rad([2.0, 2.0, 2.0, 2.0])
 vmc_joint.stiffness['thumb'][:]    = K_THUMB
@@ -130,10 +130,10 @@ def _ramp_to_pose(k_target):
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / WEIGHT_RAMP_DURATION)
-        vmc_joint.index_target  = (1-alpha)*start_tgt['index']  + alpha*WEIGHT_POSE
-        vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*WEIGHT_POSE
-        vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*WEIGHT_POSE
-        vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*WEIGHT_POSE
+        vmc_joint.index_target  = (1-alpha)*start_tgt['index']  + alpha*WEIGHT_INDEX
+        vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*WEIGHT_MIDDLE
+        vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*WEIGHT_RING
+        vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*WEIGHT_PINKY
         for f in WEIGHT_FINGERS: vmc_joint.stiffness[f][:] = WEIGHT_K_ROT
         if alpha >= 1.0: break
         time.sleep(dt)
