@@ -8,7 +8,7 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.52,  0.31,  0.29,  -1.54, -1.64, 0.90]),
+    'hard_obj': np.array([-0.52,  0.31,  0.37,  -1.54, -1.64, 0.90]),
     'soft_obj': np.array([-0.52,  0.31,  0.25, -1.54, -1.64, 0.90]),
 }
 
@@ -60,8 +60,7 @@ B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring tak
 FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
-APPROACH_HEIGHT = 0.10   # [m] Z offset below grasp pose (start and retract)
-PRESS_HEIGHT    = 0.10   # [m] Z press below grasp pose (force demonstration)
+PRESS_HEIGHT = 0.10   # [m] Z press below grasp pose (force demonstration)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
