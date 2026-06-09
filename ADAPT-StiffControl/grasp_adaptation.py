@@ -363,7 +363,7 @@ _gd_d_ref          = {f: D_REF[f].copy() for f in FINGERTIPS}
 _gd_f_des          = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_f_meas         = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_converge_ticks = 0
-_gd_f_err_ema      = 1.0   # EMA of mean force error for smooth convergence check
+_gd_f_err_ema      = None  # seeded from first GD tick to avoid startup delay
 _gd_last_print     = 0.0
 
 
@@ -489,7 +489,7 @@ def control_callback():
                 _gd_K_task[_f]  = K_TIP_GENTLE * np.eye(3)
                 _gd_d_ref[_f]   = _d_ref_model_dict[_f].copy()
             _gd_converge_ticks = 0
-            _gd_f_err_ema      = 1.0
+            _gd_f_err_ema      = None
             _log_tick          = 0
             _state_start       = now
             state              = STATE_ADAPT_GD
@@ -523,7 +523,10 @@ def control_callback():
             np.array([k_jt[0], k_jt[1], 0.0, 0.0]), 0.0)
 
         f_err_mean = float(np.mean(f_errs))
-        _gd_f_err_ema = 0.95 * _gd_f_err_ema + 0.05 * f_err_mean
+        if _gd_f_err_ema is None:
+            _gd_f_err_ema = f_err_mean
+        else:
+            _gd_f_err_ema = 0.9 * _gd_f_err_ema + 0.1 * f_err_mean
         if _gd_f_err_ema < F_CONVERGE_THR:
             _gd_converge_ticks += 1
         else:

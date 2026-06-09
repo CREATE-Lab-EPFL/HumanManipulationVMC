@@ -34,9 +34,9 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 # User selects one at startup; GD drives all 5 fingertip forces toward f_des.
 FORCE_LEVELS = ['hard', 'medium', 'soft']
 F_DES = {
-    'hard':   0.50,  # [N]  target tip force per finger
-    'medium': 0.20,  # [N]
-    'soft':   0.02   # [N]
+    'hard':   0.60,  # [N]  target tip force per finger
+    'medium': 0.30,  # [N]
+    'soft':   0.05   # [N]
 }
 
 # ── Stiffness schedule ─────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ B_ROT          = 0.001     # [N·m·s/rad]  background joint damping
 B_TIP          = 0.01      # [N·s/m]      task-space damping
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness during ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.07    # [N·m]        max stiction compensation
+FRICTION_TAU_MAX = 0.05    # [N·m]        max stiction compensation
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
 PRESS_HEIGHT = 0.15   # [m]  Z press below grasp pose (elastic band shows force)
