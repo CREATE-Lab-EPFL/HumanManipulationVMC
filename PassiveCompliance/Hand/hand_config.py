@@ -12,6 +12,13 @@ UR5_IP         = "192.168.1.10"
 UR5_INIT_SPEED = 0.05    # [m/s]
 UR5_INIT_ACCEL = 0.05    # [m/s²]
 
+# ── Shared thumb background regulation ────────────────────────────────────────
+# Thumb is not involved in either experiment — held at a small neutral pose.
+# Uses lower stiffness (matching ProprioceptiveSensing / ADAPT-StiffControl)
+# to avoid oscillation with the high K_ROT used for finger ramps.
+K_THUMB = 0.1    # [N·m/rad]
+B_THUMB = 0.001  # [N·m·s/rad]
+
 # =============================================================================
 # Guitar experiment
 # =============================================================================
@@ -48,6 +55,7 @@ WEIGHT_FINGERS          = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_SPREAD_ANGLE_DEG = 0.0
 
 STIFFNESS_CONDITIONS    = [0.05, 0.1, 0.2, 0.4]   # [N·m/rad]  swept stiffness values
+WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  ramp / background stiffness
 WEIGHT_B_ROT            = 0.01   # [N·m·s/rad]  normal damping

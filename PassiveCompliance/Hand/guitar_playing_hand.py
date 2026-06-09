@@ -28,6 +28,7 @@ from hand_config import (
     UR5_POSE_GUITAR, SWEEP_VECTOR, LIFT,
     SWEEP_SPEED, SWEEP_ACCEL, RETURN_SPEED, RETURN_ACCEL,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
+    K_THUMB, B_THUMB,
     GUITAR_FINGER_CLOSED_POSE as FINGER_CLOSED_POSE,
     GUITAR_CLOSED_FINGERS     as CLOSED_FINGERS,
     GUITAR_SPREAD_ANGLE_DEG   as SPREAD_ANGLE_DEG,
@@ -86,7 +87,9 @@ for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
 for _k in CLOSED_FINGERS:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 
-vmc_joint.thumb         = np.deg2rad([2.0, 2.0, 2.0, 2.0])
+vmc_joint.thumb                    = np.deg2rad([2.0, 2.0, 2.0, 2.0])
+vmc_joint.stiffness['thumb'][:]    = K_THUMB
+vmc_joint.damping['thumb'][:]      = B_THUMB
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.ring_target   = np.zeros(3)
