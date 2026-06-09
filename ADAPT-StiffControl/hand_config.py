@@ -45,8 +45,9 @@ K_TIP_GENTLE = 20.0   # [N/m]  starting task-space stiffness for all fingertips
 # ── Gradient-descent adaptation ────────────────────────────────────────────────
 # GD drives K_task per finger until mean |f_meas − f_des| < F_CONVERGE_THR.
 # No timeout: waits until fully converged.
-GD_LR          = 1e-4   # [-]   learning rate (matched to stiffness_descent default)
-F_CONVERGE_THR = 0.05   # [N]   mean |f_meas − f_des| threshold across all fingers
+GD_LR           = 1e-4  # [-]   stiffness_descent learning rate (thumb K_joint / K_task)
+GD_KTASK_STEP   = 0.05  # [-]   max fractional K_task change per tick for non-thumb fingers
+F_CONVERGE_THR  = 0.05  # [N]   mean |f_meas − f_des| threshold across all fingers
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
