@@ -33,8 +33,8 @@ RETURN_ACCEL   = 1.0     # [m/s²]
 
 GUITAR_CLOSED_FINGERS = ['index', 'middle', 'ring', 'pinky']
 GUITAR_INDEX  = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
-GUITAR_MIDDLE = np.deg2rad([30.0, 30.0, 30.0])
-GUITAR_RING   = np.deg2rad([30.0, 30.0, 30.0])
+GUITAR_MIDDLE = np.deg2rad([35.0, 35.0, 35.0])
+GUITAR_RING   = np.deg2rad([35.0, 35.0, 35.0])
 GUITAR_PINKY  = np.deg2rad([30.0, 30.0, 30.0])
 GUITAR_SPREAD = {
     'index':  np.deg2rad(0.0),
@@ -62,8 +62,8 @@ UR5_POSE_WEIGHT         = np.array([-0.3964,  0.5314,  0.0639,  0.8173, -0.9609,
 
 WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_INDEX  = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
-WEIGHT_MIDDLE = np.deg2rad([30.0, 30.0, 30.0])
-WEIGHT_RING   = np.deg2rad([30.0, 30.0, 30.0])
+WEIGHT_MIDDLE = np.deg2rad([35.0, 35.0, 35.0])
+WEIGHT_RING   = np.deg2rad([35.0, 35.0, 35.0])
 WEIGHT_PINKY  = np.deg2rad([30.0, 30.0, 30.0])
 WEIGHT_SPREAD = {
     'index':  np.deg2rad(0.0),
