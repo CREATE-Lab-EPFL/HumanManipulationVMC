@@ -7,7 +7,7 @@ import numpy as np
 
 # ── UR5 pose ───────────────────────────────────────────────────────────────────
 # grasp contact pose for the apple.
-UR5_POSE_GRASP = np.array([-0.52,  0.31,  0.36, -1.54, -1.64, 0.90])
+UR5_POSE_GRASP = np.array([-0.52,  0.31,  0.40, -1.54, -1.64, 0.90])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
 PC1_THUMB  = np.deg2rad([70.0, -60.0, 100.0, 100.0])
