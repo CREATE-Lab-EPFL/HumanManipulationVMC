@@ -55,7 +55,7 @@ B_ROT          = 0.001     # [N·m·s/rad]  background joint damping
 B_TIP          = 0.01      # [N·s/m]      task-space damping
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness during ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation
+FRICTION_TAU_MAX = 0.07    # [N·m]        max stiction compensation
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
 PRESS_HEIGHT = 0.15   # [m]  Z press below grasp pose (elastic band shows force)
