@@ -489,6 +489,7 @@ def control_callback():
                 _gd_K_task[_f]  = K_TIP_GENTLE * np.eye(3)
                 _gd_d_ref[_f]   = _d_ref_model_dict[_f].copy()
             _gd_converge_ticks = 0
+            _gd_f_err_ema      = 1.0
             _log_tick          = 0
             _state_start       = now
             state              = STATE_ADAPT_GD
@@ -522,7 +523,8 @@ def control_callback():
             np.array([k_jt[0], k_jt[1], 0.0, 0.0]), 0.0)
 
         f_err_mean = float(np.mean(f_errs))
-        if f_err_mean < F_CONVERGE_THR:
+        _gd_f_err_ema = 0.95 * _gd_f_err_ema + 0.05 * f_err_mean
+        if _gd_f_err_ema < F_CONVERGE_THR:
             _gd_converge_ticks += 1
         else:
             _gd_converge_ticks = 0
