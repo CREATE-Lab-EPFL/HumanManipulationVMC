@@ -2,7 +2,7 @@
 ADAPT Hand — grasp adaptation via compliance sensing + stiffness-descent GD.
 
 stiffness_descent: K_joint + K_task for the thumb updated each tick to drive
-analytic tip force → f_des = F_GAIN / C_O.
+analytic tip force → f_des (discrete: F_DES_HARD if C_O < C_O_THR else F_DES_SOFT).
 
 Protocol:
   1. UR5 → GRASP_POSE; settle SETTLE_TIME s; hand ramps HOME → PC1 at K_TIP_GENTLE
@@ -11,7 +11,7 @@ Protocol:
   4. Record pos_probe, F_probe for SENSE_DURATION s
   5. Compute C_O = ||Δpos||/||ΔF|| for this round; ramp back to K_TIP_GENTLE
   6. Repeat steps 2–5 for N_PROBES rounds; average C_O across rounds
-  7. f_des = F_GAIN / mean(C_O); gradient descent until |f_meas − f_des| < F_CONVERGE_THR
+  7. f_des = F_DES_HARD if C_O < C_O_THR else F_DES_SOFT; GD until |f_meas − f_des| < F_CONVERGE_THR
   8. UR5 presses −PRESS_HEIGHT (shows exerted force)
   9. Release hand (k=0); arm stays at PRESS_POSE
 """
@@ -46,7 +46,7 @@ from hand_config import (
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, OBJECTS,
     K_TIP_GENTLE, K_TIP_PROBE, K_TIP_HOLD,
-    F_GAIN, GD_LR, F_CONVERGE_THR,
+    C_O_THR, F_DES_HARD, F_DES_SOFT, GD_LR, F_CONVERGE_THR,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     PRESS_HEIGHT,
@@ -665,7 +665,7 @@ def control_callback():
                 state           = STATE_RETURN_RAMP
             else:
                 _C_O_mean = float(np.mean(_C_O_list)) if _C_O_list else 0.0
-                f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
+                f_des_mag = F_DES_HARD if _C_O_mean < C_O_THR else F_DES_SOFT
 
                 # Set f_des direction from initial tip force at probe stiffness
                 f_init = np.asarray(stiff_model.tip_force(
@@ -682,9 +682,10 @@ def control_callback():
                 _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
                 _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
 
+                obj_type = 'hard' if _C_O_mean < C_O_THR else 'soft'
                 controller.get_logger().info(
-                    f'All {N_PROBES} rounds done. '
-                    f'mean C_O = {_C_O_mean * 1e3:.2f} mm/N → f_des = {f_des_mag:.3f} N')
+                    f'Probe done. C_O = {_C_O_mean * 1e3:.2f} mm/N '
+                    f'→ {obj_type} object → f_des = {f_des_mag:.3f} N')
                 _gd_converge_ticks = 0
                 _log_tick          = 0
                 _state_start       = now
@@ -801,7 +802,8 @@ controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
     f'Grasp adaptation | object: {OBJECT_NAME} | '
     f'K_TIP_GENTLE={K_TIP_GENTLE} N/m | K_TIP_PROBE={K_TIP_PROBE} N/m | '
-    f'F_GAIN={F_GAIN} | GD_LR={GD_LR} | F_CONVERGE_THR={F_CONVERGE_THR} N')
+    f'C_O_THR={C_O_THR * 1e3:.1f} mm/N | F_DES_HARD={F_DES_HARD} N | F_DES_SOFT={F_DES_SOFT} N | '
+    f'GD_LR={GD_LR} | F_CONVERGE_THR={F_CONVERGE_THR} N')
 
 try:
     while rclpy.ok() and state != STATE_DONE:
