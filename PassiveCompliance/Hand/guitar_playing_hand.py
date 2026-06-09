@@ -19,19 +19,26 @@ import sys, os, csv, time, threading
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_HERE, '../..'))
-sys.path.insert(0, os.path.join(_HERE, 'HelperGuitar'))
 
 from VMCHand.HandController    import HandController, CONTROL_FREQUENCY
 from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from UR5_codes.UR5_readPose    import UR5Receiver
-from guitar_config import (
+from hand_config import (
     UR5_POSE_GUITAR, SWEEP_VECTOR, LIFT,
     SWEEP_SPEED, SWEEP_ACCEL, RETURN_SPEED, RETURN_ACCEL,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
-    FINGER_CLOSED_POSE, CLOSED_FINGERS, SPREAD_ANGLE_DEG,
-    TORSIONAL_SPRINGS, B_ROT, K_ROT,
-    RAMP_DURATION, SETTLE_TIME, K_RETURN, N_RUNS, FRICTION_TAU_MAX,
+    GUITAR_FINGER_CLOSED_POSE as FINGER_CLOSED_POSE,
+    GUITAR_CLOSED_FINGERS     as CLOSED_FINGERS,
+    GUITAR_SPREAD_ANGLE_DEG   as SPREAD_ANGLE_DEG,
+    TORSIONAL_SPRINGS,
+    GUITAR_B_ROT              as B_ROT,
+    GUITAR_K_ROT              as K_ROT,
+    GUITAR_K_RETURN           as K_RETURN,
+    GUITAR_RAMP_DURATION      as RAMP_DURATION,
+    GUITAR_SETTLE_TIME        as SETTLE_TIME,
+    GUITAR_N_RUNS             as N_RUNS,
+    GUITAR_FRICTION_TAU_MAX   as FRICTION_TAU_MAX,
 )
 import rtde_control
 
