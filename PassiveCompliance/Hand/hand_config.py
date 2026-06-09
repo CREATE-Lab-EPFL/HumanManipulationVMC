@@ -30,12 +30,15 @@ GUITAR_SPREAD_ANGLE_DEG   = 0.0
 
 TORSIONAL_SPRINGS       = [0.1, 0.3]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.4           # [N·m/rad]  ramp / background stiffness
-GUITAR_B_ROT            = 0.01          # [N·m·s/rad]
-GUITAR_K_RETURN         = 0.8           # [N·m/rad]  return-to-home stiffness
-GUITAR_RAMP_DURATION    = 3.0           # [s]
+GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
+GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
+GUITAR_K_RETURN         = 0.15          # [N·m/rad]  return-to-home stiffness (matches dynamic_grasp K_HOME)
+GUITAR_RAMP_DURATION    = 3.0           # [s]  initial close ramp
+GUITAR_RESTAB_DURATION  = 1.0           # [s]  per-run re-stabilisation ramp duration
+GUITAR_RESTAB_TIME      = 1.0           # [s]  settle at K_ROT during per-run stabilisation
 GUITAR_SETTLE_TIME      = 2.0           # [s]  settle after initial close
 GUITAR_N_RUNS           = 3             # strums per stiffness condition
-GUITAR_FRICTION_TAU_MAX = 0.05          # [N·m]  no friction compensation
+GUITAR_FRICTION_TAU_MAX = 0.05          # [N·m]
 
 # =============================================================================
 # Weight compliance experiment
@@ -45,12 +48,14 @@ WEIGHT_FINGERS          = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_SPREAD_ANGLE_DEG = 0.0
 
 STIFFNESS_CONDITIONS    = [0.05, 0.1, 0.2, 0.4]   # [N·m/rad]  swept stiffness values
-WEIGHTS_G               = [0, 50, 100, 200, 300]   # [g]  total hanging weight per step
+WEIGHTS_G               = [50, 150, 300]           # [g]  light / medium / heavy
+WEIGHT_LABELS           = ['light', 'medium', 'heavy']
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  ramp / background stiffness
-WEIGHT_B_ROT            = 0.01   # [N·m·s/rad]
-WEIGHT_K_RETURN         = 0.4    # [N·m/rad]  return-to-home stiffness
+WEIGHT_B_ROT            = 0.01   # [N·m·s/rad]  normal damping
+WEIGHT_B_SETTLE         = 0.05   # [N·m·s/rad]  higher damping for initial ramp-to-pose
+WEIGHT_K_RETURN         = 0.15   # [N·m/rad]  return-to-home stiffness (matches dynamic_grasp K_HOME)
 WEIGHT_RAMP_DURATION    = 3.0    # [s]
 WEIGHT_SETTLE_TIME      = 3.0    # [s]  settle after hanging weight before logging
-WEIGHT_LOG_DURATION     = 5.0    # [s]  logging window per weight step
+WEIGHT_LOG_DURATION     = 5.0    # [s]  convergence window per weight step
 WEIGHT_FRICTION_TAU_MAX = 0.04   # [N·m]

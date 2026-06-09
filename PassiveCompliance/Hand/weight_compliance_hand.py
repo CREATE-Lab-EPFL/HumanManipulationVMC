@@ -27,8 +27,8 @@ from VMCHand.HandGravFricLim   import GravFricLim
 from UR5_codes.UR5_readPose    import UR5Receiver
 from hand_config import (
     WEIGHT_POSE, WEIGHT_FINGERS, WEIGHT_SPREAD_ANGLE_DEG,
-    STIFFNESS_CONDITIONS, WEIGHTS_G,
-    WEIGHT_K_ROT, WEIGHT_B_ROT, WEIGHT_K_RETURN,
+    STIFFNESS_CONDITIONS, WEIGHTS_G, WEIGHT_LABELS,
+    WEIGHT_K_ROT, WEIGHT_B_ROT, WEIGHT_B_SETTLE, WEIGHT_K_RETURN,
     WEIGHT_RAMP_DURATION, WEIGHT_SETTLE_TIME, WEIGHT_LOG_DURATION,
     WEIGHT_FRICTION_TAU_MAX,
 )
@@ -69,13 +69,12 @@ vmc_joint = JointVMC()
 vmc_joint.set_stiffness(WEIGHT_K_ROT)
 vmc_joint.set_damping(WEIGHT_B_ROT)
 
-for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
+for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
 
 for _f in WEIGHT_FINGERS:
     vmc_joint.spread[_f] = np.array([np.deg2rad(WEIGHT_SPREAD_ANGLE_DEG)])
 
-vmc_joint.thumb         = np.zeros(4)
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.ring_target   = np.zeros(3)
@@ -116,10 +115,12 @@ def _flush(writer, k_rot, weight_g):
 # Ramp helpers
 # =============================================================================
 def _ramp_to_pose(k_target):
-    """Two-phase close: approach WEIGHT_POSE at WEIGHT_K_ROT, then soften to k_target.
+    """Two-phase close: approach WEIGHT_POSE at WEIGHT_K_ROT + B_SETTLE, then soften to k_target + B_ROT.
     Needed so soft springs (e.g. 0.05 N·m/rad) can still reach the target pose."""
     start_tgt = {f: getattr(vmc_joint, f'{f}_target').copy() for f in WEIGHT_FINGERS}
     dt = 1.0 / CONTROL_FREQUENCY
+    # Phase 1 — approach at K_ROT with high damping for fast settling
+    for f in WEIGHT_FINGERS: vmc_joint.damping[f][:] = WEIGHT_B_SETTLE
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / WEIGHT_RAMP_DURATION)
@@ -130,6 +131,7 @@ def _ramp_to_pose(k_target):
         for f in WEIGHT_FINGERS: vmc_joint.stiffness[f][:] = WEIGHT_K_ROT
         if alpha >= 1.0: break
         time.sleep(dt)
+    # Phase 2 — soften to k_target, restore normal damping
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / WEIGHT_RAMP_DURATION)
@@ -137,6 +139,7 @@ def _ramp_to_pose(k_target):
             vmc_joint.stiffness[f][:] = (1-alpha)*WEIGHT_K_ROT + alpha*k_target
         if alpha >= 1.0: break
         time.sleep(dt)
+    for f in WEIGHT_FINGERS: vmc_joint.damping[f][:] = WEIGHT_B_ROT
 
 def _ramp_stiffness(k_new):
     start_ks = {f: float(vmc_joint.stiffness[f].flat[0]) for f in WEIGHT_FINGERS}
@@ -188,14 +191,14 @@ try:
             fh = writer = None
 
         try:
-            for w in WEIGHTS_G:
-                input(f'  Hang {w:3d} g and press ENTER…')
+            for label, w in zip(WEIGHT_LABELS, WEIGHTS_G):
+                input(f'  Hang {label} weight ({w} g) and press ENTER…')
                 time.sleep(WEIGHT_SETTLE_TIME)
                 with _lock: _buf.clear()
                 time.sleep(WEIGHT_LOG_DURATION)
                 if not COLLECTED_DATA:
                     _flush(writer, k, w)
-                    print(f'  Logged {w} g')
+                    print(f'  Logged {label} ({w} g)')
         finally:
             if fh is not None:
                 fh.close()

@@ -33,9 +33,12 @@ from hand_config import (
     GUITAR_SPREAD_ANGLE_DEG   as SPREAD_ANGLE_DEG,
     TORSIONAL_SPRINGS,
     GUITAR_B_ROT              as B_ROT,
+    GUITAR_B_SETTLE           as B_SETTLE,
     GUITAR_K_ROT              as K_ROT,
     GUITAR_K_RETURN           as K_RETURN,
     GUITAR_RAMP_DURATION      as RAMP_DURATION,
+    GUITAR_RESTAB_DURATION    as RESTAB_DURATION,
+    GUITAR_RESTAB_TIME        as RESTAB_TIME,
     GUITAR_SETTLE_TIME        as SETTLE_TIME,
     GUITAR_N_RUNS             as N_RUNS,
     GUITAR_FRICTION_TAU_MAX   as FRICTION_TAU_MAX,
@@ -77,13 +80,12 @@ vmc_joint = JointVMC()
 vmc_joint.set_stiffness(K_ROT)
 vmc_joint.set_damping(B_ROT)
 
-for _hold in ['thumb', 'spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
+for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
 
 for _k in CLOSED_FINGERS:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 
-vmc_joint.thumb         = np.zeros(4)
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.ring_target   = np.zeros(3)
@@ -162,6 +164,30 @@ def _ramp_stiffness(k_new):
         if alpha >= 1.0: break
         time.sleep(dt)
 
+def _restabilize(k_condition):
+    """Per-run: bump to K_ROT + B_SETTLE, wait RESTAB_TIME, soften to k_condition + B_ROT."""
+    dt = 1.0 / CONTROL_FREQUENCY
+    # Phase 1 — ramp to K_ROT with high damping
+    start_ks = {f: float(vmc_joint.stiffness[f].flat[0]) for f in CLOSED_FINGERS}
+    for f in CLOSED_FINGERS: vmc_joint.damping[f][:] = B_SETTLE
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RESTAB_DURATION)
+        for f in CLOSED_FINGERS:
+            vmc_joint.stiffness[f][:] = (1-alpha)*start_ks[f] + alpha*K_ROT
+        if alpha >= 1.0: break
+        time.sleep(dt)
+    time.sleep(RESTAB_TIME)
+    # Phase 2 — soften to condition K, restore normal damping
+    t0 = time.time()
+    while True:
+        alpha = min(1.0, (time.time() - t0) / RESTAB_DURATION)
+        for f in CLOSED_FINGERS:
+            vmc_joint.stiffness[f][:] = (1-alpha)*K_ROT + alpha*k_condition
+        if alpha >= 1.0: break
+        time.sleep(dt)
+    for f in CLOSED_FINGERS: vmc_joint.damping[f][:] = B_ROT
+
 def _ramp_to_home():
     """Ramp all finger targets back to zero, stiffness back to K_RETURN."""
     starts   = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
@@ -207,6 +233,7 @@ try:
 
         for run in range(1, N_RUNS + 1):
             print(f'  Run {run}/{N_RUNS}')
+            _restabilize(ktors)
             with _lock: _buf.clear()
             _phase = 'sweep';   arm.moveL(list(END),          SWEEP_SPEED,  SWEEP_ACCEL)
             _phase = 'lift';    arm.moveL(list(END_LIFTED),   RETURN_SPEED, RETURN_ACCEL)
