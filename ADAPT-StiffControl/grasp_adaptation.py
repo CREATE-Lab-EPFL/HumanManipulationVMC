@@ -363,7 +363,7 @@ _gd_d_ref          = {f: D_REF[f].copy() for f in FINGERTIPS}
 _gd_f_des          = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_f_meas         = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_converge_ticks = 0
-
+_gd_f_err_ema      = None  # seeded from first GD tick
 _gd_last_print     = 0.0
 
 
@@ -430,7 +430,7 @@ def control_callback():
     global _converge_ticks, _log_tick
     global _use_task_vmc
     global _gd_K_joint, _gd_K_task, _gd_d_ref
-    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_last_print
+    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_f_err_ema, _gd_last_print
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -489,6 +489,7 @@ def control_callback():
                 _gd_K_task[_f]  = K_TIP_GENTLE * np.eye(3)
                 _gd_d_ref[_f]   = _d_ref_model_dict[_f].copy()
             _gd_converge_ticks = 0
+            _gd_f_err_ema      = None
             _log_tick          = 0
             _state_start       = now
             state              = STATE_ADAPT_GD
@@ -522,7 +523,8 @@ def control_callback():
             np.array([k_jt[0], k_jt[1], 0.0, 0.0]), 0.0)
 
         f_err_mean = float(np.mean(f_errs))
-        if f_err_mean < F_CONVERGE_THR:
+        _gd_f_err_ema = f_err_mean if _gd_f_err_ema is None else 0.9 * _gd_f_err_ema + 0.1 * f_err_mean
+        if _gd_f_err_ema < F_CONVERGE_THR:
             _gd_converge_ticks += 1
         else:
             _gd_converge_ticks = 0
