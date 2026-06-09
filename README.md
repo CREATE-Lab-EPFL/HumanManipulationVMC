@@ -309,8 +309,53 @@ All scripts must be run from the **repository root** so that module imports reso
 
 ## Dependencies
 
-- ROS2 (tested with Humble)
-- `dynamixel_interface` ROS2 package
-- Python: `numpy`, `scipy`, `rclpy`, `std_msgs`
-- Analysis: `pandas`, `matplotlib`, `scikit-learn`, `jupyter`
-- UR5: `rtde_control`, `rtde_receive`
+### System packages
+
+```bash
+# ROS2 Humble (includes rclpy and std_msgs)
+# Install from https://docs.ros.org/en/humble/Installation.html
+
+# dynamixel_interface ROS2 package (Dynamixel motor node)
+# Install from https://github.com/Husarion/dynamixel_interface or equivalent
+
+# ffmpeg — audio/video extraction (PassiveCompliance/Hand guitar experiment)
+sudo apt install ffmpeg
+```
+
+### Python packages
+
+```bash
+pip install numpy scipy sympy pandas matplotlib scienceplots \
+            scikit-learn tqdm pynput \
+            rtde-control rtde-receive \
+            pyserial \
+            soundfile
+```
+
+| Package | Used for |
+|---------|----------|
+| `numpy` | all numerical operations |
+| `scipy` | interpolation, optimisation, signal processing, spatial transforms, bandpass filter |
+| `sympy` | symbolic Jacobians and kinematics |
+| `pandas` | CSV loading and data analysis in notebooks |
+| `matplotlib` | all plots |
+| `scienceplots` | shared matplotlib style (`plot_config.mplstyle`) |
+| `scikit-learn` | `IsotonicRegression` (stiffness learning) |
+| `tqdm` | progress bars |
+| `pynput` | keyboard input for teleoperation scripts |
+| `rtde-control` / `rtde-receive` | UR5 robot arm RTDE interface |
+| `pyserial` | Arduino load cell over USB |
+| `soundfile` | WAV audio I/O (guitar audio extraction) |
+
+### Local modules (included in repo, no install needed)
+
+`KinematicsFinger`, `KinematicsHand`, `VMCFinger`, `VMCHand`, `VMC_utils`,
+`ModelIDFinger`, `ModelIDHand`, `StiffnessModelFinger`, `StiffnessModelHand`,
+`StiffnessForceTracking`, `UR5_codes`, `LoadCell`
+
+### Notes
+
+- **rclpy / std_msgs**: installed as part of ROS2 Humble, not via pip.
+- **Fusion 360 add-in** (`FusionPlotting/FusionAddin/`): the `adsk` modules are provided by Fusion 360 itself — do not pip-install them.
+- **Arduino**: upload `LoadCell/Real_res1_twoLoadCells_HW.ino` separately to the Arduino board.
+- All scripts must be run from the **repository root** for module imports to resolve.
