@@ -62,7 +62,8 @@ FORCE_LEVEL = FORCE_LEVELS[_sel]
 F_DES_MAG   = F_DES[FORCE_LEVEL]
 print(f'Selected: {FORCE_LEVEL}  →  f_des = {F_DES_MAG:.2f} N\n')
 
-COLLECTED_DATA = False
+# Collected data
+COLLECTED_DATA = True
 
 B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
