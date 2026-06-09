@@ -168,9 +168,6 @@ def _ramp_to_home():
 # =============================================================================
 # Run
 # =============================================================================
-# Set to True once data is collected — reruns the protocol without saving.
-COLLECTED_DATA = False
-
 input('Press ENTER to start the control loop…')
 
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
