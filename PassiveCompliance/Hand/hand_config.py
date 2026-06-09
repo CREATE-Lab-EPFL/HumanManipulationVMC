@@ -22,7 +22,7 @@ B_THUMB = 0.001  # [N·m·s/rad]
 # =============================================================================
 # Guitar experiment
 # =============================================================================
-UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.0602,  0.8344, -0.976, -1.5152 ])  # [x,y,z,rx,ry,rz]
+UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.09,  0.8344, -0.976, -1.5152 ])  # [x,y,z,rx,ry,rz]
 SWEEP_VECTOR    = np.array([0.15, 0.0, 0.0])   # [m] XYZ displacement per strum
 LIFT            = 0.05    # [m]  Z clearance for the return trip
 
@@ -32,10 +32,10 @@ RETURN_SPEED   = 0.2     # [m/s]  return (no contact)
 RETURN_ACCEL   = 1.0     # [m/s²]
 
 GUITAR_CLOSED_FINGERS = ['index', 'middle', 'ring', 'pinky']
-GUITAR_INDEX  = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
-GUITAR_MIDDLE = np.deg2rad([35.0, 35.0, 35.0])
-GUITAR_RING   = np.deg2rad([35.0, 35.0, 35.0])
-GUITAR_PINKY  = np.deg2rad([30.0, 25.0, 25.0])
+GUITAR_INDEX  = np.deg2rad([70.0, 60.0, 60.0])   # [MCP, PIP, DIP]
+GUITAR_MIDDLE = np.deg2rad([70.0, 65.0, 65.0])
+GUITAR_RING   = np.deg2rad([70.0, 65.0, 65.0])
+GUITAR_PINKY  = np.deg2rad([70.0, 55.0, 55.0])
 GUITAR_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),

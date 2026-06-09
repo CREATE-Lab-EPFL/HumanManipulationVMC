@@ -1,13 +1,14 @@
 """
 Extract and clean audio from a Canon video recording.
 
-Two-stage denoising:
+Two-stage denoising designed to isolate the guitar against UR5 motor noise:
   1. Butterworth bandpass (LOW_HZ – HIGH_HZ): removes everything outside the
      guitar frequency range (sub-bass rumble, ultrasonic hiss, etc.).
-  2. Spectral gating (noisereduce): subtracts the stationary noise floor that
-     remains inside the guitar band (HVAC, room hum, electronics).
-     Profile is taken from the first NOISE_PROFILE_S seconds — keep the room
-     quiet (no playing) for at least that long at the start of each recording.
+  2. Non-stationary spectral gating (noisereduce, stationary=False): tracks the
+     noise floor dynamically throughout the recording. This handles the UR5
+     whose noise changes as the arm accelerates and decelerates — guitar strums
+     produce large transient bursts well above the tracked floor and are
+     preserved; the continuous motor hum is subtracted frame by frame.
 
 Usage:
     python extract_audio.py <video_file>
@@ -34,10 +35,6 @@ LOW_HZ  = 80
 HIGH_HZ = 8000
 FILTER_ORDER = 4       # gentle roll-off avoids ringing artefacts
 
-# Quiet seconds at the start of the recording used to profile noise.
-NOISE_PROFILE_S = 2.0
-
-
 def _bandpass(audio, sr):
     nyq = sr / 2.0
     sos = butter(FILTER_ORDER, [LOW_HZ / nyq, HIGH_HZ / nyq], btype='bandpass', output='sos')
@@ -47,15 +44,11 @@ def _bandpass(audio, sr):
 
 
 def _spectral_gate(audio, sr):
-    n_profile = int(NOISE_PROFILE_S * sr)
+    # stationary=False: noise floor re-estimated each frame → handles UR5 speed changes
     if audio.ndim == 1:
-        noise = audio[:n_profile]
-        return nr.reduce_noise(y=audio, sr=sr, y_noise=noise, stationary=True, prop_decrease=0.9)
-    channels = []
-    for ch in range(audio.shape[1]):
-        noise = audio[:n_profile, ch]
-        channels.append(nr.reduce_noise(y=audio[:, ch], sr=sr, y_noise=noise,
-                                        stationary=True, prop_decrease=0.9))
+        return nr.reduce_noise(y=audio, sr=sr, stationary=False, prop_decrease=0.95)
+    channels = [nr.reduce_noise(y=audio[:, ch], sr=sr, stationary=False, prop_decrease=0.95)
+                for ch in range(audio.shape[1])]
     return np.stack(channels, axis=1)
 
 
@@ -88,7 +81,7 @@ audio     = audio.astype(np.float64)
 filtered  = _bandpass(audio, sr)
 
 # ── Step 3: spectral gating on the bandpass result ────────────────────────────
-print(f'Spectral gating (noise profile from first {NOISE_PROFILE_S:.1f} s)…')
+print('Spectral gating (non-stationary, tracking UR5 noise floor)…')
 clean = _spectral_gate(filtered, sr)
 
 # Normalise to avoid clipping
