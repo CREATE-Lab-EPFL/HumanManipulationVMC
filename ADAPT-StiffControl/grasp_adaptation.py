@@ -119,6 +119,30 @@ _GD_K_JOINT_INIT = {
     'pinky':  np.zeros((3, 3)),
 }
 
+# Per-finger theta_ref arrays whose ordering MATCHES the GD K_joint_dict keys.
+# tip_force / stiffness_descent index theta_ref sequentially per dict key,
+# so each array must list angles in the same order as the dict.
+#   thumb:      [CMC1, CMC2, MCP, IP]                  (4 angles)
+#   non-thumb:  [spread, MCP, PIP, DIP]                 (4 angles — spread first)
+_GD_THETA_REF = {
+    'thumb':  np.degrees(PC1_THUMB),
+    'index':  np.degrees(np.concatenate([[PC1_SPREAD['index']],  PC1_INDEX])),
+    'middle': np.degrees(np.concatenate([[PC1_SPREAD['middle']], PC1_MIDDLE])),
+    'ring':   np.degrees(np.concatenate([[PC1_SPREAD['ring']],   PC1_RING])),
+    'pinky':  np.degrees(np.concatenate([[PC1_SPREAD['pinky']],  PC1_PINKY])),
+}
+
+# GD K_joint dicts that include spread K_ROT for non-thumb fingers so the model
+# accounts for the background spread-joint torque present in the actual VMC.
+# The spread entry is fixed (not optimised); only the flex entry is updated by GD.
+_GD_K_JOINT_DICT_INIT = {
+    'thumb':  {'thumb':          K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])},
+    'index':  {'spread_index':   K_ROT * np.eye(1), 'index':  np.zeros((3, 3))},
+    'middle': {'spread_middle':  K_ROT * np.eye(1), 'middle': np.zeros((3, 3))},
+    'ring':   {'spread_ring':    K_ROT * np.eye(1), 'ring':   np.zeros((3, 3))},
+    'pinky':  {'spread_pinky':   K_ROT * np.eye(1), 'pinky':  np.zeros((3, 3))},
+}
+
 # =============================================================================
 # ROS2 + controller
 # =============================================================================
@@ -445,9 +469,11 @@ def control_callback():
         if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
             # Initialise GD: f_des direction from initial contact force per finger
             for _f in FINGERTIPS:
+                _kj_init = {**_GD_K_JOINT_DICT_INIT[_f]}
+                _kj_init[_f] = _GD_K_JOINT_INIT[_f]
                 f_init = np.asarray(stiff_model.tip_force(
-                    _f, q, THETA_REF_DEG, {_f: _d_ref_model_dict[_f]},
-                    {_f: _GD_K_JOINT_INIT[_f]}, {_f: K_TIP_GENTLE * np.eye(3)}))
+                    _f, q, _GD_THETA_REF[_f], {_f: _d_ref_model_dict[_f]},
+                    _kj_init, {_f: K_TIP_GENTLE * np.eye(3)}))
                 f_init_mag = float(np.linalg.norm(f_init))
                 if f_init_mag > 1e-9:
                     _gd_f_des[_f] = F_DES_MAG * f_init / f_init_mag
@@ -467,15 +493,17 @@ def control_callback():
     elif state == STATE_ADAPT_GD:
         f_errs = []
         for _f in FINGERTIPS:
+            _kj_dict = {**_GD_K_JOINT_DICT_INIT[_f]}  # includes spread K_ROT for non-thumb
+            _kj_dict[_f] = _gd_K_joint[_f]             # insert current GD K_joint
             _gd_f_meas[_f] = np.asarray(stiff_model.tip_force(
-                _f, q, THETA_REF_DEG, {_f: _gd_d_ref[_f]},
-                {_f: _gd_K_joint[_f]}, {_f: _gd_K_task[_f]}))
+                _f, q, _GD_THETA_REF[_f], {_f: _gd_d_ref[_f]},
+                _kj_dict, {_f: _gd_K_task[_f]}))
             K_j_f, K_t_f = stiff_model.stiffness_descent(
-                _f, q, THETA_REF_DEG, {_f: _gd_d_ref[_f]},
-                {_f: _gd_K_joint[_f]}, {_f: _gd_K_task[_f]},
+                _f, q, _GD_THETA_REF[_f], {_f: _gd_d_ref[_f]},
+                _kj_dict, {_f: _gd_K_task[_f]},
                 _gd_f_meas[_f], _gd_f_des[_f],
                 lr_joint=GD_LR, lr_task=GD_LR)
-            _gd_K_joint[_f] = np.maximum(K_j_f[_f], 0.0)
+            _gd_K_joint[_f] = np.maximum(K_j_f[_f], 0.0)  # spread entry ignored
             _gd_K_task[_f]  = np.maximum(K_t_f[_f], 0.0)
             vmc_task.springs[_f].stiffness = np.diag(_gd_K_task[_f])
             f_errs.append(float(np.linalg.norm(_gd_f_meas[_f] - _gd_f_des[_f])))
