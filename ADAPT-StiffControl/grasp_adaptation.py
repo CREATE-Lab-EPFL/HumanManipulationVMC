@@ -65,10 +65,10 @@ LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 # =============================================================================
 # UR5 poses
 # =============================================================================
-_z_below = np.array([0.0, 0.0, -APPROACH_HEIGHT, 0.0, 0.0, 0.0])
+_z_above = np.array([0.0, 0.0, +APPROACH_HEIGHT, 0.0, 0.0, 0.0])
 _z_press = np.array([0.0, 0.0, -PRESS_HEIGHT,    0.0, 0.0, 0.0])
-UR5_START_POSE = {k: v + _z_below for k, v in UR5_POSE_GRASP_OBJ.items()}
-UR5_PRESS_POSE = {k: v + _z_press for k, v in UR5_POSE_GRASP_OBJ.items()}
+UR5_RETRACT_POSE = {k: v + _z_above for k, v in UR5_POSE_GRASP_OBJ.items()}
+UR5_PRESS_POSE   = {k: v + _z_press for k, v in UR5_POSE_GRASP_OBJ.items()}
 
 # =============================================================================
 # Object selection
@@ -81,9 +81,9 @@ assert 0 <= _sel < len(OBJECTS), 'Invalid selection'
 OBJECT_NAME = OBJECTS[_sel]
 print(f'Selected: {OBJECT_NAME}\n')
 
-GRASP_POSE = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
-PRESS_POSE = UR5_PRESS_POSE[OBJECT_NAME]   # 15 cm below grasp — presses into object
-START_POSE = UR5_START_POSE[OBJECT_NAME]   # 10 cm below grasp — approach/retract
+GRASP_POSE   = UR5_POSE_GRASP_OBJ[OBJECT_NAME]
+PRESS_POSE   = UR5_PRESS_POSE[OBJECT_NAME]    # 10 cm below grasp — presses into object
+RETRACT_POSE = UR5_RETRACT_POSE[OBJECT_NAME]  # 10 cm above grasp — final retract
 
 # =============================================================================
 # PC1 motor targets and task-space references
@@ -757,7 +757,7 @@ def control_callback():
             vmc_joint.ring_pinky_target = FK_motor2finger(q, 'ring')
             _set_joint_stiffness_uniform(K_RETURN, B_RETURN)
             _begin_ramp(HOME_POSE_TARGETS)
-            _move_arm_async(START_POSE, UR5_INIT_SPEED, STATE_DONE)
+            _move_arm_async(RETRACT_POSE, UR5_INIT_SPEED, STATE_DONE)
             _state_start = now
             state        = STATE_RETRACT
 
