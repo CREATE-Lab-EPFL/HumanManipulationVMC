@@ -29,9 +29,9 @@ from hand_config import (
     SWEEP_SPEED, SWEEP_ACCEL, RETURN_SPEED, RETURN_ACCEL,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     K_THUMB, B_THUMB,
-    GUITAR_FINGER_CLOSED_POSE as FINGER_CLOSED_POSE,
-    GUITAR_CLOSED_FINGERS     as CLOSED_FINGERS,
-    GUITAR_SPREAD_ANGLE_DEG   as SPREAD_ANGLE_DEG,
+    GUITAR_CLOSED_FINGERS as CLOSED_FINGERS,
+    GUITAR_INDEX, GUITAR_MIDDLE, GUITAR_RING, GUITAR_PINKY,
+    GUITAR_SPREAD         as SPREAD,
     TORSIONAL_SPRINGS,
     GUITAR_B_ROT              as B_ROT,
     GUITAR_B_SETTLE           as B_SETTLE,
@@ -85,7 +85,7 @@ for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
     vmc_joint.stiffness[_hold][:] = 0.0
 
 for _k in CLOSED_FINGERS:
-    vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
+    vmc_joint.spread[_k] = np.array([SPREAD[_k]])
 
 vmc_joint.thumb                    = np.deg2rad([2.0, 2.0, 2.0, 2.0])
 vmc_joint.stiffness['thumb'][:]    = K_THUMB
@@ -140,10 +140,10 @@ def _ramp_closed(k_torsional):
     t0 = time.time()
     while True:
         alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
-        vmc_joint.index_target  = (1-alpha)*start_tgt['index']  + alpha*FINGER_CLOSED_POSE
-        vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*FINGER_CLOSED_POSE
-        vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*FINGER_CLOSED_POSE
-        vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*FINGER_CLOSED_POSE
+        vmc_joint.index_target  = (1-alpha)*start_tgt['index']  + alpha*GUITAR_INDEX
+        vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*GUITAR_MIDDLE
+        vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*GUITAR_RING
+        vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*GUITAR_PINKY
         for f in CLOSED_FINGERS: vmc_joint.stiffness[f][:] = K_ROT
         if alpha >= 1.0: break
         time.sleep(dt)

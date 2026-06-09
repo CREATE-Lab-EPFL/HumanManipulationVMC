@@ -26,7 +26,9 @@ from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from UR5_codes.UR5_readPose    import UR5Receiver
 from hand_config import (
-    WEIGHT_POSE, WEIGHT_FINGERS, WEIGHT_SPREAD_ANGLE_DEG,
+    WEIGHT_FINGERS,
+    WEIGHT_INDEX, WEIGHT_MIDDLE, WEIGHT_RING, WEIGHT_PINKY,
+    WEIGHT_SPREAD,
     STIFFNESS_CONDITIONS, WEIGHT_LABELS,
     K_THUMB, B_THUMB,
     WEIGHT_K_ROT, WEIGHT_B_ROT, WEIGHT_B_SETTLE, WEIGHT_K_RETURN,

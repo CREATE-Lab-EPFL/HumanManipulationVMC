@@ -31,9 +31,17 @@ SWEEP_ACCEL    = 0.5     # [m/s²]
 RETURN_SPEED   = 0.2     # [m/s]  return (no contact)
 RETURN_ACCEL   = 1.0     # [m/s²]
 
-GUITAR_FINGER_CLOSED_POSE = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
-GUITAR_CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
-GUITAR_SPREAD_ANGLE_DEG   = 0.0
+GUITAR_CLOSED_FINGERS = ['index', 'middle', 'ring', 'pinky']
+GUITAR_INDEX  = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
+GUITAR_MIDDLE = np.deg2rad([30.0, 30.0, 30.0])
+GUITAR_RING   = np.deg2rad([30.0, 30.0, 30.0])
+GUITAR_PINKY  = np.deg2rad([30.0, 30.0, 30.0])
+GUITAR_SPREAD = {
+    'index':  np.deg2rad(0.0),
+    'middle': np.deg2rad(0.0),
+    'ring':   np.deg2rad(0.0),
+    'pinky':  np.deg2rad(0.0),
+}
 
 TORSIONAL_SPRINGS       = [0.05, 0.15, 0.50]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.6           # [N·m/rad]  approach stiffness (used only to close fingers; replaced by condition K after ramp)
@@ -52,9 +60,17 @@ GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 # =============================================================================
 UR5_POSE_WEIGHT         = np.array([-0.3964,  0.5314,  0.0639,  0.8173, -0.9609, -1.521 ])  # TODO: set actual parking pose for weight trials
 
-WEIGHT_POSE             = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP] target
-WEIGHT_FINGERS          = ['index', 'middle', 'ring', 'pinky']
-WEIGHT_SPREAD_ANGLE_DEG = 0.0
+WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
+WEIGHT_INDEX  = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
+WEIGHT_MIDDLE = np.deg2rad([30.0, 30.0, 30.0])
+WEIGHT_RING   = np.deg2rad([30.0, 30.0, 30.0])
+WEIGHT_PINKY  = np.deg2rad([30.0, 30.0, 30.0])
+WEIGHT_SPREAD = {
+    'index':  np.deg2rad(0.0),
+    'middle': np.deg2rad(0.0),
+    'ring':   np.deg2rad(0.0),
+    'pinky':  np.deg2rad(0.0),
+}
 
 STIFFNESS_CONDITIONS    = [0.05, 0.1, 0.2, 0.4]   # [N·m/rad]  swept stiffness values
 WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
