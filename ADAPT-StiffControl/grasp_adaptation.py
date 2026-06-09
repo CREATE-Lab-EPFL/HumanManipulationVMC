@@ -659,7 +659,6 @@ def control_callback():
             f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
 
             # Per-finger GD init: f_des direction from initial tip force
-            K_task_now = _probe_K_task(K_TIP_PROBE)
             for _f in PROBE_FINGERS:
                 f_init = np.asarray(stiff_model.tip_force(
                     _f, q, THETA_REF_DEG, _d_ref_model_dict,
