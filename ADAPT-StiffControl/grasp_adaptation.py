@@ -505,12 +505,13 @@ def control_callback():
                 _f, q, _GD_THETA_REF[_f], {_f: _gd_d_ref[_f]},
                 _kj_dict, {_f: _gd_K_task[_f]}))
 
-            # Multiplicative update for all fingers: scale K_task (and K_joint for thumb)
-            # by f_des/f_meas each tick, clamped to ±GD_KTASK_STEP fractional change.
+            # Multiplicative update with adaptive step: max fractional change scales with
+            # relative error so the update is aggressive far from target and gentle near it.
             _f_meas_mag = float(np.linalg.norm(_gd_f_meas[_f]))
             if _f_meas_mag > 1e-6:
-                _ratio = float(np.clip(F_DES_MAG / _f_meas_mag,
-                                       1.0 - GD_KTASK_STEP, 1.0 + GD_KTASK_STEP))
+                _err_frac = abs(_f_meas_mag - F_DES_MAG) / max(_f_meas_mag, F_DES_MAG)
+                _step = GD_KTASK_STEP * _err_frac
+                _ratio = float(np.clip(F_DES_MAG / _f_meas_mag, 1.0 - _step, 1.0 + _step))
                 _gd_K_task[_f] = np.maximum(_gd_K_task[_f] * _ratio, 0.0)
 
             vmc_task.springs[_f].stiffness = np.diag(_gd_K_task[_f])
