@@ -533,11 +533,12 @@ def control_callback():
                 f'GD t={elapsed:.1f}s  |f_err| per finger: {errs_str}  mean: {f_err_mean:.3f} N')
 
         _log_tick += 1
-        if _log_tick % LOG_EVERY == 0:
+        if _log_tick % LOG_EVERY == 0 and _csv_writer:
             _csv_writer.writerow(_compute_row(q, q_dot, 'adapt_gd', gd_converged))
 
         if gd_converged:
-            _csv_file.flush()
+            if _csv_file:
+                _csv_file.flush()
             controller.get_logger().info(
                 f'GD converged at {elapsed:.1f} s. '
                 f'mean |f_err| = {f_err_mean:.4f} N. Pressing down …')
