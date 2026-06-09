@@ -51,6 +51,8 @@ HAND_POSES = {
     "position_tracking":      _proprio.UR5_POSE_SQUEEZING,
     # PassiveCompliance/Hand/guitar_playing_hand.py
     "guitar_playing_hand":    _passive.UR5_POSE_GUITAR,
+    # PassiveCompliance/Hand/weight_compliance_hand.py
+    "weight_compliance_hand": _passive.UR5_POSE_WEIGHT,
     # TunableCompliance/Hand/inhand_manipulation.py
     "inhand_manipulation":    _tunable.UR5_POSE_INHAND,
     # TunableCompliance/Hand/dynamic_grasp.py

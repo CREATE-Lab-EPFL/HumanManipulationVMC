@@ -22,7 +22,7 @@ B_THUMB = 0.001  # [N·m·s/rad]
 # =============================================================================
 # Guitar experiment
 # =============================================================================
-UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.0639,  0.8173, -0.9609, -1.521 ])  # [x,y,z,rx,ry,rz]
+UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.0602,  0.8344, -0.976, -1.5152 ])  # [x,y,z,rx,ry,rz]
 SWEEP_VECTOR    = np.array([0.10, 0.0, 0.0])   # [m] XYZ displacement per strum
 LIFT            = 0.05    # [m]  Z clearance for the return trip
 
@@ -35,7 +35,7 @@ GUITAR_FINGER_CLOSED_POSE = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP]
 GUITAR_CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 GUITAR_SPREAD_ANGLE_DEG   = 0.0
 
-TORSIONAL_SPRINGS       = [0.01, 0.10, 0.50]    # [N·m/rad]  compared conditions
+TORSIONAL_SPRINGS       = [0.05, 0.15, 0.50]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.6           # [N·m/rad]  approach stiffness (used only to close fingers; replaced by condition K after ramp)
 GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
 GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
@@ -50,6 +50,8 @@ GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 # =============================================================================
 # Weight compliance experiment
 # =============================================================================
+UR5_POSE_WEIGHT         = np.array([-0.3964,  0.5314,  0.0639,  0.8173, -0.9609, -1.521 ])  # TODO: set actual parking pose for weight trials
+
 WEIGHT_POSE             = np.deg2rad([30.0, 30.0, 30.0])   # [MCP, PIP, DIP] target
 WEIGHT_FINGERS          = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_SPREAD_ANGLE_DEG = 0.0
