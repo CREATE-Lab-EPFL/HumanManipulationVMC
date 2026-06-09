@@ -40,7 +40,7 @@ F_DES = {
 }
 
 # ── Stiffness schedule ─────────────────────────────────────────────────────────
-K_TIP_GENTLE = 20.0   # [N/m]  starting task-space stiffness for all fingertips
+K_TIP_GENTLE = 40.0   # [N/m]  starting task-space stiffness for all fingertips
 
 # ── Gradient-descent adaptation ────────────────────────────────────────────────
 # GD drives K_task per finger until mean |f_meas − f_des| < F_CONVERGE_THR.
