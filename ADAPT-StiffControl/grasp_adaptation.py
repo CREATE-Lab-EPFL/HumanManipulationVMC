@@ -549,12 +549,12 @@ def control_callback():
 
     elif state == STATE_PRESS:
         _log_tick += 1
-        if _log_tick % LOG_EVERY == 0:
+        if _log_tick % LOG_EVERY == 0 and _csv_writer:
             _csv_writer.writerow(_compute_row(q, q_dot, 'press', True))
 
     elif state == STATE_RELEASE:
         _log_tick += 1
-        if _log_tick % LOG_EVERY == 0:
+        if _log_tick % LOG_EVERY == 0 and _csv_writer:
             _csv_writer.writerow(_compute_row(q, q_dot, 'press', True))
         if elapsed >= HOLD_TIME:
             controller.get_logger().info('Releasing grasp …')
@@ -612,7 +612,7 @@ finally:
     controller.publish_torques(np.zeros(13))
     controller.get_logger().info('Stiffness zeroed (safe shutdown).')
 
-    if not _csv_file.closed:
+    if _csv_file and not _csv_file.closed:
         _csv_file.close()
         controller.get_logger().info(f'Data saved to: {_csv_path}')
 
