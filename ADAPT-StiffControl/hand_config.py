@@ -8,7 +8,7 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.52,  0.31,  0.36,  -1.54, -1.64, 0.90]),
+    'hard_obj': np.array([-0.52,  0.31,  0.37,  -1.54, -1.64, 0.90]),
     'soft_obj': np.array([-0.52,  0.31,  0.25, -1.54, -1.64, 0.90]),
 }
 
@@ -20,10 +20,10 @@ PC1_SPREAD = {
     'ring':   np.deg2rad(5.0),
     'pinky':  np.deg2rad(5.0),
 }
-PC1_INDEX  = np.deg2rad([70.0, 120.0, 120.0])
-PC1_MIDDLE = np.deg2rad([70.0, 120.0, 120.0])
-PC1_RING   = np.deg2rad([70.0, 120.0, 120.0])
-PC1_PINKY  = np.deg2rad([70.0, 120.0, 120.0])
+PC1_INDEX  = np.deg2rad([60.0, 90.0, 90.0])
+PC1_MIDDLE = np.deg2rad([60.0, 90.0, 90.0])
+PC1_RING   = np.deg2rad([60.0, 90.0, 90.0])
+PC1_PINKY  = np.deg2rad([60.0, 90.0, 90.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_THUMB  = np.zeros(4)
@@ -35,21 +35,21 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 OBJECTS    = ['hard_obj', 'soft_obj']
 
 # ── Grasp adaptation rule (grasp_adaptation.py) ───────────────────────────────
-# Two-point compliance sensing: 4 fingers clamped at K_TIP_HOLD (frozen
-# position), thumb probes from K_TIP_GENTLE → K_TIP_PROBE.
-# C_O = ||Δpos_thumb|| / ||ΔF_thumb||; then gradient descent drives
-# tip force toward f_des = F_GAIN / C_O (MODE='stiffness': updates K;
-# MODE='ref': updates virtual equilibrium positions).
-K_TIP_GENTLE = 25.0    # [N/m]   gentle baseline stiffness (thumb)
-K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
-K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
+# Two-point compliance sensing: thumb clamped at K_TIP_HOLD (frozen position),
+# four probe fingers (index/middle/ring/pinky) ramp from K_TIP_GENTLE →
+# K_TIP_PROBE and settle. C_O = mean over probe fingers of
+# ||Δpos_f|| / ||ΔF_f||; stiffness-descent GD then drives each probe finger's
+# tip force toward f_des = F_GAIN / C_O by updating K_task per finger.
+K_TIP_GENTLE = 25.0    # [N/m]   gentle baseline stiffness (all fingers at start)
+K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (probe fingers: index–pinky)
+K_TIP_HOLD   = 100.0   # [N/m]   clamp stiffness for the thumb during probing/GD
 
 # ── Gradient-descent adaptation ───────────────────────────────────────────────
 # Target force magnitude: f_des = F_GAIN / C_O.
 # With C_O ∈ [0.015, 0.045] m/N (15–45 mm/N) this maps to ≈ [1.7, 5] N.
 F_GAIN          = 0.075  # [N·m]   tune to set the desired force range
-GD_LR           = 1e-6   # [-]     gradient-descent learning rate (stiffness & ref modes)
-F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD converged
+GD_LR           = 1e-6   # [-]     gradient-descent learning rate
+F_CONVERGE_THR  = 0.05   # [N]     mean |f_meas - f_des| threshold to declare GD converged
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
@@ -69,4 +69,4 @@ CONVERGE_VEL_THR = 0.02  # [rad/s]  velocity threshold for "converged"
 CONVERGE_HOLD    = 1.0   # [s]      time below threshold to declare convergence
 CONVERGE_TIMEOUT = 5.0   # [s]      max wait before forcing transition
 SENSE_DURATION   = 2.0   # [s]      sensing window (δ averaged over this)
-HOLD_TIME        = 3.0   # [s]      hold at lifted pose
+HOLD_TIME        = 3.0   # [s]      hold at PRESS_POSE before releasing
