@@ -134,15 +134,13 @@ _GD_THETA_REF = {
     'pinky':  np.degrees(np.concatenate([[PC1_SPREAD['pinky']],  PC1_PINKY])),
 }
 
-# GD K_joint dicts that include spread K_ROT for non-thumb fingers so the model
-# accounts for the background spread-joint torque present in the actual VMC.
-# The spread entry is fixed (not optimised); only the flex entry is updated by GD.
+# GD K_joint dicts — all zero (pure task-space control, no rotational springs)
 _GD_K_JOINT_DICT_INIT = {
-    'thumb':  {'thumb':          K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])},
-    'index':  {'spread_index':   K_ROT * np.eye(1), 'index':  np.zeros((3, 3))},
-    'middle': {'spread_middle':  K_ROT * np.eye(1), 'middle': np.zeros((3, 3))},
-    'ring':   {'spread_ring':    K_ROT * np.eye(1), 'ring':   np.zeros((3, 3))},
-    'pinky':  {'spread_pinky':   K_ROT * np.eye(1), 'pinky':  np.zeros((3, 3))},
+    'thumb':  {'thumb':          np.zeros((4, 4))},
+    'index':  {'spread_index':   np.zeros((1, 1)), 'index':  np.zeros((3, 3))},
+    'middle': {'spread_middle':  np.zeros((1, 1)), 'middle': np.zeros((3, 3))},
+    'ring':   {'spread_ring':    np.zeros((1, 1)), 'ring':   np.zeros((3, 3))},
+    'pinky':  {'spread_pinky':   np.zeros((1, 1)), 'pinky':  np.zeros((3, 3))},
 }
 
 # =============================================================================
@@ -389,12 +387,10 @@ def _set_joint_stiffness_uniform(k_rot, b_rot):
 
 
 def _set_joint_stiffness_experiment():
-    vmc_joint.set_stiffness(K_ROT)
+    vmc_joint.set_stiffness(0.0)   # pure task-space control — no rotational springs
     vmc_joint.set_damping(B_ROT)
-    vmc_joint.stiffness['thumb'] = np.array([K_ROT, K_ROT, 0.0, 0.0])
     for _f in ['index', 'middle', 'ring', 'pinky']:
-        vmc_joint.stiffness[_f] = np.zeros(3)
-        vmc_joint.damping[_f]   = np.full(3, B_FLEX_DAMP)
+        vmc_joint.damping[_f] = np.full(3, B_FLEX_DAMP)
 
 
 def _begin_ramp(end_targets):

@@ -179,6 +179,9 @@ def _ramp_to_home():
 # =============================================================================
 # Run
 # =============================================================================
+# Set to True once data is collected — reruns the protocol without saving.
+COLLECTED_DATA = False
+
 input('Press ENTER to connect the UR5 and approach the guitar…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
@@ -195,9 +198,12 @@ try:
             _ramp_stiffness(ktors)
         input(f'\n=== K = {ktors:.1f} N·m/rad — Press ENTER to start {N_RUNS} runs ===')
 
-        f      = open(_out_path(ktors), 'w', newline='')
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        writer.writeheader()
+        if not COLLECTED_DATA:
+            f      = open(_out_path(ktors), 'w', newline='')
+            writer = csv.DictWriter(f, fieldnames=FIELDS)
+            writer.writeheader()
+        else:
+            f = writer = None
 
         for run in range(1, N_RUNS + 1):
             print(f'  Run {run}/{N_RUNS}')
@@ -206,9 +212,11 @@ try:
             _phase = 'lift';    arm.moveL(list(END_LIFTED),   RETURN_SPEED, RETURN_ACCEL)
             _phase = 'return';  arm.moveL(list(START_LIFTED), RETURN_SPEED, RETURN_ACCEL)
             _phase = 'descend'; arm.moveL(list(START),        RETURN_SPEED, RETURN_ACCEL)
-            _flush(writer, ktors, run)
+            if not COLLECTED_DATA:
+                _flush(writer, ktors, run)
 
-        f.close()
+        if f is not None:
+            f.close()
 
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
