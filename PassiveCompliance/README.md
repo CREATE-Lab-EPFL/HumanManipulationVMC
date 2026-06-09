@@ -56,6 +56,8 @@ Key technical elements:
 - Fingers stay closed throughout all runs within a condition; the arm lifts over
   the top and returns without reopening the hand.
 - No friction compensation (FRICTION_TAU_MAX = 0).
+- Set `COLLECTED_DATA = True` in the script to replay the full arm protocol
+  without overwriting any saved CSV files.
 
 | File | Description |
 |------|-------------|
@@ -74,6 +76,8 @@ Key technical elements:
   the steady-state joint state after a settle period.
 - With UR5 absent, UR5Receiver falls back to identity rotation for gravity
   compensation; connect a stationary UR5 for accurate orientation.
+- Set `COLLECTED_DATA = True` in the script to step through the weight sequence
+  without overwriting any saved CSV files.
 
 | File | Description |
 |------|-------------|

@@ -42,6 +42,9 @@ from hand_config import (
 )
 import rtde_control
 
+# Set to True once data is collected — reruns the protocol without saving.
+COLLECTED_DATA = False
+
 # Pre-compute the four UR5 waypoints used every run
 START        = UR5_POSE_GUITAR.copy()
 END          = UR5_POSE_GUITAR.copy(); END[:3]          += SWEEP_VECTOR
