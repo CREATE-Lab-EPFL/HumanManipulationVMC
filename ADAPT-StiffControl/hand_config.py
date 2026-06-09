@@ -34,20 +34,20 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 # User selects one at startup; GD drives all 5 fingertip forces toward f_des.
 FORCE_LEVELS = ['hard', 'medium', 'soft']
 F_DES = {
-    'hard':   0.60,  # [N]  target tip force per finger
-    'medium': 0.30,  # [N]
-    'soft':   0.05   # [N]
+    'hard':   0.50,  # [N]  target tip force per finger
+    'medium': 0.20,  # [N]
+    'soft':   0.02   # [N]
 }
 
 # ── Stiffness schedule ─────────────────────────────────────────────────────────
 K_TIP_GENTLE = 40.0   # [N/m]  starting task-space stiffness for all fingertips
 
 # ── Gradient-descent adaptation ────────────────────────────────────────────────
-# GD drives K_task per finger until mean |f_meas − f_des| < F_CONVERGE_THR.
+# GD drives K_task per finger until EMA mean |f_meas − f_des| < F_CONVERGE_THR_REL * f_des.
 # No timeout: waits until fully converged.
-GD_LR           = 1e-4  # [-]   stiffness_descent learning rate (thumb K_joint / K_task)
-GD_KTASK_STEP   = 0.05  # [-]   max fractional K_task change per tick (adaptive: scaled by relative error)
-F_CONVERGE_THR  = 0.05  # [N]   mean |f_meas − f_des| threshold across all fingers
+GD_LR              = 1e-4  # [-]   stiffness_descent learning rate
+GD_KTASK_STEP      = 0.05  # [-]   max fractional K_task change per tick (adaptive: scaled by relative error)
+F_CONVERGE_THR_REL = 0.10  # [-]   convergence threshold as fraction of f_des (scales with target)
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
