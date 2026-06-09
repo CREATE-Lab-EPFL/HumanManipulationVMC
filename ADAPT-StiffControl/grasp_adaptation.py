@@ -491,7 +491,7 @@ def control_callback():
                 _gd_f_meas[_f]  = f_init  # seed with initial force (K_TIP_GENTLE state)
             _gd_converge_ticks = 0
             _gd_f_err_ema      = None
-            _log_tick          = -1  # tick 0 logged explicitly below; next log at LOG_EVERY
+            _log_tick          = 0   # tick 0 logged explicitly below; next log at LOG_EVERY
             _state_start       = now
             state              = STATE_ADAPT_GD
             # Log tick 0: captures K_TIP_GENTLE state before any GD update
