@@ -15,8 +15,8 @@ UR5_INIT_ACCEL = 0.05    # [m/s²]
 # =============================================================================
 # Guitar experiment
 # =============================================================================
-UR5_POSE_GUITAR = np.array([0.0, 0.61, 0.22, -1.66, -0.61, -0.54])  # [x,y,z,rx,ry,rz]
-SWEEP_VECTOR    = np.array([0.0, -0.10, 0.0])   # [m] XYZ displacement per strum
+UR5_POSE_GUITAR = np.array([-0.3964, 0.5314, 0.2458, 1.3352, -1.4089, -1.2771])  # [x,y,z,rx,ry,rz]
+SWEEP_VECTOR    = np.array([0.10, 0.0, 0.0])   # [m] XYZ displacement per strum
 LIFT            = 0.05    # [m]  Z clearance for the return trip
 
 SWEEP_SPEED    = 0.05    # [m/s]  strum speed (contact phase)
@@ -24,7 +24,7 @@ SWEEP_ACCEL    = 0.5     # [m/s²]
 RETURN_SPEED   = 0.2     # [m/s]  return (no contact)
 RETURN_ACCEL   = 1.0     # [m/s²]
 
-GUITAR_FINGER_CLOSED_POSE = np.deg2rad([20.0, 20.0, 20.0])   # [MCP, PIP, DIP]
+GUITAR_FINGER_CLOSED_POSE = np.deg2rad([20.0, 30.0, 30.0])   # [MCP, PIP, DIP]
 GUITAR_CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 GUITAR_SPREAD_ANGLE_DEG   = 0.0
 
