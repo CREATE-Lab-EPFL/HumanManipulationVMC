@@ -45,7 +45,7 @@ GUITAR_RESTAB_DURATION  = 1.0           # [s]  per-run re-stabilisation ramp dur
 GUITAR_RESTAB_TIME      = 1.0           # [s]  settle at K_ROT during per-run stabilisation
 GUITAR_SETTLE_TIME      = 2.0           # [s]  settle after initial close
 GUITAR_N_RUNS           = 3             # strums per stiffness condition
-GUITAR_FRICTION_TAU_MAX = 0.03          # [N·m]
+GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 
 # =============================================================================
 # Weight compliance experiment
