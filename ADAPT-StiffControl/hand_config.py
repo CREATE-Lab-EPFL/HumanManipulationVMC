@@ -41,11 +41,11 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # tip force toward f_des = F_GAIN / C_O (MODE='stiffness': updates K;
 # MODE='ref': updates virtual equilibrium positions).
 K_TIP_GENTLE = 20.0    # [N/m]   gentle baseline stiffness (thumb)
-K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
+K_TIP_PROBE  = 100.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
 
 # ── Gradient-descent adaptation ───────────────────────────────────────────────
-F_GAIN          = 0.025  # [N·m]   tune to set the desired force range
+F_GAIN          = 0.010  # [N·m]   tune to set the desired force range
 GD_LR           = 1e-6   # [-]     gradient-descent learning rate (stiffness & ref modes)
 F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD converged
 
