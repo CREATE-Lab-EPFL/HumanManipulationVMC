@@ -35,7 +35,7 @@ GUITAR_K_RETURN         = 0.8           # [N·m/rad]  return-to-home stiffness
 GUITAR_RAMP_DURATION    = 3.0           # [s]
 GUITAR_SETTLE_TIME      = 2.0           # [s]  settle after initial close
 GUITAR_N_RUNS           = 3             # strums per stiffness condition
-GUITAR_FRICTION_TAU_MAX = 0.0           # [N·m]  no friction compensation
+GUITAR_FRICTION_TAU_MAX = 0.05          # [N·m]  no friction compensation
 
 # =============================================================================
 # Weight compliance experiment
