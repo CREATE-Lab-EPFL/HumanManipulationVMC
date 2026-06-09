@@ -8,12 +8,12 @@ import numpy as np
 # ── UR5 poses ─────────────────────────────────────────────────────────────────
 # grasp_adaptation.py — grasp contact pose for each known object.
 UR5_POSE_GRASP_OBJ = {
-    'hard_obj': np.array([-0.52,  0.31,  0.29,  -1.54, -1.64, 0.90]),
+    'hard_obj': np.array([-0.52,  0.31,  0.30,  -1.54, -1.64, 0.90]),
     'soft_obj': np.array([-0.52,  0.31,  0.25, -1.54, -1.64, 0.90]),
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([90.0, -60.0, 90.0, 90.0])
+PC1_THUMB  = np.deg2rad([70.0, -60.0, 90.0, 90.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': np.deg2rad(0.0),
@@ -53,11 +53,11 @@ F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD conv
 
 # ── Background joint regulation ───────────────────────────────────────────────
 K_ROT          = 0.1       # [N·m/rad]    background joint stiffness
-B_ROT          = 0.0001    # [N·m·s/rad]  background joint damping
-B_TIP          = 0.001     # [N·s/m]      task-space damping
+B_ROT          = 0.001     # [N·m·s/rad]  background joint damping
+B_TIP          = 0.01      # [N·s/m]      task-space damping
 K_RETURN       = 0.2       # [N·m/rad]    joint stiffness during ramp back to HOME
 B_FLEX_DAMP    = B_ROT     # [N·m·s/rad]  flexion damping when task spring takes over
-FRICTION_TAU_MAX = 0.02    # [N·m]        max stiction compensation (overrides hand_params default)
+FRICTION_TAU_MAX = 0.04    # [N·m]        max stiction compensation (overrides hand_params default)
 
 # ── UR5 motion geometry ───────────────────────────────────────────────────────
 APPROACH_HEIGHT = 0.10   # [m] Z offset below grasp pose (start and retract)
@@ -65,12 +65,9 @@ PRESS_HEIGHT    = 0.10   # [m] Z press below grasp pose (force demonstration)
 
 # ── Timing ────────────────────────────────────────────────────────────────────
 SETTLE_TIME      = 3.0   # [s]      wait after UR5 reaches pose
-RAMP_DURATION    = 5.0   # [s]      joint-target / K ramp duration
+RAMP_DURATION    = 1.0   # [s]      joint-target / K ramp duration
 CONVERGE_VEL_THR = 0.02  # [rad/s]  velocity threshold for "converged"
 CONVERGE_HOLD    = 1.0   # [s]      time below threshold to declare convergence
-CONVERGE_TIMEOUT = 12.0  # [s]      max wait before forcing transition
-SENSE_DURATION        = 2.0   # [s]      sensing window per round (δ averaged over this)
-N_PROBE_ROUNDS        = 3     # [-]      number of K_GENTLE→K_PROBE round-trips to average
-PROBE_RAMP_DURATION   = 0.5   # [s]      K ramp up/down per probe round (fast — no joint motion)
-PROBE_CONVERGE_HOLD   = 0.5   # [s]      sustained-velocity threshold for probe convergence
-HOLD_TIME             = 3.0   # [s]      hold at lifted pose
+CONVERGE_TIMEOUT = 5.0   # [s]      max wait before forcing transition
+SENSE_DURATION   = 2.0   # [s]      sensing window (δ averaged over this)
+HOLD_TIME        = 3.0   # [s]      hold at lifted pose
