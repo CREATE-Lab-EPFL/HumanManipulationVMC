@@ -7,7 +7,7 @@ analytic tip force toward f_des (hardcoded: hard / medium / soft force level).
 Protocol:
   1. UR5 → GRASP_POSE; settle SETTLE_TIME s; hand ramps HOME → PC1 at K_TIP_GENTLE
   2. Wait velocity convergence at K_TIP_GENTLE
-  3. Run GD on all five fingers until EMA mean |f_meas − f_des| < F_CONVERGE_THR_REL * f_des
+  3. Run GD on all five fingers until mean |f_meas − f_des| < F_CONVERGE_THR
   4. UR5 presses −PRESS_HEIGHT (elastic band shows exerted force)
   5. Hold HOLD_TIME s; release (k=0); hand returns HOME; arm stays at PRESS_POSE
 """
@@ -41,7 +41,7 @@ from hand_config import (
     PC1_THUMB, PC1_SPREAD, PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
     HOME_THUMB, HOME_SPREAD, HOME_FINGER,
     FINGERTIPS, FORCE_LEVELS, F_DES,
-    K_TIP_GENTLE, GD_LR, GD_KTASK_STEP, F_CONVERGE_THR_REL,
+    K_TIP_GENTLE, GD_LR, GD_KTASK_STEP, F_CONVERGE_THR,
     K_ROT, B_ROT, B_TIP, K_RETURN, B_FLEX_DAMP,
     FRICTION_TAU_MAX,
     PRESS_HEIGHT,
@@ -363,7 +363,7 @@ _gd_d_ref          = {f: D_REF[f].copy() for f in FINGERTIPS}
 _gd_f_des          = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_f_meas         = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_converge_ticks = 0
-_gd_f_err_ema      = None  # seeded from first GD tick to avoid startup delay
+
 _gd_last_print     = 0.0
 
 
@@ -430,7 +430,7 @@ def control_callback():
     global _converge_ticks, _log_tick
     global _use_task_vmc
     global _gd_K_joint, _gd_K_task, _gd_d_ref
-    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_f_err_ema, _gd_last_print
+    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_last_print
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -489,7 +489,6 @@ def control_callback():
                 _gd_K_task[_f]  = K_TIP_GENTLE * np.eye(3)
                 _gd_d_ref[_f]   = _d_ref_model_dict[_f].copy()
             _gd_converge_ticks = 0
-            _gd_f_err_ema      = None
             _log_tick          = 0
             _state_start       = now
             state              = STATE_ADAPT_GD
@@ -523,11 +522,7 @@ def control_callback():
             np.array([k_jt[0], k_jt[1], 0.0, 0.0]), 0.0)
 
         f_err_mean = float(np.mean(f_errs))
-        if _gd_f_err_ema is None:
-            _gd_f_err_ema = f_err_mean
-        else:
-            _gd_f_err_ema = 0.9 * _gd_f_err_ema + 0.1 * f_err_mean
-        if _gd_f_err_ema < F_CONVERGE_THR_REL * F_DES_MAG:
+        if f_err_mean < F_CONVERGE_THR:
             _gd_converge_ticks += 1
         else:
             _gd_converge_ticks = 0
@@ -602,7 +597,7 @@ timer_period = 1.0 / CONTROL_FREQUENCY
 controller.create_timer(timer_period, control_callback)
 controller.get_logger().info(
     f'Grasp adaptation | force level: {FORCE_LEVEL} | f_des = {F_DES_MAG} N | '
-    f'K_TIP_GENTLE={K_TIP_GENTLE} N/m | GD_LR={GD_LR} | F_CONVERGE_THR_REL={F_CONVERGE_THR_REL}')
+    f'K_TIP_GENTLE={K_TIP_GENTLE} N/m | GD_LR={GD_LR} | F_CONVERGE_THR={F_CONVERGE_THR} N')
 
 try:
     while rclpy.ok() and state != STATE_DONE:
