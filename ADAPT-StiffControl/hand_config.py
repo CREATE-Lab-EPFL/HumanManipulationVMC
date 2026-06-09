@@ -43,6 +43,7 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 K_TIP_GENTLE = 20.0    # [N/m]   gentle baseline stiffness (thumb)
 K_TIP_PROBE  = 100.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
+N_PROBES     = 3       # [-]     gentle→probe rounds; C_O averaged across rounds
 
 # ── Gradient-descent adaptation ───────────────────────────────────────────────
 F_GAIN          = 0.010  # [N·m]   tune to set the desired force range
