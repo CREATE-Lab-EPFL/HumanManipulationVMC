@@ -13,7 +13,7 @@ UR5_POSE_GRASP_OBJ = {
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([90.0, -90.0, 90.0, 90.0])
+PC1_THUMB  = np.deg2rad([90.0, -60.0, 70.0, 70.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': np.deg2rad(0.0),
