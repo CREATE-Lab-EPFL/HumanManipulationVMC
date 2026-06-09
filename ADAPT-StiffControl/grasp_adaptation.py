@@ -430,7 +430,7 @@ def control_callback():
     global _converge_ticks, _log_tick
     global _use_task_vmc
     global _gd_K_joint, _gd_K_task, _gd_d_ref
-    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_last_print
+    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_f_err_ema, _gd_last_print
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
