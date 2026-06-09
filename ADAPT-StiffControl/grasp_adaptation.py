@@ -363,6 +363,7 @@ _gd_d_ref          = {f: D_REF[f].copy() for f in FINGERTIPS}
 _gd_f_des          = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_f_meas         = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_converge_ticks = 0
+_gd_f_err_ema      = 1.0   # EMA of mean force error for smooth convergence check
 _gd_last_print     = 0.0
 
 
