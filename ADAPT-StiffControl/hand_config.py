@@ -40,7 +40,7 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # C_O = ||Δpos_thumb|| / ||ΔF_thumb||; then gradient descent drives
 # tip force toward f_des = F_GAIN / C_O (MODE='stiffness': updates K;
 # MODE='ref': updates virtual equilibrium positions).
-K_TIP_GENTLE = 40.0    # [N/m]   gentle baseline stiffness (thumb)
+K_TIP_GENTLE = 25.0    # [N/m]   gentle baseline stiffness (thumb)
 K_TIP_PROBE  = 150.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
 N_PROBES     = 1       # [-]     gentle→probe rounds (1 = single probe, no averaging)
@@ -49,7 +49,7 @@ N_PROBES     = 1       # [-]     gentle→probe rounds (1 = single probe, no ave
 # Discrete force target: C_O < C_O_THR → stiff object → higher force target.
 C_O_THR    = 0.025  # [m/N]  compliance threshold (25 mm/N)
 F_DES_HARD = 0.3    # [N]    target force when C_O < C_O_THR (stiff object)
-F_DES_SOFT = 0.01   # [N]    target force when C_O ≥ C_O_THR (soft object)
+F_DES_SOFT = 0.05   # [N]    target force when C_O ≥ C_O_THR (soft object)
 GD_LR           = 1e-6   # [-]     gradient-descent learning rate
 F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD converged
 
