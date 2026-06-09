@@ -20,10 +20,10 @@ PC1_SPREAD = {
     'ring':   np.deg2rad(5.0),
     'pinky':  np.deg2rad(5.0),
 }
-PC1_INDEX  = np.deg2rad([90.0, 110.0, 110.0])
-PC1_MIDDLE = np.deg2rad([90.0, 110.0, 110.0])
-PC1_RING   = np.deg2rad([90.0, 110.0, 110.0])
-PC1_PINKY  = np.deg2rad([90.0, 110.0, 110.0])
+PC1_INDEX  = np.deg2rad([70.0, 120.0, 120.0])
+PC1_MIDDLE = np.deg2rad([70.0, 120.0, 120.0])
+PC1_RING   = np.deg2rad([70.0, 120.0, 120.0])
+PC1_PINKY  = np.deg2rad([70.0, 120.0, 120.0])
 
 # ── Home pose (all joints at zero) ────────────────────────────────────────────
 HOME_THUMB  = np.zeros(4)
@@ -40,7 +40,7 @@ OBJECTS    = ['hard_obj', 'soft_obj']
 # C_O = ||Δpos_thumb|| / ||ΔF_thumb||; then gradient descent drives
 # tip force toward f_des = F_GAIN / C_O (MODE='stiffness': updates K;
 # MODE='ref': updates virtual equilibrium positions).
-K_TIP_GENTLE = 20.0    # [N/m]   gentle baseline stiffness (thumb)
+K_TIP_GENTLE = 25.0    # [N/m]   gentle baseline stiffness (thumb)
 K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
 
