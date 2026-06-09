@@ -62,6 +62,8 @@ FORCE_LEVEL = FORCE_LEVELS[_sel]
 F_DES_MAG   = F_DES[FORCE_LEVEL]
 print(f'Selected: {FORCE_LEVEL}  →  f_des = {F_DES_MAG:.2f} N\n')
 
+COLLECTED_DATA = False
+
 B_RETURN  = K_RETURN * (B_ROT / K_ROT if K_ROT else 0.0)
 LOG_EVERY = max(1, int(CONTROL_FREQUENCY / 30))
 
@@ -97,22 +99,22 @@ THETA_REF_DEG = np.degrees(np.concatenate([
     PC1_INDEX, PC1_MIDDLE, PC1_RING, PC1_PINKY,
 ]))
 
-# Joint stiffness for model logging (thumb CMC active, fingers flex-passive)
+# Joint stiffness for model logging — only task-space springs used; all K_joint = 0
 K_JOINT_DICT_MODEL = {
-    'thumb':         K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
-    'spread_index':  K_ROT * np.eye(1),
-    'spread_middle': K_ROT * np.eye(1),
-    'spread_ring':   K_ROT * np.eye(1),
-    'spread_pinky':  K_ROT * np.eye(1),
+    'thumb':         np.zeros((4, 4)),
+    'spread_index':  np.zeros((1, 1)),
+    'spread_middle': np.zeros((1, 1)),
+    'spread_ring':   np.zeros((1, 1)),
+    'spread_pinky':  np.zeros((1, 1)),
     'index':         np.zeros((3, 3)),
     'middle':        np.zeros((3, 3)),
     'ring':          np.zeros((3, 3)),
     'pinky':         np.zeros((3, 3)),
 }
 
-# GD initial K_joint per finger
+# GD initial K_joint per finger — all zero (pure task-space control)
 _GD_K_JOINT_INIT = {
-    'thumb':  K_ROT * np.diag([1.0, 1.0, 0.0, 0.0]),
+    'thumb':  np.zeros((4, 4)),
     'index':  np.zeros((3, 3)),
     'middle': np.zeros((3, 3)),
     'ring':   np.zeros((3, 3)),
