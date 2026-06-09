@@ -9,10 +9,11 @@ Protocol:
   2. Record pos_gentle, F_gentle for SENSE_DURATION s (baseline)
   3. Ramp thumb K → K_TIP_PROBE; wait velocity convergence
   4. Record pos_probe, F_probe for SENSE_DURATION s
-  5. Compute C_O = ||Δpos||/||ΔF||; f_des = F_GAIN / C_O
-  6. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
-  7. UR5 presses −PRESS_HEIGHT (shows exerted force); UR5 returns to GRASP_POSE
-  8. Release hand (k=0); UR5 retracts to START_POSE
+  5. Compute C_O = ||Δpos||/||ΔF|| for this round; ramp back to K_TIP_GENTLE
+  6. Repeat steps 2–5 for N_PROBES rounds; average C_O across rounds
+  7. f_des = F_GAIN / mean(C_O); gradient descent until |f_meas − f_des| < F_CONVERGE_THR
+  8. UR5 presses −PRESS_HEIGHT (shows exerted force)
+  9. Release hand (k=0); arm stays at PRESS_POSE
 """
 
 import numpy as np
