@@ -494,17 +494,31 @@ def control_callback():
         f_errs = []
         for _f in FINGERTIPS:
             _kj_dict = {**_GD_K_JOINT_DICT_INIT[_f]}  # includes spread K_ROT for non-thumb
-            _kj_dict[_f] = _gd_K_joint[_f]             # insert current GD K_joint
+            _kj_dict[_f] = _gd_K_joint[_f]
             _gd_f_meas[_f] = np.asarray(stiff_model.tip_force(
                 _f, q, _GD_THETA_REF[_f], {_f: _gd_d_ref[_f]},
                 _kj_dict, {_f: _gd_K_task[_f]}))
-            K_j_f, K_t_f = stiff_model.stiffness_descent(
-                _f, q, _GD_THETA_REF[_f], {_f: _gd_d_ref[_f]},
-                _kj_dict, {_f: _gd_K_task[_f]},
-                _gd_f_meas[_f], _gd_f_des[_f],
-                lr_joint=GD_LR, lr_task=GD_LR)
-            _gd_K_joint[_f] = np.maximum(K_j_f[_f], 0.0)  # spread entry ignored
-            _gd_K_task[_f]  = np.maximum(K_t_f[_f], 0.0)
+
+            if _f == 'thumb':
+                # GD on both K_joint (CMC) and K_task for thumb
+                K_j_f, K_t_f = stiff_model.stiffness_descent(
+                    'thumb', q, _GD_THETA_REF['thumb'],
+                    {'thumb': _gd_d_ref['thumb']},
+                    {'thumb': _gd_K_joint['thumb']},
+                    {'thumb': _gd_K_task['thumb']},
+                    _gd_f_meas['thumb'], _gd_f_des['thumb'],
+                    lr_joint=GD_LR, lr_task=GD_LR)
+                _gd_K_joint['thumb'] = np.maximum(K_j_f['thumb'], 0.0)
+                _gd_K_task['thumb']  = np.maximum(K_t_f['thumb'], 0.0)
+            else:
+                # Multiplicative K_task update: scale by f_des/f_meas each tick,
+                # clamped to ±GD_KTASK_STEP fractional change for smooth dynamics.
+                _f_meas_mag = float(np.linalg.norm(_gd_f_meas[_f]))
+                if _f_meas_mag > 1e-6:
+                    _ratio = float(np.clip(F_DES_MAG / _f_meas_mag,
+                                           1.0 - GD_KTASK_STEP, 1.0 + GD_KTASK_STEP))
+                    _gd_K_task[_f] = np.maximum(_gd_K_task[_f] * _ratio, 0.0)
+
             vmc_task.springs[_f].stiffness = np.diag(_gd_K_task[_f])
             f_errs.append(float(np.linalg.norm(_gd_f_meas[_f] - _gd_f_des[_f])))
 
