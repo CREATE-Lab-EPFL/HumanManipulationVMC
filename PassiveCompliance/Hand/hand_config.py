@@ -35,7 +35,7 @@ GUITAR_FINGER_CLOSED_POSE = np.deg2rad([20.0, 30.0, 30.0])   # [MCP, PIP, DIP]
 GUITAR_CLOSED_FINGERS     = ['index', 'middle', 'ring', 'pinky']
 GUITAR_SPREAD_ANGLE_DEG   = 0.0
 
-TORSIONAL_SPRINGS       = [0.1, 0.3]    # [N·m/rad]  compared conditions
+TORSIONAL_SPRINGS       = [0.01, 0.08, 0.3]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.4           # [N·m/rad]  ramp / background stiffness
 GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
 GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
@@ -45,7 +45,7 @@ GUITAR_RESTAB_DURATION  = 1.0           # [s]  per-run re-stabilisation ramp dur
 GUITAR_RESTAB_TIME      = 1.0           # [s]  settle at K_ROT during per-run stabilisation
 GUITAR_SETTLE_TIME      = 2.0           # [s]  settle after initial close
 GUITAR_N_RUNS           = 3             # strums per stiffness condition
-GUITAR_FRICTION_TAU_MAX = 0.05          # [N·m]
+GUITAR_FRICTION_TAU_MAX = 0.01          # [N·m]
 
 # =============================================================================
 # Weight compliance experiment
