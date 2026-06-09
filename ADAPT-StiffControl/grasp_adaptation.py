@@ -639,38 +639,56 @@ def control_callback():
             if not COLLECTED_DATA:
                 _csv_file.flush()
 
-            n_g   = max(1, _sense_count)
-            n_p   = max(1, _probe_count)
-            d_pos = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
-            d_F   = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
-            nF    = float(np.linalg.norm(d_F))
-            if nF > 1e-9:
-                _C_O_mean = float(np.linalg.norm(d_pos) / nF)
-            else:
-                _C_O_mean = 0.0
-            f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
-
-            # Set f_des direction from initial tip force at probe stiffness
-            f_init = np.asarray(stiff_model.tip_force(
-                'thumb', q, _GD_THETA_THUMB_DEG, {'thumb': _d_ref_model_dict['thumb']},
-                _GD_K_JOINT_INIT, {'thumb': K_TIP_PROBE * np.eye(3)}))
-            f_init_mag = float(np.linalg.norm(f_init))
-            if f_init_mag > 1e-9:
-                _gd_f_des = f_des_mag * f_init / f_init_mag
-            else:
-                _gd_f_des = np.array([0.0, 0.0, -f_des_mag])
-
-            _gd_K_joint       = {'thumb': K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])}
-            _gd_K_task        = {'thumb': K_TIP_PROBE * np.eye(3)}
-            _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
-            _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
-
+            n_g       = max(1, _sense_count)
+            n_p       = max(1, _probe_count)
+            d_pos     = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
+            d_F       = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
+            nF        = float(np.linalg.norm(d_F))
+            C_O_round = float(np.linalg.norm(d_pos) / nF) if nF > 1e-9 else 0.0
+            _C_O_list.append(C_O_round)
             controller.get_logger().info(
-                f'Probe done. C_O = {_C_O_mean * 1e3:.2f} mm/N → f_des = {f_des_mag:.3f} N')
-            _gd_converge_ticks = 0
-            _log_tick          = 0
-            _state_start       = now
-            state              = STATE_ADAPT_GD
+                f'Round {_probe_round + 1}/{N_PROBES}: C_O = {C_O_round * 1e3:.2f} mm/N')
+
+            _probe_round += 1
+            if _probe_round < N_PROBES:
+                # Another round: ramp thumb back to K_TIP_GENTLE, re-record gentle
+                _sense_count = 0
+                _probe_count = 0
+                for _f in FINGERTIPS:
+                    _pos_gentle_sum[_f]   = np.zeros(3)
+                    _force_gentle_sum[_f] = np.zeros(3)
+                _begin_k_ramp(K_TIP_PROBE, K_TIP_GENTLE)
+                _converge_ticks = 0
+                _converged      = False
+                _log_tick       = 0
+                _state_start    = now
+                state           = STATE_RETURN_RAMP
+            else:
+                _C_O_mean = float(np.mean(_C_O_list)) if _C_O_list else 0.0
+                f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
+
+                # Set f_des direction from initial tip force at probe stiffness
+                f_init = np.asarray(stiff_model.tip_force(
+                    'thumb', q, _GD_THETA_THUMB_DEG, {'thumb': _d_ref_model_dict['thumb']},
+                    _GD_K_JOINT_INIT, {'thumb': K_TIP_PROBE * np.eye(3)}))
+                f_init_mag = float(np.linalg.norm(f_init))
+                if f_init_mag > 1e-9:
+                    _gd_f_des = f_des_mag * f_init / f_init_mag
+                else:
+                    _gd_f_des = np.array([0.0, 0.0, -f_des_mag])
+
+                _gd_K_joint       = {'thumb': K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])}
+                _gd_K_task        = {'thumb': K_TIP_PROBE * np.eye(3)}
+                _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
+                _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
+
+                controller.get_logger().info(
+                    f'All {N_PROBES} rounds done. '
+                    f'mean C_O = {_C_O_mean * 1e3:.2f} mm/N → f_des = {f_des_mag:.3f} N')
+                _gd_converge_ticks = 0
+                _log_tick          = 0
+                _state_start       = now
+                state              = STATE_ADAPT_GD
 
     elif state == STATE_ADAPT_GD:
         # Compute analytic tip force with current GD parameters
