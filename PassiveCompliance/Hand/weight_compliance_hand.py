@@ -160,7 +160,7 @@ def _ramp_stiffness(k_new):
 
 def _ramp_to_home():
     starts   = {f: getattr(vmc_joint, f'{f}_target').copy() for f in WEIGHT_FINGERS}
-    start_ks = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
+    start_ks = {f: vmc_joint.stiffness[f].copy() for f in WEIGHT_FINGERS}
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
@@ -169,8 +169,8 @@ def _ramp_to_home():
         vmc_joint.middle_target = (1-alpha)*starts['middle'] + alpha*np.zeros(3)
         vmc_joint.ring_target   = (1-alpha)*starts['ring']   + alpha*np.zeros(3)
         vmc_joint.pinky_target  = (1-alpha)*starts['pinky']  + alpha*np.zeros(3)
-        for g in start_ks:
-            vmc_joint.stiffness[g][:] = (1-alpha)*start_ks[g] + alpha*WEIGHT_K_RETURN
+        for f in WEIGHT_FINGERS:
+            vmc_joint.stiffness[f][:] = (1-alpha)*start_ks[f] + alpha*WEIGHT_K_RETURN
         if alpha >= 1.0: break
         time.sleep(dt)
 
@@ -224,7 +224,9 @@ finally:
     _ramp_to_home()
     _running = False
     ctrl_thread.join(timeout=1.0)
-    vmc_joint.set_stiffness(0.0); vmc_joint.set_damping(0.0)
+    for f in WEIGHT_FINGERS:
+        vmc_joint.stiffness[f][:] = 0.0
+        vmc_joint.damping[f][:]   = 0.0
     controller.publish_torques(np.zeros(13))
     if recv is not None: recv.disconnect()
     controller.destroy_node()

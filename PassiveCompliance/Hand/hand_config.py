@@ -58,7 +58,7 @@ GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 # =============================================================================
 # Weight compliance experiment
 # =============================================================================
-UR5_POSE_WEIGHT         = np.array([-0.3554,  0.4908,  0.3358, -2.3652, -0.4837,  0.2694])
+UR5_POSE_WEIGHT         = np.array([[-0.3199,  0.4437,  0.3519, -2.8051, -0.7298,  0.1164]])
                                    
 WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_INDEX  = np.deg2rad([40.0, 40.0, 40.0])   # [MCP, PIP, DIP]
@@ -72,7 +72,7 @@ WEIGHT_SPREAD = {
     'pinky':  np.deg2rad(0.0),
 }
 
-STIFFNESS_CONDITIONS    = [0.05, 0.1, 0.2, 0.4]   # [N·m/rad]  swept stiffness values
+STIFFNESS_CONDITIONS    = [0.01, 0.2, 0.6]   # [N·m/rad]  swept stiffness values
 WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  approach stiffness (used only to reach pose; replaced by condition K after ramp)
