@@ -27,7 +27,7 @@ from VMCHand.HandGravFricLim   import GravFricLim
 from UR5_codes.UR5_readPose    import UR5Receiver
 from hand_config import (
     WEIGHT_POSE, WEIGHT_FINGERS, WEIGHT_SPREAD_ANGLE_DEG,
-    STIFFNESS_CONDITIONS, WEIGHTS_G, WEIGHT_LABELS,
+    STIFFNESS_CONDITIONS,
     WEIGHT_K_ROT, WEIGHT_B_ROT, WEIGHT_B_SETTLE, WEIGHT_K_RETURN,
     WEIGHT_RAMP_DURATION, WEIGHT_SETTLE_TIME, WEIGHT_LOG_DURATION,
     WEIGHT_FRICTION_TAU_MAX,
@@ -42,7 +42,7 @@ COLLECTED_DATA = False
 _S_COLS = ([f'q_{i}'    for i in range(13)] +
            [f'qdot_{i}' for i in range(13)] +
            [f'tau_{i}'  for i in range(13)])
-FIELDS  = ['time_s', 'k_rot', 'weight_g'] + _S_COLS
+FIELDS  = ['time_s', 'k_rot', 'weight_step'] + _S_COLS
 
 def _out_path(k):
     d = os.path.join(_HERE, 'outputs', 'weight_compliance_hand')
@@ -75,6 +75,7 @@ for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
 for _f in WEIGHT_FINGERS:
     vmc_joint.spread[_f] = np.array([np.deg2rad(WEIGHT_SPREAD_ANGLE_DEG)])
 
+vmc_joint.thumb         = np.deg2rad([2.0, 2.0, 2.0, 2.0])
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.ring_target   = np.zeros(3)
@@ -104,11 +105,11 @@ def _control_loop():
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
 
-def _flush(writer, k_rot, weight_g):
+def _flush(writer, k_rot, weight_step):
     with _lock:
         rows = _buf.copy(); _buf.clear()
     for r in rows:
-        writer.writerow({'time_s': r[0], 'k_rot': k_rot, 'weight_g': weight_g,
+        writer.writerow({'time_s': r[0], 'k_rot': k_rot, 'weight_step': weight_step,
                          **dict(zip(_S_COLS, r[1:]))})
 
 # =============================================================================
@@ -191,14 +192,26 @@ try:
             fh = writer = None
 
         try:
-            for label, w in zip(WEIGHT_LABELS, WEIGHTS_G):
-                input(f'  Hang {label} weight ({w} g) and press ENTER…')
+            weight_step = 0
+            # Log baseline with no weight
+            time.sleep(WEIGHT_SETTLE_TIME)
+            with _lock: _buf.clear()
+            time.sleep(WEIGHT_LOG_DURATION)
+            if not COLLECTED_DATA:
+                _flush(writer, k, weight_step)
+                print(f'  Logged step {weight_step} (no weight)')
+            # Incremental weights — operator adds and presses ENTER; "done" to finish
+            while True:
+                resp = input('  Add a weight and press ENTER, or "done" to move on… ')
+                if resp.strip().lower() in ('done', 'd', 'q'):
+                    break
+                weight_step += 1
                 time.sleep(WEIGHT_SETTLE_TIME)
                 with _lock: _buf.clear()
                 time.sleep(WEIGHT_LOG_DURATION)
                 if not COLLECTED_DATA:
-                    _flush(writer, k, w)
-                    print(f'  Logged {label} ({w} g)')
+                    _flush(writer, k, weight_step)
+                    print(f'  Logged step {weight_step}')
         finally:
             if fh is not None:
                 fh.close()

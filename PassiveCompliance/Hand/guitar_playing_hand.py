@@ -86,6 +86,7 @@ for _hold in ['spread_index', 'spread_middle', 'spread_ring', 'spread_pinky']:
 for _k in CLOSED_FINGERS:
     vmc_joint.spread[_k] = np.array([np.deg2rad(SPREAD_ANGLE_DEG)])
 
+vmc_joint.thumb         = np.deg2rad([2.0, 2.0, 2.0, 2.0])
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.ring_target   = np.zeros(3)

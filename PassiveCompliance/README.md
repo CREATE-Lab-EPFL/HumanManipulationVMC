@@ -48,14 +48,17 @@ Shared configuration lives in a single `hand_config.py`.
 All fingers except the thumb are held closed at a fixed flexion pose under a
 torsional (joint-space) spring. The UR5 drags the closed hand linearly across
 the strings at two stiffness conditions; audio is captured externally via the
-camera microphone.
+camera microphone. The thumb is held at a small neutral pose (2° on all joints)
+and is not involved in the strumming motion.
 
 Key technical elements:
 - Torsional (joint-space) stiffness is the swept variable; task-space springs are
   not used — the experiment isolates the effect of joint stiffness on sound.
+- At the start of every run the script bumps stiffness to K_ROT with higher damping
+  (B_SETTLE) for 1 s to guarantee identical initial conditions, then softens to the
+  condition K before the arm moves.
 - Fingers stay closed throughout all runs within a condition; the arm lifts over
   the top and returns without reopening the hand.
-- No friction compensation (FRICTION_TAU_MAX = 0).
 - Set `COLLECTED_DATA = True` in the script to replay the full arm protocol
   without overwriting any saved CSV files.
 
@@ -67,16 +70,19 @@ Key technical elements:
 ### Weight compliance (`weight_compliance_hand.py`)
 
 Four fingers are commanded to hold a fixed pose (WEIGHT_POSE) under joint-space
-springs. Hanging weights are applied in steps to measure steady-state angular
-deflection as a function of stiffness. The hand is fixed (UR5 stationary or absent).
+springs. The operator adds weights incrementally; the script logs a 5 s convergence
+window after each addition. The hand is fixed (UR5 stationary or absent). The thumb
+is held at a small neutral pose (2° on all joints) and is not loaded.
 
 Key technical elements:
 - Torsional stiffness (STIFFNESS_CONDITIONS) is the swept variable.
-- For each stiffness, the operator steps through WEIGHTS_G and the script logs
-  the steady-state joint state after a settle period.
+- The hand ramps to the target pose once at the start (K_ROT + B_SETTLE for fast
+  settling), then softens to the first condition K. Subsequent conditions change K only.
+- The operator types ENTER for each weight added, "done" to close the condition.
+  Step 0 (no weight) is logged automatically as the baseline.
 - With UR5 absent, UR5Receiver falls back to identity rotation for gravity
   compensation; connect a stationary UR5 for accurate orientation.
-- Set `COLLECTED_DATA = True` in the script to step through the weight sequence
+- Set `COLLECTED_DATA = True` in the script to step through the sequence
   without overwriting any saved CSV files.
 
 | File | Description |

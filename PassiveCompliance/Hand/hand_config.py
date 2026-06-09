@@ -48,8 +48,6 @@ WEIGHT_FINGERS          = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_SPREAD_ANGLE_DEG = 0.0
 
 STIFFNESS_CONDITIONS    = [0.05, 0.1, 0.2, 0.4]   # [N·m/rad]  swept stiffness values
-WEIGHTS_G               = [50, 150, 300]           # [g]  light / medium / heavy
-WEIGHT_LABELS           = ['light', 'medium', 'heavy']
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  ramp / background stiffness
 WEIGHT_B_ROT            = 0.01   # [N·m·s/rad]  normal damping
