@@ -35,7 +35,7 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 FORCE_LEVELS = ['hard', 'medium', 'soft']
 F_DES = {
     'hard':   0.50,  # [N]  target tip force per finger
-    'medium': 0.20,  # [N]
+    'medium': 0.25,  # [N]
     'soft':   0.02   # [N]
 }
 
