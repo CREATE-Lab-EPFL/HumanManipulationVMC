@@ -34,10 +34,8 @@ def _load(module_alias, relative_path):
     return module
 
 
-_piano    = _load("piano_config_hand",
-                  "PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py")
-_guitar   = _load("guitar_config_hand",
-                  "PassiveCompliance/Hand/HelperGuitar/guitar_config.py")
+_passive  = _load("passive_hand_config",
+                  "PassiveCompliance/Hand/hand_config.py")
 _tunable  = _load("tunable_hand_config",
                   "TunableCompliance/Hand/hand_config.py")
 _proprio  = _load("proprio_hand_config",
@@ -51,19 +49,16 @@ _adapt    = _load("adapt_hand_config",
 HAND_POSES = {
     # PoseControl/position_tracker.py (UR5 stays still; arm parked at squeezing pose)
     "position_tracking":      _proprio.UR5_POSE_SQUEEZING,
-    # PassiveCompliance/Hand/piano_playing_hand.py
-    "piano_playing_hand":     _piano.UR5_POSE_PIANO,
     # PassiveCompliance/Hand/guitar_playing_hand.py
-    "guitar_playing_hand":    _guitar.UR5_POSE_GUITAR,
+    "guitar_playing_hand":    _passive.UR5_POSE_GUITAR,
     # TunableCompliance/Hand/inhand_manipulation.py
     "inhand_manipulation":    _tunable.UR5_POSE_INHAND,
     # TunableCompliance/Hand/dynamic_grasp.py
     "dynamic_grasp":          _tunable.UR5_POSE_BOTTLE_START,
     # ProprioceptiveSensing/Hand/object_stiffness_hand.py
     "object_stiffness_hand":  _proprio.UR5_POSE_SQUEEZING,
-    # ADAPT-StiffControl/grasp_adaptation.py (per-object grasp pose)
-    "grasp_adaptation_hard":  _adapt.UR5_POSE_GRASP_OBJ["hard_obj"],
-    "grasp_adaptation_soft":  _adapt.UR5_POSE_GRASP_OBJ["soft_obj"],
+    # ADAPT-StiffControl/grasp_adaptation.py
+    "grasp_adaptation":       _adapt.UR5_POSE_GRASP,
 }
 
 
