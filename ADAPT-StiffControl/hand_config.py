@@ -7,10 +7,10 @@ import numpy as np
 
 # ── UR5 pose ───────────────────────────────────────────────────────────────────
 # grasp contact pose for the apple.
-UR5_POSE_GRASP = np.array([-0.52,  0.31,  0.40, -1.54, -1.64, 0.90])
+UR5_POSE_GRASP = np.array([-0.52,  0.31,  0.42, -1.54, -1.64, 0.90])
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([70.0, -60.0, 100.0, 100.0])
+PC1_THUMB  = np.deg2rad([90.0, -60.0, 100.0, 100.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': np.deg2rad(0.0),
@@ -34,9 +34,9 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 # User selects one at startup; GD drives all 5 fingertip forces toward f_des.
 FORCE_LEVELS = ['hard', 'medium', 'soft']
 F_DES = {
-    'hard':   0.8,   # [N]  target tip force per finger
-    'medium': 0.3,   # [N]
-    'soft':   0.1,   # [N]
+    'hard':   0.5,   # [N]  target tip force per finger
+    'medium': 0.2,   # [N]
+    'soft':   0.01  # [N]
 }
 
 # ── Stiffness schedule ─────────────────────────────────────────────────────────

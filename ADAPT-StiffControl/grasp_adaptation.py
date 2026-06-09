@@ -332,6 +332,7 @@ _gd_d_ref          = {f: D_REF[f].copy() for f in FINGERTIPS}
 _gd_f_des          = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_f_meas         = {f: np.zeros(3) for f in FINGERTIPS}
 _gd_converge_ticks = 0
+_gd_last_print     = 0.0
 
 
 def _move_arm_async(target_pose, speed, done_state):
@@ -399,7 +400,7 @@ def control_callback():
     global _converge_ticks, _log_tick
     global _use_task_vmc
     global _gd_K_joint, _gd_K_task, _gd_d_ref
-    global _gd_f_des, _gd_f_meas, _gd_converge_ticks
+    global _gd_f_des, _gd_f_meas, _gd_converge_ticks, _gd_last_print
 
     q     = controller.get_joint_positions()
     q_dot = controller.get_joint_velocities()
@@ -489,6 +490,12 @@ def control_callback():
         else:
             _gd_converge_ticks = 0
         gd_converged = _gd_converge_ticks >= _CONVERGE_TICKS
+
+        if not gd_converged and now - _gd_last_print >= 1.0:
+            _gd_last_print = now
+            errs_str = '  '.join(f'{f}: {e:.3f}' for f, e in zip(FINGERTIPS, f_errs))
+            controller.get_logger().info(
+                f'GD t={elapsed:.1f}s  |f_err| per finger: {errs_str}  mean: {f_err_mean:.3f} N')
 
         _log_tick += 1
         if _log_tick % LOG_EVERY == 0:
