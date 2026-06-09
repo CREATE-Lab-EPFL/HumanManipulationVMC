@@ -34,9 +34,9 @@ FINGERTIPS = ['thumb', 'index', 'middle', 'ring', 'pinky']
 # User selects one at startup; GD drives all 5 fingertip forces toward f_des.
 FORCE_LEVELS = ['hard', 'medium', 'soft']
 F_DES = {
-    'hard':   0.5,   # [N]  target tip force per finger
-    'medium': 0.2,   # [N]
-    'soft':   0.01  # [N]
+    'hard':   0.50,  # [N]  target tip force per finger
+    'medium': 0.20,  # [N]
+    'soft':   0.02   # [N]
 }
 
 # ── Stiffness schedule ─────────────────────────────────────────────────────────
