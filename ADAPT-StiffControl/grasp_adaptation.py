@@ -262,6 +262,10 @@ def _compute_row(q, q_dot, phase, converged):
     K_task_now = {f: _gd_K_task[f] for f in FINGERTIPS}
     K_task_now['palm'] = K_TIP_GENTLE * np.eye(3)
 
+    # Use GD-updated thumb K_joint so the logged stiffness reflects the actual controller state
+    _K_joint_log = dict(K_JOINT_DICT_MODEL)
+    _K_joint_log['thumb'] = _gd_K_joint['thumb']
+
     row = [f'{time.time() - _experiment_start:.4f}', phase,
            FORCE_LEVEL, f'{F_DES_MAG:.4f}', int(converged)]
 
@@ -288,8 +292,8 @@ def _compute_row(q, q_dot, phase, converged):
         disp = pos - ref
         mag  = float(np.linalg.norm(disp))
         f1   = stiff_model.tip_force(_f, q, THETA_REF_DEG, _d_ref_model_dict,
-                                      K_JOINT_DICT_MODEL, K_task_now)
-        K1   = stiff_model.tip_stiffness(_f, q, K_JOINT_DICT_MODEL, K_task_now)
+                                      _K_joint_log, K_task_now)
+        K1   = stiff_model.tip_stiffness(_f, q, _K_joint_log, K_task_now)
         eig1 = np.linalg.eigvalsh(K1)
 
         row += [f'{v:.6f}' for v in pos]
@@ -499,25 +503,17 @@ def control_callback():
                 _f, q, _GD_THETA_REF[_f], {_f: _gd_d_ref[_f]},
                 _kj_dict, {_f: _gd_K_task[_f]}))
 
-            if _f == 'thumb':
-                # GD on both K_joint (CMC) and K_task for thumb
-                K_j_f, K_t_f = stiff_model.stiffness_descent(
-                    'thumb', q, _GD_THETA_REF['thumb'],
-                    {'thumb': _gd_d_ref['thumb']},
-                    {'thumb': _gd_K_joint['thumb']},
-                    {'thumb': _gd_K_task['thumb']},
-                    _gd_f_meas['thumb'], _gd_f_des['thumb'],
-                    lr_joint=GD_LR, lr_task=GD_LR)
-                _gd_K_joint['thumb'] = np.maximum(K_j_f['thumb'], 0.0)
-                _gd_K_task['thumb']  = np.maximum(K_t_f['thumb'], 0.0)
-            else:
-                # Multiplicative K_task update: scale by f_des/f_meas each tick,
-                # clamped to ±GD_KTASK_STEP fractional change for smooth dynamics.
-                _f_meas_mag = float(np.linalg.norm(_gd_f_meas[_f]))
-                if _f_meas_mag > 1e-6:
-                    _ratio = float(np.clip(F_DES_MAG / _f_meas_mag,
-                                           1.0 - GD_KTASK_STEP, 1.0 + GD_KTASK_STEP))
-                    _gd_K_task[_f] = np.maximum(_gd_K_task[_f] * _ratio, 0.0)
+            # Multiplicative update for all fingers: scale K_task (and K_joint for thumb)
+            # by f_des/f_meas each tick, clamped to ±GD_KTASK_STEP fractional change.
+            _f_meas_mag = float(np.linalg.norm(_gd_f_meas[_f]))
+            if _f_meas_mag > 1e-6:
+                _ratio = float(np.clip(F_DES_MAG / _f_meas_mag,
+                                       1.0 - GD_KTASK_STEP, 1.0 + GD_KTASK_STEP))
+                _gd_K_task[_f] = np.maximum(_gd_K_task[_f] * _ratio, 0.0)
+                if _f == 'thumb':
+                    # Also scale CMC joint stiffness so the rotational contribution
+                    # to tip stiffness tracks the same target.
+                    _gd_K_joint['thumb'] = np.maximum(_gd_K_joint['thumb'] * _ratio, 0.0)
 
             vmc_task.springs[_f].stiffness = np.diag(_gd_K_task[_f])
             f_errs.append(float(np.linalg.norm(_gd_f_meas[_f] - _gd_f_des[_f])))
