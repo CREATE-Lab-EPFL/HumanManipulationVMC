@@ -13,7 +13,7 @@ UR5_POSE_GRASP_OBJ = {
 }
 
 # ── PC1 grasp pose (Santello et al. 1998 — first principal component) ─────────
-PC1_THUMB  = np.deg2rad([90.0, -60.0, 90.0, 90.0])
+PC1_THUMB  = np.deg2rad([90.0, -90.0, 90.0, 90.0])
 PC1_SPREAD = {
     'index':  np.deg2rad(-5.0),
     'middle': np.deg2rad(0.0),
@@ -45,9 +45,7 @@ K_TIP_PROBE  = 200.0   # [N/m]   probe stiffness (thumb)
 K_TIP_HOLD   = 100.0   # [N/m]   constant hold stiffness for the 4 clamping fingers
 
 # ── Gradient-descent adaptation ───────────────────────────────────────────────
-# Target force magnitude: f_des = F_GAIN / C_O.
-# With C_O ∈ [0.015, 0.045] m/N (15–45 mm/N) this maps to ≈ [1.7, 5] N.
-F_GAIN          = 0.075  # [N·m]   tune to set the desired force range
+F_GAIN          = 0.025  # [N·m]   tune to set the desired force range
 GD_LR           = 1e-6   # [-]     gradient-descent learning rate (stiffness & ref modes)
 F_CONVERGE_THR  = 0.05   # [N]     |f_meas - f_des| threshold to declare GD converged
 
