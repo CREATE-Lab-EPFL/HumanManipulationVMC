@@ -6,14 +6,13 @@ analytic tip force → f_des = F_GAIN / C_O.
 
 Protocol:
   1. UR5 → GRASP_POSE; settle SETTLE_TIME s; hand ramps HOME → PC1 at K_TIP_GENTLE
-  2. Repeat N_PROBE_ROUNDS times:
-       a. Ramp thumb K → K_TIP_PROBE; wait convergence
-       b. Record pos_probe, F_probe for SENSE_DURATION s
-       c. (if more rounds) ramp K back to K_TIP_GENTLE; wait
-  3. Compute C_O = avg(||Δpos||/||ΔF||); f_des = F_GAIN / C_O
-  4. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
-  5. UR5 presses −PRESS_HEIGHT (shows force); UR5 returns to GRASP_POSE
-  6. Release hand (k=0); UR5 retracts to START_POSE
+  2. Record pos_gentle, F_gentle for SENSE_DURATION s (baseline)
+  3. Ramp thumb K → K_TIP_PROBE; wait velocity convergence
+  4. Record pos_probe, F_probe for SENSE_DURATION s
+  5. Compute C_O = ||Δpos||/||ΔF||; f_des = F_GAIN / C_O
+  6. Gradient descent until |f_meas − f_des| < F_CONVERGE_THR
+  7. UR5 presses −PRESS_HEIGHT (shows exerted force); UR5 returns to GRASP_POSE
+  8. Release hand (k=0); UR5 retracts to START_POSE
 """
 
 import numpy as np
@@ -400,9 +399,6 @@ _gd_f_des           = np.zeros(3)
 _gd_f_meas          = np.zeros(3)
 _gd_converge_ticks  = 0
 
-_probe_round  = 0   # which probe round we are on (0-indexed)
-
-
 def _move_arm_async(target_pose, speed, done_state):
     global _arm_moving
     def _run():
@@ -499,7 +495,7 @@ def control_callback():
     global state, _state_start
     global _converge_ticks, _log_tick, _converged
     global _use_task_vmc, _C_O_mean
-    global _sense_count, _probe_count, _probe_round
+    global _sense_count, _probe_count
     global _current_k
     global _gd_K_joint, _gd_K_task, _gd_theta_ref_deg, _gd_d_ref
     global _gd_f_des, _gd_f_meas, _gd_converge_ticks
@@ -598,8 +594,26 @@ def control_callback():
     elif state == STATE_PROBE_RAMP:
         if _step_k_ramp(now):
             controller.get_logger().info(
-                f'Probe round {_probe_round + 1}/{N_PROBE_ROUNDS}: '
-                f'K={K_TIP_PROBE} N/m. Recording for {SENSE_DURATION:.1f} s …')
+                f'K={K_TIP_PROBE} N/m. Waiting convergence …')
+            _converge_ticks = 0
+            _converged      = False
+            _log_tick       = 0
+            _state_start    = now
+            state           = STATE_PROBE_CONV
+
+    elif state == STATE_PROBE_CONV:
+        if np.max(np.abs(q_dot)) < CONVERGE_VEL_THR:
+            _converge_ticks += 1
+        else:
+            _converge_ticks = 0
+        if (_converge_ticks >= _CONVERGE_TICKS) or (elapsed >= CONVERGE_TIMEOUT):
+            _probe_count = 0
+            for _f in FINGERTIPS:
+                _pos_probe_sum[_f]   = np.zeros(3)
+                _force_probe_sum[_f] = np.zeros(3)
+            controller.get_logger().info(
+                f'Probe converged at {elapsed:.1f} s. '
+                f'Recording probe point for {SENSE_DURATION:.1f} s …')
             _log_tick    = 0
             _state_start = now
             state        = STATE_PROBE_REC
@@ -624,67 +638,38 @@ def control_callback():
             if not COLLECTED_DATA:
                 _csv_file.flush()
 
-            if _probe_round < N_PROBE_ROUNDS - 1:
-                # More rounds: ramp K back to K_TIP_GENTLE then repeat probe
-                controller.get_logger().info(
-                    f'Probe round {_probe_round + 1}/{N_PROBE_ROUNDS} done. '
-                    f'Ramping back to K_TIP_GENTLE …')
-                _probe_round += 1
-                _begin_k_ramp(K_TIP_PROBE, K_TIP_GENTLE)
-                _converge_ticks = 0
-                _converged      = False
-                _log_tick       = 0
-                _state_start    = now
-                state           = STATE_PROBE_BACK_RAMP
+            n_g   = max(1, _sense_count)
+            n_p   = max(1, _probe_count)
+            d_pos = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
+            d_F   = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
+            nF    = float(np.linalg.norm(d_F))
+            if nF > 1e-9:
+                _C_O_mean = float(np.linalg.norm(d_pos) / nF)
             else:
-                # All rounds done: compute C_O and start GD
-                n_g   = max(1, _sense_count)
-                n_p   = max(1, _probe_count)
-                d_pos = _pos_probe_sum['thumb'] / n_p - _pos_gentle_sum['thumb'] / n_g
-                d_F   = _force_probe_sum['thumb'] / n_p - _force_gentle_sum['thumb'] / n_g
-                nF    = float(np.linalg.norm(d_F))
-                if nF > 1e-9:
-                    _C_O_mean = float(np.linalg.norm(d_pos) / nF)
-                else:
-                    _C_O_mean = 0.0
-                f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
+                _C_O_mean = 0.0
+            f_des_mag = F_GAIN / _C_O_mean if _C_O_mean > 1e-12 else 0.0
 
-                # Set f_des direction from initial tip force at probe stiffness
-                f_init = np.asarray(stiff_model.tip_force(
-                    'thumb', q, _GD_THETA_THUMB_DEG, {'thumb': _d_ref_model_dict['thumb']},
-                    _GD_K_JOINT_INIT, {'thumb': K_TIP_PROBE * np.eye(3)}))
-                f_init_mag = float(np.linalg.norm(f_init))
-                if f_init_mag > 1e-9:
-                    _gd_f_des = f_des_mag * f_init / f_init_mag
-                else:
-                    _gd_f_des = np.array([0.0, 0.0, -f_des_mag])
+            # Set f_des direction from initial tip force at probe stiffness
+            f_init = np.asarray(stiff_model.tip_force(
+                'thumb', q, _GD_THETA_THUMB_DEG, {'thumb': _d_ref_model_dict['thumb']},
+                _GD_K_JOINT_INIT, {'thumb': K_TIP_PROBE * np.eye(3)}))
+            f_init_mag = float(np.linalg.norm(f_init))
+            if f_init_mag > 1e-9:
+                _gd_f_des = f_des_mag * f_init / f_init_mag
+            else:
+                _gd_f_des = np.array([0.0, 0.0, -f_des_mag])
 
-                # Initialise GD state (both modes use same K; ref mode keeps K fixed)
-                _gd_K_joint       = {'thumb': K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])}
-                _gd_K_task        = {'thumb': K_TIP_PROBE * np.eye(3)}
-                _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
-                _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
+            _gd_K_joint       = {'thumb': K_ROT * np.diag([1.0, 1.0, 0.0, 0.0])}
+            _gd_K_task        = {'thumb': K_TIP_PROBE * np.eye(3)}
+            _gd_theta_ref_deg = _GD_THETA_THUMB_DEG.copy()
+            _gd_d_ref         = {'thumb': _d_ref_model_dict['thumb'].copy()}
 
-                controller.get_logger().info(
-                    f'All {N_PROBE_ROUNDS} probe rounds done. '
-                    f'C_O = {_C_O_mean * 1e3:.2f} mm/N  '
-                    f'→ f_des = {f_des_mag:.3f} N')
-                _gd_converge_ticks = 0
-                _log_tick          = 0
-                _state_start       = now
-                state              = STATE_ADAPT_GD
-
-    elif state == STATE_PROBE_BACK_RAMP:
-        if _step_k_ramp(now):
-            # K is back at K_TIP_GENTLE — start next probe ramp
             controller.get_logger().info(
-                f'Starting probe round {_probe_round + 1}/{N_PROBE_ROUNDS} …')
-            _begin_k_ramp(K_TIP_GENTLE, K_TIP_PROBE)
-            _converge_ticks = 0
-            _converged      = False
-            _log_tick       = 0
-            _state_start    = now
-            state           = STATE_PROBE_RAMP
+                f'Probe done. C_O = {_C_O_mean * 1e3:.2f} mm/N → f_des = {f_des_mag:.3f} N')
+            _gd_converge_ticks = 0
+            _log_tick          = 0
+            _state_start       = now
+            state              = STATE_ADAPT_GD
 
     elif state == STATE_ADAPT_GD:
         # Compute analytic tip force with current GD parameters
