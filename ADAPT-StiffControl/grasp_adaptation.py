@@ -354,12 +354,11 @@ STATE_PROBE_RAMP      = 5   # ramp thumb K → K_TIP_PROBE
 STATE_PROBE_CONV      = 6   # wait convergence at K_TIP_PROBE
 STATE_PROBE_REC       = 7   # record probe; compute C_O; init GD
 STATE_ADAPT_GD        = 8   # gradient descent until force converges
-STATE_PRESS           = 9   # UR5 pressing down −15 cm (shows exerted force)
-STATE_RAISE           = 10  # trigger UR5 → GRASP_POSE
-STATE_RELEASE         = 11  # k=0, wait CONVERGE_HOLD
-STATE_RAMP_HOME       = 12  # snap joint targets, ramp to HOME + retract arm
-STATE_RETRACT         = 13  # arm moving to START_POSE; hand ramping
-STATE_DONE            = 14
+STATE_PRESS           = 9   # UR5 pressing down; hold at PRESS_POSE
+STATE_RELEASE         = 10  # k=0 at PRESS_POSE; wait HOLD_TIME
+STATE_RAMP_HOME       = 11  # snap joint targets, ramp to HOME + retract arm
+STATE_RETRACT         = 12  # arm retracting to RETRACT_POSE; hand ramping
+STATE_DONE            = 13
 
 state             = STATE_APPROACH
 _state_start      = time.time()
@@ -711,7 +710,7 @@ def control_callback():
                 f'|f_meas - f_des| = {f_err:.4f} N. Pressing down …')
             _log_tick    = 0
             _state_start = now
-            _move_arm_async(PRESS_POSE, UR5_INIT_SPEED, STATE_RAISE)
+            _move_arm_async(PRESS_POSE, UR5_INIT_SPEED, STATE_RELEASE)
             state        = STATE_PRESS
 
     elif state == STATE_PRESS:
@@ -723,21 +722,15 @@ def control_callback():
                 _gd_f_des, _gd_f_meas,
                 *extras, converged=True))
 
-    elif state == STATE_RAISE:
-        if not _arm_moving:
-            controller.get_logger().info('Raising back to grasp pose …')
-            _log_tick = 0
-            _move_arm_async(GRASP_POSE, UR5_INIT_SPEED, STATE_RELEASE)
-
     elif state == STATE_RELEASE:
         _log_tick += 1
         if not COLLECTED_DATA and _log_tick % LOG_EVERY == 0:
             extras = _gd_log_extras()
             _csv_writer.writerow(_compute_row(
-                q, q_dot, 'raise', _C_O_mean,
+                q, q_dot, 'press', _C_O_mean,
                 _gd_f_des, _gd_f_meas,
                 *extras, converged=True))
-        if not _arm_moving:
+        if elapsed >= HOLD_TIME:
             controller.get_logger().info('Releasing grasp …')
             _set_task_stiffness(0.0)
             _use_task_vmc = False
