@@ -86,7 +86,8 @@ def draw_radar(
                 marker='o',
                 markersize=markersize,
                 label=t.get('label', ''))
-        ax.fill(ac, vc, color=t['color'], alpha=t.get('alpha', alpha_fill))
+        ax.fill(ac, vc, color=t['color'], alpha=t.get('alpha', alpha_fill),
+                edgecolor='none')
 
     ax.set_xticks(angles)
     ax.set_xticklabels([])
