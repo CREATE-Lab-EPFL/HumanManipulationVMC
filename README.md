@@ -135,19 +135,18 @@ and convergence over time.
 
 ---
 
-### ADAPT Hand - Grasp Adaptation - `ADAPT-StiffControl/`
+### ADAPT Hand - Force Adaptation - `ADAPT-StiffControl/`
 
-End-to-end closed-loop stiffness adaptation on the full hand. The hand
-estimates object compliance with the same paired-sample approach used in
-`ProprioceptiveSensing/Hand` (settle, probe, compare FK position and analytic
-VMC tip force), then maps compliance to applied fingertip stiffness with
-saturation before lifting, holding, and placing the object back. The experiment
-connects sensing, stiffness mapping, and manipulation in a single pipeline.
+End-to-end closed-loop force adaptation on the full hand. The operator selects
+a target force level (hard / medium / soft); the hand closes to a PC1 grasp pose
+and runs stiffness-descent gradient descent on all five fingertips until analytic
+tip force converges to the target. The arm then presses down to demonstrate the
+exerted force.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `grasp_adaptation.py` | hand | Gentle contact, probe, estimate compliance, then lift / hold / place with matched stiffness |
-| `plot_grasp_adaptation.ipynb` | hand | Plot grasp adaptation experiment |
+| `grasp_adaptation.py` | hand | Select force level, GD stiffness adaptation, press demonstration |
+| `plot_grasp_adaptation.ipynb` | hand | Plot GD convergence, stiffness evolution, and hand pose |
 
 ---
 
