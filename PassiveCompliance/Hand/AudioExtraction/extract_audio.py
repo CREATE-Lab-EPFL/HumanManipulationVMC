@@ -1,5 +1,5 @@
 """
-Extract and clean audio from a Canon video recording.
+Extract and clean audio from Canon video recordings.
 
 Two-stage denoising designed to isolate the guitar against UR5 motor noise:
   1. Butterworth bandpass (LOW_HZ – HIGH_HZ): removes everything outside the
@@ -10,12 +10,15 @@ Two-stage denoising designed to isolate the guitar against UR5 motor noise:
      produce large transient bursts well above the tracked floor and are
      preserved; the continuous motor hum is subtracted frame by frame.
 
-Usage:
-    python extract_audio.py <video_file>
+When multiple files are provided, all clean outputs are normalised to the same
+global peak amplitude so that RMS intensity is directly comparable across files.
 
-Output:
-    <base>.wav       — raw extracted audio (next to the video file)
-    <base>_clean.wav — bandpass + spectral-gated audio
+Usage:
+    python extract_audio.py <video1> [video2] [video3] ...
+
+Output (next to each input file):
+    <base>.wav       — raw extracted audio
+    <base>_clean.wav — bandpass + spectral-gated, globally normalised
 
 Dependencies:
     sudo apt install ffmpeg
@@ -52,42 +55,49 @@ def _spectral_gate(audio, sr):
     return np.stack(channels, axis=1)
 
 
-if len(sys.argv) != 2:
-    print('Usage: python extract_audio.py <video_file>')
+if len(sys.argv) < 2:
+    print('Usage: python extract_audio.py <video1> [video2] ...')
     sys.exit(1)
 
-video_path = sys.argv[1]
-if not os.path.isfile(video_path):
-    print(f'File not found: {video_path}')
-    sys.exit(1)
+video_paths = sys.argv[1:]
+for p in video_paths:
+    if not os.path.isfile(p):
+        print(f'File not found: {p}')
+        sys.exit(1)
 
-base, _ = os.path.splitext(video_path)
-raw_path   = base + '.wav'
-clean_path = base + '_clean.wav'
+# ── Step 1 & 2 & 3: extract, bandpass, spectral-gate each file ───────────────
+results = []   # list of (clean_path, audio_array, sample_rate)
+for video_path in video_paths:
+    base       = os.path.splitext(video_path)[0]
+    raw_path   = base + '.wav'
+    clean_path = base + '_clean.wav'
 
-# ── Step 1: extract audio to WAV ──────────────────────────────────────────────
-print('Extracting audio…')
-subprocess.run([
-    'ffmpeg', '-y', '-i', video_path,
-    '-vn', '-acodec', 'pcm_s16le',
-    raw_path,
-], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-print(f'  Raw audio → {raw_path}')
+    print(f'\n[{os.path.basename(video_path)}]')
+    print('  Extracting audio…')
+    subprocess.run([
+        'ffmpeg', '-y', '-i', video_path,
+        '-vn', '-acodec', 'pcm_s16le', raw_path,
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-# ── Step 2: bandpass filter ────────────────────────────────────────────────────
-print(f'Bandpass {LOW_HZ}–{HIGH_HZ} Hz…')
-audio, sr = sf.read(raw_path)
-audio     = audio.astype(np.float64)
-filtered  = _bandpass(audio, sr)
+    print(f'  Bandpass {LOW_HZ}–{HIGH_HZ} Hz…')
+    audio, sr = sf.read(raw_path)
+    audio     = audio.astype(np.float64)
+    filtered  = _bandpass(audio, sr)
 
-# ── Step 3: spectral gating on the bandpass result ────────────────────────────
-print('Spectral gating (non-stationary, tracking UR5 noise floor)…')
-clean = _spectral_gate(filtered, sr)
+    print('  Spectral gating (non-stationary)…')
+    clean = _spectral_gate(filtered, sr)
 
-# Normalise to avoid clipping
-peak = np.max(np.abs(clean))
-if peak > 0:
-    clean /= peak
+    results.append((clean_path, clean, sr))
 
-sf.write(clean_path, clean, sr)
-print(f'  Clean audio → {clean_path}')
+# ── Step 4: normalise all files to the same global peak ──────────────────────
+global_peak = max(np.max(np.abs(clean)) for _, clean, _ in results)
+if global_peak > 0:
+    print(f'\nGlobal peak: {global_peak:.6f}  — normalising all files to this scale.')
+    for i in range(len(results)):
+        path, clean, sr = results[i]
+        results[i] = (path, clean / global_peak, sr)
+
+# ── Step 5: save ──────────────────────────────────────────────────────────────
+for clean_path, clean, sr in results:
+    sf.write(clean_path, clean, sr)
+    print(f'  Saved → {clean_path}')
