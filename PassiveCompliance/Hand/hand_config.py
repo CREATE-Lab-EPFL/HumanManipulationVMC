@@ -54,7 +54,7 @@ GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 # =============================================================================
 # Weight compliance experiment
 # =============================================================================
-UR5_POSE_WEIGHT         = np.array([-0.3394,  0.4647,  0.3477, -2.5229, -0.8195,  0.2237])
+UR5_POSE_WEIGHT         = np.array([-0.3629,  0.4597,  0.3438, -2.6389, -0.2644,  0.5189])
 
 WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_INDEX  = np.deg2rad([40.0, 40.0, 40.0])   # [MCP, PIP, DIP]
