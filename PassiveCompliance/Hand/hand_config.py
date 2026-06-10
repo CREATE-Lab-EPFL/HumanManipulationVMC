@@ -58,9 +58,9 @@ UR5_POSE_WEIGHT         = np.array([-0.3199,  0.4437,  0.3519, -2.8051, -0.7298,
 
 WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_INDEX  = np.deg2rad([40.0, 40.0, 40.0])   # [MCP, PIP, DIP]
-WEIGHT_MIDDLE = np.deg2rad([45.0, 45.0, 45.0])
-WEIGHT_RING   = np.deg2rad([50.0, 45.0, 45.0])
-WEIGHT_PINKY  = np.deg2rad([40.0, 40.0, 40.0])
+WEIGHT_MIDDLE = np.deg2rad([10.0, 10.0, 10.0])
+WEIGHT_RING   = np.deg2rad([10.0, 10.0, 10.0])
+WEIGHT_PINKY  = np.deg2rad([10.0, 10.0, 10.0])
 WEIGHT_SPREAD = {
     'index':  np.deg2rad(0.0),
     'middle': np.deg2rad(0.0),
@@ -68,7 +68,7 @@ WEIGHT_SPREAD = {
     'pinky':  np.deg2rad(0.0),
 }
 
-STIFFNESS_CONDITIONS    = [0.05, 0.6]   # [N·m/rad]  soft and hard conditions
+STIFFNESS_CONDITIONS    = [0.05, 0.2, 0.6]   # [N·m/rad]  soft and hard conditions
 WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  approach stiffness (used only to reach pose; replaced by condition K after ramp)

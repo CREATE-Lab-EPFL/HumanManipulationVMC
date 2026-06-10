@@ -42,9 +42,10 @@ COLLECTED_DATA = False
 # =============================================================================
 # CSV schema
 # =============================================================================
-_S_COLS = ([f'q_{i}'    for i in range(13)] +
-           [f'qdot_{i}' for i in range(13)] +
-           [f'tau_{i}'  for i in range(13)])
+_IDX_MOTORS = [5, 6]   # index MCP, PIP
+_S_COLS = ([f'q_{i}'    for i in _IDX_MOTORS] +
+           [f'qdot_{i}' for i in _IDX_MOTORS] +
+           [f'tau_{i}'  for i in _IDX_MOTORS])
 FIELDS  = ['time_s', 'k_rot', 'weight_step'] + _S_COLS
 
 def _out_path(k):
@@ -106,7 +107,9 @@ def _control_loop():
         if step % LOG_EVERY == 0:
             with _lock:
                 _buf.append([f'{time.time()-_t0:.4f}']
-                            + list(q) + list(qd) + list(tau))
+                            + [q[i]   for i in _IDX_MOTORS]
+                            + [qd[i]  for i in _IDX_MOTORS]
+                            + [tau[i] for i in _IDX_MOTORS])
         step += 1
         time.sleep(1.0 / CONTROL_FREQUENCY)
 
