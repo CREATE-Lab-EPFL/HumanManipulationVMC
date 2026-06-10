@@ -24,7 +24,7 @@ B_THUMB = 0.001  # [N·m·s/rad]
 # =============================================================================
 UR5_POSE_GUITAR = np.array([-0.3964,  0.5314,  0.06,  0.8344, -0.976, -1.5152 ])  # [x,y,z,rx,ry,rz]
 LIFT           = 0.05    # [m]  Z stroke height
-SWEEP_SPEED    = 0.15    # [m/s]  strum speed
+SWEEP_SPEED    = 0.30    # [m/s]  strum speed
 SWEEP_ACCEL    = 0.5     # [m/s²]
 
 GUITAR_CLOSED_FINGERS = ['index', 'middle', 'ring']
@@ -39,7 +39,7 @@ GUITAR_SPREAD = {
     'pinky':  np.deg2rad(0.0),
 }
 
-TORSIONAL_SPRINGS       = [0.1, 0.3, 0.8]    # [N·m/rad]  compared conditions
+TORSIONAL_SPRINGS       = [0.05, 0.2, 0.6]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.6           # [N·m/rad]  approach stiffness (used only to close fingers; replaced by condition K after ramp)
 GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
 GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
