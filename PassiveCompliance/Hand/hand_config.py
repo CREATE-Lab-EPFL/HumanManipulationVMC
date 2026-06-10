@@ -68,14 +68,14 @@ WEIGHT_SPREAD = {
     'pinky':  np.deg2rad(0.0),
 }
 
-STIFFNESS_CONDITIONS    = [0.05, 0.2, 0.6]   # [N·m/rad]  swept stiffness values
+STIFFNESS_CONDITIONS    = [0.02, 0.06, 0.2]   # [N·m/rad]  swept stiffness values
 WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  approach stiffness (used only to reach pose; replaced by condition K after ramp)
 WEIGHT_B_ROT            = 0.01   # [N·m·s/rad]  normal damping
 WEIGHT_B_SETTLE         = 0.05   # [N·m·s/rad]  higher damping for initial ramp-to-pose
 WEIGHT_K_RETURN         = 0.15   # [N·m/rad]  return-to-home stiffness (matches dynamic_grasp K_HOME)
-WEIGHT_RAMP_DURATION    = 3.0    # [s]
-WEIGHT_SETTLE_TIME      = 3.0    # [s]  settle after hanging weight before logging
-WEIGHT_LOG_DURATION     = 5.0    # [s]  convergence window per weight step
-WEIGHT_FRICTION_TAU_MAX = 0.04   # [N·m]
+WEIGHT_RAMP_DURATION    = 2.0    # [s]
+WEIGHT_SETTLE_TIME      = 1.0    # [s]  settle after hanging weight before logging
+WEIGHT_LOG_DURATION     = 3.0    # [s]  convergence window per weight step
+WEIGHT_FRICTION_TAU_MAX = 0.02   # [N·m]
