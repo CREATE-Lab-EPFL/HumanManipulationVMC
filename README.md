@@ -40,13 +40,13 @@ and pose change the measured response.
 | `Finger/directional_stiffness.py` | Task-space stiffness in multiple contact directions in a plane |
 | `Finger/pose_sweep.py` | Sweep starting poses and record force versus displacement |
 
-**Hand/** - ADAPT Hand piano playing
+**Hand/** - ADAPT Hand compliance experiments
 
 | File | Description |
 |------|-------------|
-| `Hand/piano_playing_hand.py` | Hand holds a press pose while the UR5 performs rhythmic press-lift strokes. Runs uniform and mixed stiffness conditions, saving hand state and MIDI logs per stroke. |
-| `Hand/piano_glissando.py` | Hand holds a press pose while the UR5 slides along the keyboard and returns. Saves hand state and MIDI logs per run. |
-| `Hand/HelperPianoMIDI/` | MIDI keyboard to ROS bridge (publisher, subscriber, UR5 config) |
+| `Hand/guitar_playing_hand.py` | Three fingers (index, middle, ring) held closed while the UR5 performs a single upward stroke across the strings. One stiffness condition per run; audio captured externally. |
+| `Hand/weight_compliance_hand.py` | Four fingers hold a fixed pose under joint-space springs. Weights are added incrementally by the operator; deflection is logged per (stiffness, weight) pair. |
+| `Hand/AudioExtraction/` | Extracts and normalises audio from the three guitar experiment recordings |
 
 ---
 
@@ -198,8 +198,8 @@ HumanManipulationVMC/
 │
 ├── PassiveCompliance/              # Experimental area - passive compliance
 │   ├── Finger/                     #   single finger experiments
-│   └── Hand/                       #   ADAPT Hand piano experiments
-│       └── HelperPianoMIDI/        #     MIDI keyboard → ROS2 bridge + UR5 config
+│   └── Hand/                       #   ADAPT Hand compliance experiments
+│       └── AudioExtraction/        #     guitar audio extraction and normalisation
 ├── TunableCompliance/              # Experimental area - tunable compliance
 │   ├── Finger/                     #   stiffening/repulsive shaping (finger)
 │   └── Hand/                       #   emergent grasps (hand)
@@ -208,7 +208,7 @@ HumanManipulationVMC/
 │   └── Hand/                       #   object stiffness estimation
 ├── StiffnessForceTracking/         # Experimental area - stiffness and force tracking
 ├── PoseControl/                    # Experimental area - pose control
-├── ADAPT-StiffControl/             # Final demo - compliance matching on the full hand
+├── ADAPT-StiffControl/             # Final demo - force adaptation via stiffness descent on the full hand
 ├── Supplementary/                  # Experimental area - supplementary experiments
 ├── MethodsElastic/                 # Methods - VMC stiffness model validation
 │
@@ -229,7 +229,8 @@ HumanManipulationVMC/
 │
 ├── finger_go_home.py       # Bring finger to home position (run before any finger experiment)
 ├── hand_go_home.py         # Bring hand to home position (run before any hand experiment)
-├── start_hand.sh           # Full hand startup: home + latency + dynamixel nodes (torque/position split)
+├── start_finger.sh         # Full finger startup: home + latency timer + dynamixel node
+├── start_hand.sh           # Full hand startup: home + latency timer + dynamixel node (torque/position mixed)
 ├── ADAPT_Hand.urdf         # URDF of the ADAPT hand
 └── plot_config.mplstyle    # Shared matplotlib style
 ```
@@ -246,9 +247,16 @@ sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 
 ### Start the ROS2 Dynamixel node
 
-For the **finger**:
+For the **finger**, use the startup script (does all steps in order):
 ```bash
-ros2 run dynamixel_interface dynamixel_node
+./start_finger.sh
+```
+
+Or manually:
+```bash
+python3 finger_go_home.py
+sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
+ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=1000000 -p motor_ids:=[1,2]
 ```
 
 For the **hand**, use the startup script (does all steps in order):
@@ -259,15 +267,13 @@ For the **hand**, use the startup script (does all steps in order):
 This script:
 1. Moves the hand to home position (`hand_go_home.py`) — finger/thumb motors end in torque mode, wrist motors stay in position mode holding the home pose
 2. Sets the USB latency timer for maximum throughput
-3. Starts the Dynamixel node for finger/thumb motors (hw 0–12) in torque (current) mode
-4. Starts the Dynamixel node for wrist motors (hw 13–14) in position mode
+3. Starts a single Dynamixel node: finger/thumb motors (hw 0–12) in torque mode, wrist motors (hw 13–14) in position mode via `position_motor_ids`
 
 Or step by step manually:
 ```bash
 python3 hand_go_home.py
 sudo echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
-ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12]
-ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[13,14] -p control_mode:=position
+ros2 run dynamixel_interface dynamixel_node --ros-args -p baudrate:=2000000 -p motor_ids:=[0,1,2,3,4,5,6,7,8,9,10,11,12] -p position_motor_ids:=[13,14]
 ```
 
 ### Configure UR5 network (optional)
@@ -288,11 +294,11 @@ UR5 IP: `192.168.1.10`
 
 ```bash
 # Finger experiments
-python3 finger_go_home.py
+./start_finger.sh        # home + latency timer + dynamixel node
 python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
 
 # Hand experiments
-./start_hand.sh          # home + latency timer + both dynamixel nodes
+./start_hand.sh          # home + latency timer + dynamixel node
 python3 ADAPT-StiffControl/grasp_adaptation.py
 ```
 

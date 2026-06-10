@@ -4,10 +4,17 @@
 
 ## Motor layout (software order)
 
-| idx | motor | idx | motor |
-|-----|-------|-----|-------|
-| 0–1 | wrist (differential) | 6 | spread (all fingers) |
-| 2–5 | thumb CMC1, CMC2, MCP, IP | 7–14 | index/middle/ring/pinky MCP+PIP |
+The 13 torque-controlled motors are indexed 0–12. Wrist motors (hardware IDs 13, 14)
+run in position mode and are excluded from this table.
+
+| idx | motor |
+|-----|-------|
+| 0–3 | thumb CMC1, CMC2, MCP, IP |
+| 4   | spread (drives all four finger spread joints) |
+| 5–6 | index MCP, PIP |
+| 7–8 | middle MCP, PIP |
+| 9–10 | ring MCP, PIP |
+| 11–12 | pinky MCP, PIP |
 
 ## Files
 
@@ -61,4 +68,4 @@ The `style` parameter applies to all finger/thumb chains. Structural elements (w
 
 A plain dict of matplotlib line kwargs can be passed instead of a name (any key accepted by `ax.plot`).
 
-`MOTOR_LIMITS` is a `(15, 2)` array of `[min, max]` motor bounds derived from `JOINT_LIMITS`.
+`MOTOR_LIMITS` is a `(13, 2)` array of `[min, max]` motor bounds derived from `JOINT_LIMITS`.

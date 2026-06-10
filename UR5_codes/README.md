@@ -33,15 +33,15 @@ chosen one. Poses are imported directly from each experiment's own config
 folders share the module name `hand_config.py`), so any upstream pose
 change is picked up automatically.
 
-| Menu key                 | Source config                                                  | Variable                          |
-|--------------------------|----------------------------------------------------------------|-----------------------------------|
-| `piano_playing_hand`     | `PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py`       | `UR5_POSE_PIANO`                  |
-| `piano_glissando`        | `PassiveCompliance/Hand/HelperPianoMIDI/piano_config.py`       | `UR5_POSE_GLISSANDO_START`        |
-| `inhand_manipulation`    | `TunableCompliance/Hand/hand_config.py`                        | `UR5_POSE_INHAND`                 |
-| `dynamic_grasp`          | `TunableCompliance/Hand/hand_config.py`                        | `UR5_POSE_BOTTLE_START`           |
-| `object_stiffness_hand`  | `ProprioceptiveSensing/Hand/hand_config.py`                    | `UR5_POSE_SQUEEZING`              |
-| `grasp_adaptation_hard`  | `ADAPT-StiffControl/hand_config.py`                            | `UR5_POSE_GRASP_OBJ['hard_obj']`  |
-| `grasp_adaptation_soft`  | `ADAPT-StiffControl/hand_config.py`                            | `UR5_POSE_GRASP_OBJ['soft_obj']`  |
+| Menu key                 | Source config                                          | Variable                   |
+|--------------------------|--------------------------------------------------------|----------------------------|
+| `position_tracking`      | `ProprioceptiveSensing/Hand/hand_config.py`            | `UR5_POSE_SQUEEZING`       |
+| `guitar_playing_hand`    | `PassiveCompliance/Hand/hand_config.py`                | `UR5_POSE_GUITAR`          |
+| `weight_compliance_hand` | `PassiveCompliance/Hand/hand_config.py`                | `UR5_POSE_WEIGHT`          |
+| `inhand_manipulation`    | `TunableCompliance/Hand/hand_config.py`                | `UR5_POSE_INHAND`          |
+| `dynamic_grasp`          | `TunableCompliance/Hand/hand_config.py`                | `UR5_POSE_BOTTLE_START`    |
+| `object_stiffness_hand`  | `ProprioceptiveSensing/Hand/hand_config.py`            | `UR5_POSE_SQUEEZING`       |
+| `grasp_adaptation`       | `ADAPT-StiffControl/hand_config.py`                    | `UR5_POSE_GRASP`           |
 
 ### `UR5_readPose.py`
 
