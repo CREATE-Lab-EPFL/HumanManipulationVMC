@@ -95,7 +95,7 @@ def open_csv(kd, offset_m, run):
 
 
 # ── Experiment queue ──────────────────────────────────────────────────────────
-# COLLECTED_DATA = True: one pass with the smallest K_d across all three offsets.
+# COLLECTED_DATA = True: one pass with the largest K_d across all three offsets.
 # COLLECTED_DATA = False: full sweep (all K_d × offsets × runs).
 if COLLECTED_DATA:
     experiment_queue = [(KD_VALUES[-1], off, 0) for off in POSE_OFFSETS]
