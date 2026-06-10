@@ -51,7 +51,7 @@ def draw_radar(
         Spoke labels.
     traces : list[dict]
         Each entry must have 'label', 'values' (array length N), 'color'.
-        Optional per-trace keys: 'lw', 'alpha' (override global defaults).
+        Optional per-trace keys: 'lw', 'ls', 'alpha' (override global defaults).
     save_path : str, optional
         Save the figure here (only when ax is None and a new figure is created).
     ax : polar Axes, optional
@@ -79,9 +79,11 @@ def draw_radar(
     for t in traces:
         v  = np.array(t['values'], dtype=float) / vmax
         vc = np.append(v, v[0])
-        ax.plot(ac, vc, '-o',
+        ax.plot(ac, vc,
                 color=t['color'],
                 linewidth=t.get('lw', lw),
+                linestyle=t.get('ls', '-'),
+                marker='o',
                 markersize=markersize,
                 label=t.get('label', ''))
         ax.fill(ac, vc, color=t['color'], alpha=t.get('alpha', alpha_fill))
