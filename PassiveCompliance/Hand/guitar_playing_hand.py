@@ -145,7 +145,6 @@ def _ramp_closed(k_torsional):
         vmc_joint.index_target  = (1-alpha)*start_tgt['index']  + alpha*GUITAR_INDEX
         vmc_joint.middle_target = (1-alpha)*start_tgt['middle'] + alpha*GUITAR_MIDDLE
         vmc_joint.ring_target   = (1-alpha)*start_tgt['ring']   + alpha*GUITAR_RING
-        vmc_joint.pinky_target  = (1-alpha)*start_tgt['pinky']  + alpha*GUITAR_PINKY
         for f in CLOSED_FINGERS: vmc_joint.stiffness[f][:] = K_ROT
         if alpha >= 1.0: break
         time.sleep(dt)
@@ -186,7 +185,7 @@ def _restabilize(k_condition):
 def _ramp_to_home():
     """Ramp all finger targets back to zero, stiffness back to K_RETURN."""
     starts   = {f: getattr(vmc_joint, f'{f}_target').copy() for f in CLOSED_FINGERS}
-    start_ks = {g: vmc_joint.stiffness[g].copy() for g in vmc_joint.stiffness}
+    start_ks = {f: vmc_joint.stiffness[f].copy() for f in CLOSED_FINGERS}
     dt = 1.0 / CONTROL_FREQUENCY
     t0 = time.time()
     while True:
@@ -194,9 +193,8 @@ def _ramp_to_home():
         vmc_joint.index_target  = (1-alpha)*starts['index']  + alpha*np.zeros(3)
         vmc_joint.middle_target = (1-alpha)*starts['middle'] + alpha*np.zeros(3)
         vmc_joint.ring_target   = (1-alpha)*starts['ring']   + alpha*np.zeros(3)
-        vmc_joint.pinky_target  = (1-alpha)*starts['pinky']  + alpha*np.zeros(3)
-        for g in start_ks:
-            vmc_joint.stiffness[g][:] = (1-alpha)*start_ks[g] + alpha*K_RETURN
+        for f in CLOSED_FINGERS:
+            vmc_joint.stiffness[f][:] = (1-alpha)*start_ks[f] + alpha*K_RETURN
         if alpha >= 1.0: break
         time.sleep(dt)
 
