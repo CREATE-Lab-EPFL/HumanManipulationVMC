@@ -38,8 +38,8 @@ PROFILE_VELOCITY   = 40      # 0.229 rpm per unit → ~9 rpm (slow, safe)
 # ── Home position (ABSOLUTE encoder ticks) ───────────────────────────────────
 # To update: run  python3 go_home.py --read  with the finger in the desired pose.
 HOME_POSITION = {
-    MOTOR_MCP: 2653,
-    MOTOR_PIP: 267,
+    MOTOR_MCP: 2657,
+    MOTOR_PIP: 4038,
 }
 
 
