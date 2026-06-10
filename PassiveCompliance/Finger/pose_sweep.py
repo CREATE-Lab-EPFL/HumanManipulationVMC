@@ -95,10 +95,15 @@ def open_csv(kd, offset_m, run):
 
 
 # ── Experiment queue ──────────────────────────────────────────────────────────
-experiment_queue  = [(kd, off, run)
-                     for off in POSE_OFFSETS
-                     for kd  in KD_VALUES
-                     for run in range(N_RUNS)]
+# COLLECTED_DATA = True: one pass with the smallest K_d across all three offsets.
+# COLLECTED_DATA = False: full sweep (all K_d × offsets × runs).
+if COLLECTED_DATA:
+    experiment_queue = [(KD_VALUES[0], off, 0) for off in POSE_OFFSETS]
+else:
+    experiment_queue = [(kd, off, run)
+                        for off in POSE_OFFSETS
+                        for kd  in KD_VALUES
+                        for run in range(N_RUNS)]
 total_experiments = len(experiment_queue)
 
 # ── ROS2 / finger init ────────────────────────────────────────────────────────
@@ -199,7 +204,7 @@ def control_callback():
     if state == STATE_GOTO_POSE:
         if not arm_moving:
             kd, offset, run = experiment_queue[current_exp_idx]
-            if os.path.exists(output_path(kd, offset, run)):
+            if not COLLECTED_DATA and os.path.exists(output_path(kd, offset, run)):
                 controller.get_logger().info(
                     f'Skipping existing: K_d={kd}  offset={offset * 1000:+.0f} mm  run {run + 1}')
                 state = STATE_NEXT
