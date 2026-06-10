@@ -41,7 +41,6 @@ from hand_config import (
     GUITAR_RESTAB_DURATION    as RESTAB_DURATION,
     GUITAR_RESTAB_TIME        as RESTAB_TIME,
     GUITAR_SETTLE_TIME        as SETTLE_TIME,
-    GUITAR_N_RUNS             as N_RUNS,
     GUITAR_FRICTION_TAU_MAX   as FRICTION_TAU_MAX,
 )
 import rtde_control
@@ -156,17 +155,6 @@ def _ramp_closed(k_torsional):
         if alpha >= 1.0: break
         time.sleep(dt)
 
-def _ramp_stiffness(k_new):
-    """Ramp finger stiffness to k_new without moving targets (fingers already closed)."""
-    start_ks = {f: float(vmc_joint.stiffness[f].flat[0]) for f in CLOSED_FINGERS}
-    dt = 1.0 / CONTROL_FREQUENCY
-    t0 = time.time()
-    while True:
-        alpha = min(1.0, (time.time() - t0) / RAMP_DURATION)
-        for f in CLOSED_FINGERS:
-            vmc_joint.stiffness[f][:] = (1-alpha)*start_ks[f] + alpha*k_new
-        if alpha >= 1.0: break
-        time.sleep(dt)
 
 def _restabilize(k_condition):
     """Per-run: bump to K_ROT + B_SETTLE, wait RESTAB_TIME, soften to k_condition + B_ROT."""
@@ -212,6 +200,17 @@ def _ramp_to_home():
 # =============================================================================
 # Run
 # =============================================================================
+print('Available stiffness conditions:')
+for i, k in enumerate(TORSIONAL_SPRINGS):
+    print(f'  [{i+1}]  K = {k:.2f} N·m/rad')
+while True:
+    sel = input('Select condition (1–{}): '.format(len(TORSIONAL_SPRINGS))).strip()
+    if sel.isdigit() and 1 <= int(sel) <= len(TORSIONAL_SPRINGS):
+        ktors = TORSIONAL_SPRINGS[int(sel) - 1]
+        break
+    print('  Invalid choice, try again.')
+print(f'Selected K = {ktors:.2f} N·m/rad')
+
 input('Press ENTER to connect the UR5 and approach the guitar…')
 arm = rtde_control.RTDEControlInterface(UR5_IP)
 arm.moveL(list(START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
@@ -219,37 +218,29 @@ arm.moveL(list(START), UR5_INIT_SPEED, UR5_INIT_ACCEL)
 ctrl_thread = threading.Thread(target=_control_loop, daemon=True)
 ctrl_thread.start()
 
-_ramp_closed(TORSIONAL_SPRINGS[0])
+_ramp_closed(ktors)
 time.sleep(SETTLE_TIME)
 
 try:
-    for i, ktors in enumerate(TORSIONAL_SPRINGS):
-        if i == 0:
-            input(f'\n=== K = {ktors:.1f} N·m/rad — Press ENTER to start {N_RUNS} runs ===')
-        else:
-            _ramp_stiffness(ktors)
-            print(f'\n=== K = {ktors:.1f} N·m/rad — starting {N_RUNS} runs ===')
+    if not COLLECTED_DATA:
+        f      = open(_out_path(ktors), 'w', newline='')
+        writer = csv.DictWriter(f, fieldnames=FIELDS)
+        writer.writeheader()
+    else:
+        f = writer = None
 
-        if not COLLECTED_DATA:
-            f      = open(_out_path(ktors), 'w', newline='')
-            writer = csv.DictWriter(f, fieldnames=FIELDS)
-            writer.writeheader()
-        else:
-            f = writer = None
+    input(f'\n=== K = {ktors:.2f} N·m/rad — Press ENTER to strum ===')
+    _restabilize(ktors)
+    with _lock: _buf.clear()
+    _phase = 'sweep';   arm.moveL(list(END),          SWEEP_SPEED,  SWEEP_ACCEL)
+    _phase = 'lift';    arm.moveL(list(END_LIFTED),   RETURN_SPEED, RETURN_ACCEL)
+    _phase = 'return';  arm.moveL(list(START_LIFTED), RETURN_SPEED, RETURN_ACCEL)
+    _phase = 'descend'; arm.moveL(list(START),        RETURN_SPEED, RETURN_ACCEL)
+    if not COLLECTED_DATA:
+        _flush(writer, ktors, 1)
 
-        for run in range(1, N_RUNS + 1):
-            input(f'  Run {run}/{N_RUNS} — Press ENTER to strum…')
-            _restabilize(ktors)
-            with _lock: _buf.clear()
-            _phase = 'sweep';   arm.moveL(list(END),          SWEEP_SPEED,  SWEEP_ACCEL)
-            _phase = 'lift';    arm.moveL(list(END_LIFTED),   RETURN_SPEED, RETURN_ACCEL)
-            _phase = 'return';  arm.moveL(list(START_LIFTED), RETURN_SPEED, RETURN_ACCEL)
-            _phase = 'descend'; arm.moveL(list(START),        RETURN_SPEED, RETURN_ACCEL)
-            if not COLLECTED_DATA:
-                _flush(writer, ktors, run)
-
-        if f is not None:
-            f.close()
+    if f is not None:
+        f.close()
 
 except KeyboardInterrupt:
     controller.get_logger().info('Interrupted.')
