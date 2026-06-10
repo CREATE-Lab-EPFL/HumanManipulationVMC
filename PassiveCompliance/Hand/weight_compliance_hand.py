@@ -37,7 +37,7 @@ from hand_config import (
 )
 
 # Set to True once data is collected — reruns the protocol without saving.
-COLLECTED_DATA = True
+COLLECTED_DATA = False
 
 # =============================================================================
 # CSV schema

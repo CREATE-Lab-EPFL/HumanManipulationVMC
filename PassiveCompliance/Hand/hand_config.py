@@ -68,7 +68,7 @@ WEIGHT_SPREAD = {
     'pinky':  np.deg2rad(0.0),
 }
 
-STIFFNESS_CONDITIONS    = [0.05, 0.6]   # [N·m/rad]  soft and hard conditions
+STIFFNESS_CONDITIONS    = [0.05, 0.3]   # [N·m/rad]  soft and hard conditions
 WEIGHT_LABELS           = ['soft', 'medium', 'hard']  # operator-named weight steps (magnitudes not fixed)
 
 WEIGHT_K_ROT            = 0.4    # [N·m/rad]  approach stiffness (used only to reach pose; replaced by condition K after ramp)
