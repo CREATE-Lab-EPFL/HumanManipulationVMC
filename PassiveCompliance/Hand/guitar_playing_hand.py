@@ -1,12 +1,9 @@
 """
 Passive compliance — guitar playing with the ADAPT Hand.
 
-All fingers except the thumb are held closed at FINGER_CLOSED_POSE by a torsional
-(joint-space) spring. The experiment compares TORSIONAL_SPRINGS values. For each
-stiffness, N_RUNS strums are recorded: the UR5 sweeps SWEEP_VECTOR on the XY plane,
-lifts by LIFT, returns to the start position at height, then descends — fingers
-stay closed throughout. Stiffness is changed online between conditions. A manual
-ENTER is required only between stiffness conditions.
+Index, middle, and ring fingers are held closed by a torsional (joint-space) spring;
+thumb and pinky are held at a neutral pose. The UR5 performs a single upward Z stroke
+(fingers drag through the strings). Stiffness condition is selected at startup.
 
 Audio intensity is captured externally via the camera microphone.
 
@@ -25,8 +22,7 @@ from VMCHand.HandVMCJointSpace import VMC as JointVMC
 from VMCHand.HandGravFricLim   import GravFricLim
 from UR5_codes.UR5_readPose    import UR5Receiver
 from hand_config import (
-    UR5_POSE_GUITAR, SWEEP_VECTOR, LIFT,
-    SWEEP_SPEED, SWEEP_ACCEL, RETURN_SPEED, RETURN_ACCEL,
+    UR5_POSE_GUITAR, LIFT, SWEEP_SPEED, SWEEP_ACCEL,
     UR5_IP, UR5_INIT_SPEED, UR5_INIT_ACCEL,
     K_THUMB, B_THUMB,
     GUITAR_CLOSED_FINGERS as CLOSED_FINGERS,
@@ -48,11 +44,9 @@ import rtde_control
 # Set to True once data is collected — reruns the protocol without saving.
 COLLECTED_DATA = False
 
-# Pre-compute the four UR5 waypoints used every run
-START        = UR5_POSE_GUITAR.copy()
-END          = UR5_POSE_GUITAR.copy(); END[:3]          += SWEEP_VECTOR
-START_LIFTED = UR5_POSE_GUITAR.copy(); START_LIFTED[2]  += LIFT
-END_LIFTED   = END.copy();             END_LIFTED[2]    += LIFT
+# Two UR5 waypoints: start position and lifted position (strum ends here)
+START = UR5_POSE_GUITAR.copy()
+TOP   = UR5_POSE_GUITAR.copy(); TOP[2] += LIFT
 
 # =============================================================================
 # CSV schema
@@ -233,10 +227,8 @@ try:
     input(f'\n=== K = {ktors:.2f} N·m/rad — Press ENTER to strum ===')
     _restabilize(ktors)
     with _lock: _buf.clear()
-    _phase = 'sweep';   arm.moveL(list(END),          SWEEP_SPEED,  SWEEP_ACCEL)
-    _phase = 'lift';    arm.moveL(list(END_LIFTED),   RETURN_SPEED, RETURN_ACCEL)
-    _phase = 'return';  arm.moveL(list(START_LIFTED), RETURN_SPEED, RETURN_ACCEL)
-    _phase = 'descend'; arm.moveL(list(START),        RETURN_SPEED, RETURN_ACCEL)
+    _phase = 'strum'
+    arm.moveL(list(TOP), SWEEP_SPEED, SWEEP_ACCEL)
     if not COLLECTED_DATA:
         _flush(writer, ktors, 1)
 
