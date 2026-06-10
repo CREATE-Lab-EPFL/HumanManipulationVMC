@@ -39,7 +39,7 @@ GUITAR_SPREAD = {
     'pinky':  np.deg2rad(0.0),
 }
 
-TORSIONAL_SPRINGS       = [0.1, 0.3, 0.8]    # [N·m/rad]  compared conditions
+TORSIONAL_SPRINGS       = [0.02, 0.2, 0.8]    # [N·m/rad]  compared conditions
 GUITAR_K_ROT            = 0.6           # [N·m/rad]  approach stiffness (used only to close fingers; replaced by condition K after ramp)
 GUITAR_B_ROT            = 0.01          # [N·m·s/rad]  normal strum damping
 GUITAR_B_SETTLE         = 0.05          # [N·m·s/rad]  higher damping for per-run stabilisation
