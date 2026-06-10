@@ -12,7 +12,9 @@ Target pose format: [x, y, z, rx, ry, rz]
 import numpy as np
 
 # Normal experiment configuration (vertical press — UR5 descends in Z)
-UR5_POSE = np.array([0.096, 0.72, 0.085, 0.081, 2.21, 2.21])  # [x, y, z, rx, ry, rz]
+UR5_POSE = np.array([0.0643, 0.72, 0.112, 0.081, 2.21, 2.21])  # [x, y, z, rx, ry, rz]
+
+# Note: on Z, the UR5 base should be 70 mm above the table surface for reproducibility
 
 # Finger target pose (for VMC bending control)
 FINGER_TARGET = np.array([np.deg2rad(30.0), np.deg2rad(30.0), np.deg2rad(30.0)])
