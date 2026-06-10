@@ -54,7 +54,7 @@ GUITAR_FRICTION_TAU_MAX = 0.02          # [N·m]
 # =============================================================================
 # Weight compliance experiment
 # =============================================================================
-UR5_POSE_WEIGHT         = np.array([-0.3629,  0.4597,  0.3438, -2.6389, -0.2644,  0.5189])
+UR5_POSE_WEIGHT         = np.array([-0.3629,  0.4597,  0.50, -2.6389, -0.2644,  0.5189])
 
 WEIGHT_FINGERS = ['index', 'middle', 'ring', 'pinky']
 WEIGHT_INDEX  = np.deg2rad([40.0, 40.0, 40.0])   # [MCP, PIP, DIP]
@@ -78,4 +78,4 @@ WEIGHT_K_RETURN         = 0.15   # [N·m/rad]  return-to-home stiffness (matches
 WEIGHT_RAMP_DURATION    = 3.0    # [s]
 WEIGHT_SETTLE_TIME      = 3.0    # [s]  settle after hanging weight before logging
 WEIGHT_LOG_DURATION     = 5.0    # [s]  convergence window per weight step
-WEIGHT_FRICTION_TAU_MAX = 0.04   # [N·m]
+WEIGHT_FRICTION_TAU_MAX = 0.01   # [N·m]
