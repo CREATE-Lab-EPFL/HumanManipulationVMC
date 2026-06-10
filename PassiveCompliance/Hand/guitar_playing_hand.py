@@ -42,7 +42,7 @@ from hand_config import (
 import rtde_control
 
 # Set to True once data is collected — reruns the protocol without saving.
-COLLECTED_DATA = False
+COLLECTED_DATA = True
 
 # Two UR5 waypoints: start position and lifted position (strum ends here)
 START = UR5_POSE_GUITAR.copy()
