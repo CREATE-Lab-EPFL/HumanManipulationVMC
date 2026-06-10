@@ -31,7 +31,7 @@ SWEEP_ACCEL    = 0.5     # [m/s²]
 RETURN_SPEED   = 0.2     # [m/s]  return (no contact)
 RETURN_ACCEL   = 1.0     # [m/s²]
 
-GUITAR_CLOSED_FINGERS = ['index', 'middle', 'ring', 'pinky']
+GUITAR_CLOSED_FINGERS = ['index', 'middle', 'ring']
 GUITAR_INDEX  = np.deg2rad([70.0, 60.0, 60.0])   # [MCP, PIP, DIP]
 GUITAR_MIDDLE = np.deg2rad([70.0, 65.0, 65.0])
 GUITAR_RING   = np.deg2rad([70.0, 65.0, 65.0])

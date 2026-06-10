@@ -89,10 +89,13 @@ for _k in CLOSED_FINGERS:
 vmc_joint.thumb                    = np.deg2rad([2.0, 2.0, 2.0, 2.0])
 vmc_joint.stiffness['thumb'][:]    = K_THUMB
 vmc_joint.damping['thumb'][:]      = B_THUMB
+vmc_joint.spread['pinky']          = np.array([SPREAD['pinky']])
+vmc_joint.pinky_target             = np.deg2rad([2.0, 2.0, 2.0])
+vmc_joint.stiffness['pinky'][:]    = K_THUMB
+vmc_joint.damping['pinky'][:]      = B_THUMB
 vmc_joint.index_target  = np.zeros(3)
 vmc_joint.middle_target = np.zeros(3)
 vmc_joint.ring_target   = np.zeros(3)
-vmc_joint.pinky_target  = np.zeros(3)
 
 # =============================================================================
 # Control loop  (background thread — runs throughout the experiment)
