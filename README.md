@@ -3,8 +3,6 @@
 Virtual Model Control (VMC) framework for programmable passivity and stiffness
 modulation in tendon-driven compliant robotic hands.
 
-Collaboration between **EPFL CREATE Lab** (Josie Hughes) and **Cambridge Control Robotics Lab** (Fulvio Forni).
-
 **Platforms**:
 - **Single finger** - tendon-driven finger with MCP and PIP, with mimic DIP
 - **ADAPT Hand** - anthropomorphic hand with wrist, thumb, fingers, and spread
