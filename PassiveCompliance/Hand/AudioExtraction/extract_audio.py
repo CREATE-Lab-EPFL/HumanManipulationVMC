@@ -58,4 +58,4 @@ if global_peak > 0:
 # ── Step 3: save ─────────────────────────────────────────────────────────────
 for wav_path, audio, sr in results:
     sf.write(wav_path, audio, sr)
-    print(f'  Saved → {wav_path}')
+    print(f'  Saved -> {wav_path}')
