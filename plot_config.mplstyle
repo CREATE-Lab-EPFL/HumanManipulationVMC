@@ -1,10 +1,10 @@
 # Nature Communications matplotlib style
 # Single column: 88 mm = 3.46 in  |  Double column: 180 mm = 7.09 in
-# Font: Helvetica (via LaTeX helvet)  |  Colors: Okabe-Ito (colorblind-safe)
+# Font: Helvetica via LaTeX helvet + sfmath  |  Colors: Okabe-Ito (colorblind-safe)
 
 # ── LaTeX rendering ────────────────────────────────────────────────────────────
-text.usetex         : True
-text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb} \usepackage{helvet} \renewcommand{\familydefault}{\sfdefault}
+text.usetex        : True
+text.latex.preamble: \usepackage{amsmath} \usepackage{amssymb} \usepackage{helvet} \usepackage{sfmath} \renewcommand{\familydefault}{\sfdefault}
 
 # ── Font ───────────────────────────────────────────────────────────────────────
 font.family    : sans-serif
