@@ -1,15 +1,18 @@
 """
 Shared plotting helpers for all experiments.
 
-Usage in every notebook (one-liner, style auto-applied):
+Usage in every notebook:
     import sys, os
     sys.path.insert(0, '..')        # 1-level-deep notebooks
     # or
     sys.path.insert(0, '../..')     # 2-level-deep notebooks
     from plot_config import COLORS, FIG_W_SINGLE, FIG_W_DOUBLE
 
-Figure size — add these two lines after the import to control aspect ratio:
-    FIG_W, FIG_H = FIG_W_SINGLE, 2.60   # change FIG_H to adjust aspect ratio
+Figure size — add these lines after the import to control per-notebook size:
+    FIG_W = 10    # inches
+    FIG_H = 6     # inches
+    plt.rcParams['figure.figsize'] = [FIG_W, FIG_H]
+Text sizes are fixed globally in plot_config.mplstyle.
 """
 
 import os as _os
@@ -36,14 +39,16 @@ FIG_W_1P5    = 4.72   # 120 mm — 1.5 column
 # ── Okabe-Ito palette (same order as prop_cycle in plot_config.mplstyle) ──────
 # Use COLORS[i] or 'Ci' in matplotlib — they reference the same palette.
 COLORS = [
-    '#56B4E9',  # C0 sky-blue
-    '#D55E00',  # C1 vermillion
-    '#009E73',  # C2 bluish-green
-    '#E69F00',  # C3 orange
-    '#0072B2',  # C4 blue
-    '#F0E442',  # C5 yellow
-    '#CC79A7',  # C6 reddish-purple
-    '#000000',  # C7 black
+    '#4DBBD5',  # C0 blue/cyan
+    '#E64B35',  # C1 red
+    '#00A087',  # C2 teal
+    '#3C5488',  # C3 navy
+    '#F39B7F',  # C4 coral
+    '#8491B4',  # C5 lavender
+    '#91D1C2',  # C6 light teal
+    '#DC0000',  # C7 bright red
+    '#7E6148',  # C8 brown
+    '#949494',  # C9 gray
 ]
 
 # ── Style constants for bespoke polar/radar charts ────────────────────────────
