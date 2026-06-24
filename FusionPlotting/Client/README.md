@@ -20,9 +20,7 @@ Fusion add-in.
 
 ## Sending a pose
 
-1. Open `PosesFinger.py` or `PosesHand.py`.
-2. Set `POSE = "figure_name"` at the top to select which figure to send.
-3. Run:
+Run the script — it shows a numbered menu and you pick the pose interactively:
 
 ```powershell
 python PosesFinger.py
@@ -30,8 +28,25 @@ python PosesFinger.py
 python PosesHand.py
 ```
 
+```
+Available poses:
+  [0] flat
+  [1] bent
+  [2] force_gradient
+Select pose number: 1
+
+Sending pose 'bent':
+  MCP: 10.0 deg
+  ...
+```
+
 The script prints the joint values, sends them to Fusion, and reads back the
 values Fusion confirms after applying them.
+
+> **Important:** Fusion 360 must be open and the correct model file (finger or
+> hand) must be the **active document** when the script runs.  If any other
+> file is in the foreground the add-in will not find the joints and nothing
+> will move.
 
 ---
 

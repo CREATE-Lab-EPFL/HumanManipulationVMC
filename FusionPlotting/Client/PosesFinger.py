@@ -2,8 +2,8 @@
 Hardcoded poses for the single-finger Fusion model.
 
 Usage:
-    Set POSE to the figure name you want, then run:
-        python PosesFinger.py
+    python PosesFinger.py
+    → shows a numbered menu, pick a pose by number.
 
 Joint names (must match the Fusion model):
     MCP   — metacarpophalangeal
@@ -20,11 +20,6 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from JointClient import JointClient
 
 # ---------------------------------------------------------------------------
-# Pick which figure to send.
-# ---------------------------------------------------------------------------
-POSE = "flat"
-
-# ---------------------------------------------------------------------------
 # Figures: fill in figure by figure.
 # ---------------------------------------------------------------------------
 FIGURES: dict[str, dict[str, float]] = {
@@ -33,17 +28,36 @@ FIGURES: dict[str, dict[str, float]] = {
         "PIP": 0.0,
         "DIP": 0.0,
     },
+    "bent": {
+        "MCP": 10.0,
+        "PIP": 10.0,
+        "DIP": 10.0,
+    },
+    "force_gradient": {
+        "MCP": 5.0,
+        "PIP": 10.0,
+        "DIP": 10.0,
+    },
 }
 
 # ---------------------------------------------------------------------------
 
-if POSE not in FIGURES:
-    raise ValueError(f"Unknown pose '{POSE}'. Available: {list(FIGURES)}")
+names = list(FIGURES)
+print("Available poses:")
+for i, name in enumerate(names):
+    print(f"  [{i}] {name}")
+
+while True:
+    raw = input("Select pose number: ").strip()
+    if raw.isdigit() and int(raw) < len(names):
+        POSE = names[int(raw)]
+        break
+    print(f"  Please enter a number between 0 and {len(names) - 1}.")
 
 joints = FIGURES[POSE]
 client = JointClient()
 
-print(f"Sending pose '{POSE}':")
+print(f"\nSending pose '{POSE}':")
 for name, val in joints.items():
     print(f"  {name}: {val} deg")
 
