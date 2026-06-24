@@ -40,13 +40,14 @@ class JointClient:
         """Overwrite the targets section and declare the active units."""
         data = self._read()
         data["units"]        = {"angle": angle_unit, "length": length_unit}
-        data["targets"]      = {k: float(v) for k, v in targets.items()}
+        data["targets"]      = {k: self._wire(k, v) for k, v in targets.items()}
         data["last_updated"] = datetime.now(timezone.utc).isoformat()
         self._write(data)
 
     def read_current(self) -> dict[str, float]:
         """Return the last values Fusion wrote back after applying targets."""
-        return self._read().get("current", {})
+        raw = self._read().get("current", {})
+        return {k: self._wire(k, v) for k, v in raw.items()}
 
     def read_units(self) -> dict[str, str]:
         """Return the unit declaration currently in the bridge file."""
@@ -59,6 +60,12 @@ class JointClient:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _wire(name: str, value: float) -> float:
+        # DIP joints in the Fusion model have the opposite sign to MCP/PIP.
+        # Negate on the wire so callers always use positive = flexion.
+        return -float(value) if name.endswith("_DIP") else float(value)
 
     def _ensure_file(self) -> None:
         self.bridge_path.parent.mkdir(parents=True, exist_ok=True)
