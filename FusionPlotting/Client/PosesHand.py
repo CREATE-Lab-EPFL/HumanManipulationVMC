@@ -78,7 +78,7 @@ FIGURES: dict[str, dict[str, float]] = {
         "ring_DIP":     45.0,
         "pinky_MCP":    55.0,
         "pinky_PIP":    45.0,
-        "pinky_DIP":    45.0,
+        "pinky_DIP":    -45.0,
     },
 
     # PC1 lightly closed (~50% of full power-grasp angles).

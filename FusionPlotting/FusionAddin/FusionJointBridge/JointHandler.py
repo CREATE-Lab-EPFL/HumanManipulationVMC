@@ -146,6 +146,7 @@ def apply_and_readback(app) -> None:
     targets  = data.get("targets", {})
     current: dict = {}
 
+    # Phase 1: set all joints.
     for code_name, code_value in targets.items():
         fusion_name, sign = FusionConventions.resolve(code_name)
 
@@ -154,16 +155,29 @@ def apply_and_readback(app) -> None:
             _log(f"Joint not found: {fusion_name!r}  (code name: {code_name!r})")
             continue
 
-        fusion_side_value = sign * float(code_value)
-
         try:
-            ok = _set_joint_value(joint, fusion_side_value, angle_u, length_u)
-            if ok:
-                read_back = _get_joint_value(joint, angle_u, length_u)
-                if read_back is not None:
-                    current[code_name] = round(sign * read_back, 6)
+            _set_joint_value(joint, sign * float(code_value), angle_u, length_u)
         except Exception:
-            _log(f"Error on joint {fusion_name!r}:\n{traceback.format_exc()}")
+            _log(f"Error setting joint {fusion_name!r}:\n{traceback.format_exc()}")
+
+    # Phase 2: one refresh so Fusion propagates motion links (e.g. PIP → DIP coupling).
+    try:
+        app.activeViewport.refresh()
+    except Exception:
+        pass
+
+    # Phase 3: read back the post-refresh values.
+    for code_name in targets:
+        fusion_name, sign = FusionConventions.resolve(code_name)
+        joint = _joint_cache.get(fusion_name)
+        if joint is None:
+            continue
+        try:
+            read_back = _get_joint_value(joint, angle_u, length_u)
+            if read_back is not None:
+                current[code_name] = round(sign * read_back, 6)
+        except Exception:
+            _log(f"Error reading joint {fusion_name!r}:\n{traceback.format_exc()}")
 
     data["current"]      = current
     data["last_updated"] = datetime.now(timezone.utc).isoformat()
