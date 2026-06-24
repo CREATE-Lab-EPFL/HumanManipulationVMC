@@ -236,17 +236,17 @@ JOINT_LIMITS = {
 # =============================================================================
 ETA_THUMB_CMC1 = 1.0000  # [0]  thumb_CMC1
 ETA_THUMB_CMC2 = 1.0000  # [1]  thumb_CMC2
-ETA_THUMB_MCP  = 0.8373  # [2]  thumb_MCP
-ETA_THUMB_IP   = 0.3594  # [3]  thumb_IP
-ETA_SPREAD     = 1.0000  # [4]  spread
-ETA_INDEX_MCP  = 0.8373  # [5]  index_MCP
-ETA_INDEX_PIP  = 0.3594  # [6]  index_PIP
+ETA_THUMB_MCP = 0.8373  # [2]  thumb_MCP
+ETA_THUMB_IP = 0.3594  # [3]  thumb_IP
+ETA_SPREAD = 1.0000  # [4]  spread
+ETA_INDEX_MCP = 0.8373  # [5]  index_MCP
+ETA_INDEX_PIP = 0.3594  # [6]  index_PIP
 ETA_MIDDLE_MCP = 0.8373  # [7]  middle_MCP
 ETA_MIDDLE_PIP = 0.3594  # [8]  middle_PIP
-ETA_RING_MCP   = 0.8373  # [9]  ring_MCP
-ETA_RING_PIP   = 0.3594  # [10] ring_PIP
-ETA_PINKY_MCP  = 0.8373  # [11] pinky_MCP
-ETA_PINKY_PIP  = 0.3594  # [12] pinky_PIP
+ETA_RING_MCP = 0.8373  # [9]  ring_MCP
+ETA_RING_PIP = 0.3594  # [10] ring_PIP
+ETA_PINKY_MCP = 0.8373  # [11] pinky_MCP
+ETA_PINKY_PIP = 0.3594  # [12] pinky_PIP
 
 eta = np.array([
     ETA_THUMB_CMC1, # [0]
