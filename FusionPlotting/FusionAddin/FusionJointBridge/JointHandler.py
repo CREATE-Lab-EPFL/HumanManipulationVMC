@@ -146,10 +146,6 @@ def apply_and_readback(app) -> None:
     except OSError as e:
         _log(f"Could not write bridge file: {e}")
 
-    try:
-        app.activeViewport.refresh()
-    except Exception:
-        pass
 
 
 # ---------------------------------------------------------------------------
