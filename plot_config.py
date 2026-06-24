@@ -16,6 +16,14 @@ import os as _os
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Ensure MiKTeX is on PATH so text.usetex works even when Jupyter is launched
+# from a shortcut or IDE that didn't inherit the updated system PATH.
+_MIKTEX_BIN = r'C:\Users\loren\AppData\Local\Programs\MiKTeX\miktex\bin\x64'
+if _os.path.isdir(_MIKTEX_BIN):
+    _path = _os.environ.get('PATH', '')
+    if _MIKTEX_BIN not in _path:
+        _os.environ['PATH'] = _path + _os.pathsep + _MIKTEX_BIN
+
 # Apply the shared mplstyle automatically when this module is imported.
 _REPO = _os.path.dirname(_os.path.abspath(__file__))
 plt.style.use(_os.path.join(_REPO, 'plot_config.mplstyle'))
