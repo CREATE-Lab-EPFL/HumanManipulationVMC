@@ -17,9 +17,12 @@ FusionPlotting/
 │       ├── JointHandler.py
 │       └── Units.py            ← all unit conversions live here
 ├── Client/
-│   ├── JointClient.py          ← reusable client class
-│   ├── ExampleFinger.py        ← drives the single-finger model
-│   └── ExampleHand.py          ← drives the ADAPT Hand model
+│   ├── JointClient.py          ← reusable bridge client class
+│   ├── _fusion_utils.py        ← FK helpers (motor → joint angles)
+│   ├── PosesFinger.py          ← hardcoded figure poses for the single-finger model
+│   ├── PosesHand.py            ← hardcoded figure poses for the full hand model
+│   ├── ExampleFinger.py        ← minimal usage example (finger)
+│   └── ExampleHand.py          ← minimal usage example (hand)
 ├── Shared/
 │   └── commands.json           ← template; first run copies it to ~/FusionBridge/
 ├── requirements.txt
@@ -85,8 +88,16 @@ Update `FINGER_JOINTS` in `Client/ExampleFinger.py` and `HAND_JOINTS` in
 
 No installation needed — the client uses only the Python standard library.
 
+**Send a hardcoded figure pose** (set `POSE = "figure_name"` at the top of the file, then run):
+
 ```powershell
-# From the repo root or from Client/
+python FusionPlotting/Client/PosesFinger.py
+python FusionPlotting/Client/PosesHand.py
+```
+
+**Quick one-off examples:**
+
+```powershell
 python FusionPlotting/Client/ExampleFinger.py
 python FusionPlotting/Client/ExampleHand.py
 ```
