@@ -4,6 +4,13 @@ Also writes a discovery file (joints_discovery.json) listing every joint in
 the active design — use it to find Fusion joint names and confirm sign conventions.
 
 All public functions run on the Fusion main thread (called from the custom-event handler).
+
+Change-detection: apply_and_readback is a no-op if the bridge file's last_updated
+timestamp has not changed since the previous apply. This means most poll ticks do
+nothing at all — Fusion's main thread is barely touched between commands.
+
+Joint caching: joint references are cached after the first lookup per design.
+If the active design changes the cache is cleared automatically.
 """
 
 import json
@@ -21,6 +28,10 @@ LOG_PATH       = pathlib.Path.home() / "FusionBridge" / "addin.log"
 
 _DEFAULT_UNITS = {"angle": "degrees", "length": "mm"}
 
+_last_applied:       str  = ""   # last_updated value from the bridge file we already applied
+_joint_cache:        dict = {}   # fusion_name → joint object (per design)
+_cached_design_name: str  = ""   # design name the cache was built for
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -33,24 +44,33 @@ def _log(msg: str) -> None:
 
 
 def _find_joint(design, name: str):
-    """Search the entire design tree for a joint matching name."""
+    """Search the entire design tree for a joint matching name (result is cached)."""
     import adsk.fusion
+
+    if name in _joint_cache:
+        return _joint_cache[name]
 
     root = design.rootComponent
     for j in root.joints:
         if j.name == name:
+            _joint_cache[name] = j
             return j
     for j in root.asBuiltJoints:
         if j.name == name:
+            _joint_cache[name] = j
             return j
     for occ in root.allOccurrences:
         comp = occ.component
         for j in comp.joints:
             if j.name == name:
+                _joint_cache[name] = j
                 return j
         for j in comp.asBuiltJoints:
             if j.name == name:
+                _joint_cache[name] = j
                 return j
+
+    _joint_cache[name] = None   # cache misses too so we don't re-search
     return None
 
 
@@ -91,6 +111,7 @@ def _set_joint_value(joint, value: float, angle_unit: str, length_unit: str) -> 
 # ---------------------------------------------------------------------------
 
 def apply_and_readback(app) -> None:
+    global _last_applied, _joint_cache, _cached_design_name
     import adsk.fusion
 
     if not BRIDGE_PATH.exists():
@@ -102,11 +123,23 @@ def apply_and_readback(app) -> None:
     except (json.JSONDecodeError, OSError):
         return
 
+    # Skip if nothing has changed since the last apply.
+    last_updated = data.get("last_updated", "")
+    if last_updated == _last_applied:
+        return
+
     product = app.activeProduct
     if not isinstance(product, adsk.fusion.Design):
         return
 
-    design   = adsk.fusion.Design.cast(product)
+    design = adsk.fusion.Design.cast(product)
+
+    # If the active design changed, clear the joint cache.
+    design_name = design.rootComponent.name
+    if design_name != _cached_design_name:
+        _joint_cache.clear()
+        _cached_design_name = design_name
+
     units    = data.get("units", _DEFAULT_UNITS)
     angle_u  = units.get("angle",  "degrees")
     length_u = units.get("length", "mm")
@@ -114,7 +147,6 @@ def apply_and_readback(app) -> None:
     current: dict = {}
 
     for code_name, code_value in targets.items():
-        # Resolve Fusion name and sign from the conventions map
         fusion_name, sign = FusionConventions.resolve(code_name)
 
         joint = _find_joint(design, fusion_name)
@@ -122,7 +154,6 @@ def apply_and_readback(app) -> None:
             _log(f"Joint not found: {fusion_name!r}  (code name: {code_name!r})")
             continue
 
-        # code convention → Fusion convention
         fusion_side_value = sign * float(code_value)
 
         try:
@@ -130,7 +161,6 @@ def apply_and_readback(app) -> None:
             if ok:
                 read_back = _get_joint_value(joint, angle_u, length_u)
                 if read_back is not None:
-                    # Fusion convention → code convention
                     current[code_name] = round(sign * read_back, 6)
         except Exception:
             _log(f"Error on joint {fusion_name!r}:\n{traceback.format_exc()}")
@@ -146,6 +176,7 @@ def apply_and_readback(app) -> None:
     except OSError as e:
         _log(f"Could not write bridge file: {e}")
 
+    _last_applied = data["last_updated"]
 
 
 # ---------------------------------------------------------------------------
