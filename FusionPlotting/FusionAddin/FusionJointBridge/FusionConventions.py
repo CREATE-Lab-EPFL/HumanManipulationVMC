@@ -24,12 +24,16 @@ JOINT_MAP: dict[str, tuple] = {
 
     "index_MCP":  ("Index_MCP",  -1),
     "index_PIP":  ("Index_PIP",  -1),
+    "index_DIP":  ("Index_DIP",  -1),
     "middle_MCP": ("Middle_MCP", -1),
     "middle_PIP": ("Middle_PIP", -1),
+    "middle_DIP": ("Middle_DIP", -1),
     "ring_MCP":   ("Ring_MCP",   -1),
     "ring_PIP":   ("Ring_PIP",   -1),
+    "ring_DIP":   ("Ring_DIP",   -1),
     "pinky_MCP":  ("Pinky_MCP",  -1),
     "pinky_PIP":  ("Pinky_PIP",  -1),
+    "pinky_DIP":  ("Pinky_DIP",  -1),
 }
 
 
