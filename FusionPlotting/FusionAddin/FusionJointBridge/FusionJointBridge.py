@@ -4,8 +4,8 @@ Fusion 360 add-in entry point.
 On run():
   1. Discovers all joints in the active design → ~/FusionBridge/joints_discovery.json
   2. Starts a background thread that fires a custom event every POLL_INTERVAL seconds.
-     The event handler applies joint targets from the bridge file and writes back
-     current values, with sign conventions from FusionConventions.py.
+     The event handler applies joint targets from the bridge file only when the file
+     has actually changed since the last apply (cheap no-op otherwise).
 """
 
 import adsk.core
@@ -21,7 +21,7 @@ if _addin_dir not in sys.path:
 
 import JointHandler
 
-POLL_INTERVAL   = 0.2
+POLL_INTERVAL   = 2.0   # seconds — only applies when bridge file changed, so low rate is fine
 CUSTOM_EVENT_ID = "FusionJointBridgeEvent"
 
 _app       = None
@@ -54,7 +54,6 @@ def run(context):
     _ui  = _app.userInterface
 
     try:
-        # Write joints_discovery.json so the user can find Fusion joint names.
         JointHandler.discover_all_joints(_app)
 
         event   = _app.registerCustomEvent(CUSTOM_EVENT_ID)
@@ -68,7 +67,7 @@ def run(context):
 
         _ui.messageBox(
             "FusionJointBridge started.\n\n"
-            f"Polling every {int(POLL_INTERVAL * 1000)} ms.\n\n"
+            f"Polling every {int(POLL_INTERVAL)} s (applies only on new commands).\n\n"
             f"Bridge file:    {JointHandler.BRIDGE_PATH}\n"
             f"Discovery file: {JointHandler.DISCOVERY_PATH}\n"
             f"Log file:       {JointHandler.LOG_PATH}"
