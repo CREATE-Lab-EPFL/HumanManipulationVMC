@@ -41,7 +41,7 @@ legend.framealpha : 0.9
 legend.edgecolor : black
 
 # Axes
-axes.labelpad : 8
+axes.labelpad : 4
 axes.titlepad : 12
 
 # NPG (Nature Publishing Group) color palette — colorblind-friendly, print-safe
