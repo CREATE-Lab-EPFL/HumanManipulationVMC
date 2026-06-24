@@ -1,62 +1,72 @@
-# Custom matplotlib style for scientific plots with LaTeX
+# Nature Communications matplotlib style
+# Single column: 88 mm = 3.46 in  |  Double column: 180 mm = 7.09 in
+# Font: Helvetica (via LaTeX helvet)  |  Colors: Okabe-Ito (colorblind-safe)
 
-# Use LaTeX for text rendering
-text.usetex : True
-text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
+# ── LaTeX rendering ────────────────────────────────────────────────────────────
+text.usetex         : True
+text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb} \usepackage{helvet} \renewcommand{\familydefault}{\sfdefault}
 
-# Font sizes
-font.size : 18
-axes.labelsize : 24
-axes.titlesize : 22
-xtick.labelsize : 20
-ytick.labelsize : 20
-legend.fontsize : 20
+# ── Font ───────────────────────────────────────────────────────────────────────
+font.family    : sans-serif
+font.sans-serif: Arial, Helvetica Neue, Helvetica, DejaVu Sans
 
-# Font family
-font.family : serif
-font.serif : Computer Modern Roman
+# ── Font sizes (Nature Comm minimum: 5 pt at print size) ──────────────────────
+font.size             : 8
+axes.labelsize        : 8
+axes.titlesize        : 8
+xtick.labelsize       : 7
+ytick.labelsize       : 7
+legend.fontsize       : 7
+legend.title_fontsize : 7
 
-# Figure size
-figure.figsize : 10, 6
-figure.dpi : 150
+# ── Figure defaults (single column; override per-notebook with FIG_W / FIG_H) ─
+figure.figsize: 3.46, 2.60
+figure.dpi    : 150
 
-# Line widths
-lines.linewidth : 2.5
-axes.linewidth : 1.5
-grid.linewidth : 1.0
+# ── Lines ──────────────────────────────────────────────────────────────────────
+lines.linewidth : 2.0
+axes.linewidth  : 0.8
+grid.linewidth  : 0.6
 
-# Marker sizes
-lines.markersize : 10
+# ── Markers ────────────────────────────────────────────────────────────────────
+lines.markersize: 5
 
-# Grid
-axes.grid : True
-grid.alpha : 0.3
-grid.linestyle : --
+# ── Grid ───────────────────────────────────────────────────────────────────────
+axes.grid: False
 
-# Legend
-legend.frameon : True
-legend.framealpha : 0.9
-legend.edgecolor : black
+# ── Legend ─────────────────────────────────────────────────────────────────────
+legend.frameon       : False
+legend.borderpad     : 0.3
+legend.labelspacing  : 0.3
+legend.handlelength  : 1.5
+legend.handletextpad : 0.4
+legend.columnspacing : 1.0
 
-# Axes
-axes.labelpad : 8
-axes.titlepad : 12
+# ── Axes ───────────────────────────────────────────────────────────────────────
+axes.labelpad    : 4
+axes.titlepad    : 4
+axes.spines.top  : False
+axes.spines.right: False
 
-# Scientific color palette (colorblind-friendly, print-safe)
-# Based on Wong's palette and Tableau colors
-# NPG (Nature Publishing Group) official color palette
-# Used in Nature, Nature Reviews, and Science journals
-# Research shows Blue+Red is most distinguishable and commonly used
-# C0=Cyan/Blue, C1=Red, C2=Teal, C3=Navy, C4=Coral, C5=Lavender, C6=Light Teal, C7=Bright Red, C8=Brown, C9=Gray
-axes.prop_cycle : cycler(color=['4DBBD5', 'E64B35', '00A087', '3C5488', 'F39B7F', '8491B4', '91D1C2', 'DC0000', '7E6148', '949494'])
+# ── Ticks ──────────────────────────────────────────────────────────────────────
+xtick.major.size : 3.5
+xtick.major.width: 0.8
+ytick.major.size : 3.5
+ytick.major.width: 0.8
+xtick.minor.size : 2.0
+xtick.minor.width: 0.6
+ytick.minor.size : 2.0
+ytick.minor.width: 0.6
+xtick.direction  : out
+ytick.direction  : out
 
-# Tick parameters
-xtick.major.size : 6
-xtick.major.width : 1.5
-ytick.major.size : 6
-ytick.major.width : 1.5
+# ── Color cycle: Okabe-Ito (colorblind-safe, print-safe) ──────────────────────
+# C0=sky-blue  C1=vermillion  C2=bluish-green  C3=orange
+# C4=blue      C5=yellow      C6=reddish-purple C7=black
+axes.prop_cycle: cycler(color=['56B4E9', 'D55E00', '009E73', 'E69F00', '0072B2', 'F0E442', 'CC79A7', '000000'])
 
-# Save figure settings
-savefig.dpi : 300
-savefig.bbox : tight
-savefig.pad_inches : 0.1
+# ── Save ───────────────────────────────────────────────────────────────────────
+savefig.dpi       : 300
+savefig.bbox      : tight
+savefig.pad_inches: 0.05
+savefig.format    : pdf

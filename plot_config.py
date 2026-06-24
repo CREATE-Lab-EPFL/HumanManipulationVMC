@@ -1,9 +1,15 @@
 """
 Shared plotting helpers for all experiments.
 
-Usage in every notebook:
-    import sys; sys.path.insert(0, '../..')   # or '..' for 1-level-deep notebooks
-    from plot_config import draw_radar         # mplstyle is applied automatically
+Usage in every notebook (one-liner, style auto-applied):
+    import sys, os
+    sys.path.insert(0, '..')        # 1-level-deep notebooks
+    # or
+    sys.path.insert(0, '../..')     # 2-level-deep notebooks
+    from plot_config import COLORS, FIG_W_SINGLE, FIG_W_DOUBLE
+
+Figure size — add these two lines after the import to control aspect ratio:
+    FIG_W, FIG_H = FIG_W_SINGLE, 2.60   # change FIG_H to adjust aspect ratio
 """
 
 import os as _os
@@ -14,15 +20,31 @@ import matplotlib.pyplot as plt
 _REPO = _os.path.dirname(_os.path.abspath(__file__))
 plt.style.use(_os.path.join(_REPO, 'plot_config.mplstyle'))
 
+# ── Nature Communications column widths (inches) ───────────────────────────────
+FIG_W_SINGLE = 3.46   # 88 mm  — single column
+FIG_W_DOUBLE = 7.09   # 180 mm — double column
+FIG_W_1P5    = 4.72   # 120 mm — 1.5 column
 
-# Style constants for bespoke polar charts (supplement rcParams).
-# Font/line values are intentionally read from rcParams so they track the shared mplstyle.
+# ── Okabe-Ito palette (same order as prop_cycle in plot_config.mplstyle) ──────
+# Use COLORS[i] or 'Ci' in matplotlib — they reference the same palette.
+COLORS = [
+    '#56B4E9',  # C0 sky-blue
+    '#D55E00',  # C1 vermillion
+    '#009E73',  # C2 bluish-green
+    '#E69F00',  # C3 orange
+    '#0072B2',  # C4 blue
+    '#F0E442',  # C5 yellow
+    '#CC79A7',  # C6 reddish-purple
+    '#000000',  # C7 black
+]
+
+# ── Style constants for bespoke polar/radar charts ────────────────────────────
 RADAR_RC = {
     'grid_color':     '0.80',
-    'grid_lw':        0.4,    # finer than the default for polar readability
-    'grid_ls':        ':',    # dotted looks cleaner on polar axes
+    'grid_lw':        0.4,
+    'grid_ls':        ':',
     'spine_color':    '#cccccc',
-    'tick_pad':       24,
+    'tick_pad':       12,
     'fill_alpha_des': 0.12,
     'fill_alpha_trk': 0.18,
 }
@@ -37,10 +59,10 @@ def draw_radar(
     vmax=None,
     r_lim=1.25,
     r_label=1.30,
-    fs_spokes=18,
-    lw=2.5,
+    fs_spokes=None,
+    lw=2.0,
     alpha_fill=0.15,
-    markersize=6,
+    markersize=5,
 ):
     """
     Draw a radar (spider) chart.
@@ -59,6 +81,9 @@ def draw_radar(
     vmax : array-like(N), optional
         Per-spoke normalization maxima.  Computed from traces if None.
     """
+    if fs_spokes is None:
+        fs_spokes = plt.rcParams.get('axes.labelsize', 8)
+
     N = len(spokes)
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False)
     ac = np.append(angles, angles[0])
@@ -74,7 +99,8 @@ def draw_radar(
 
     own_fig = ax is None
     if own_fig:
-        fig, ax = plt.subplots(figsize=(7, 7), subplot_kw=dict(projection='polar'))
+        fig, ax = plt.subplots(figsize=(FIG_W_SINGLE, FIG_W_SINGLE),
+                               subplot_kw=dict(projection='polar'))
 
     for t in traces:
         v  = np.array(t['values'], dtype=float) / vmax
@@ -105,7 +131,9 @@ def draw_radar(
 
     if own_fig:
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.12),
-                  ncol=len(traces), fontsize=fs_spokes * 0.8, frameon=False)
+                  ncol=len(traces),
+                  fontsize=plt.rcParams.get('legend.fontsize', 7),
+                  frameon=False)
         plt.tight_layout()
         if save_path:
             import os
