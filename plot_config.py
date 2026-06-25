@@ -95,7 +95,7 @@ def draw_radar(
         Per-spoke normalization maxima.  Computed from traces if None.
     """
     if fs_spokes is None:
-        fs_spokes = plt.rcParams.get('axes.labelsize', 8)
+        fs_spokes = plt.rcParams.get('axes.labelsize', 18)
 
     N = len(spokes)
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False)
@@ -112,7 +112,7 @@ def draw_radar(
 
     own_fig = ax is None
     if own_fig:
-        fig, ax = plt.subplots(figsize=(FIG_W_SINGLE, FIG_W_SINGLE),
+        fig, ax = plt.subplots(figsize=(7, 7),
                                subplot_kw=dict(projection='polar'))
 
     for t in traces:
@@ -145,7 +145,6 @@ def draw_radar(
     if own_fig:
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.12),
                   ncol=len(traces),
-                  fontsize=plt.rcParams.get('legend.fontsize', 7),
                   frameon=False)
         plt.tight_layout()
         if save_path:

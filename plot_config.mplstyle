@@ -4,15 +4,14 @@
 text.usetex : True
 text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
 
-# Font sizes — all uniform; change TEXT_SIZE here to rescale everything together
-# axes title is kept slightly larger for hierarchy
-font.size             : 20
-axes.labelsize        : 20
-axes.titlesize        : 22
-xtick.labelsize       : 20
-ytick.labelsize       : 20
-legend.fontsize       : 20
-legend.title_fontsize : 20
+# Font sizes — all at 18 pt; change here to rescale everything at once
+font.size             : 18
+axes.labelsize        : 18
+axes.titlesize        : 18
+xtick.labelsize       : 18
+ytick.labelsize       : 18
+legend.fontsize       : 18
+legend.title_fontsize : 18
 
 # Font family
 font.family : serif
