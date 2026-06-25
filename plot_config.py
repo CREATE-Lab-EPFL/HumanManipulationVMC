@@ -6,13 +6,14 @@ Usage in every notebook:
     sys.path.insert(0, '..')        # 1-level-deep notebooks
     # or
     sys.path.insert(0, '../..')     # 2-level-deep notebooks
-    from plot_config import COLORS, FIG_W_SINGLE, FIG_W_DOUBLE
+    from plot_config import COLORS, FIG_W_SINGLE, FIG_W_DOUBLE, set_font_size
 
-Figure size — add these lines after the import to control per-notebook size:
-    FIG_W = 10    # inches
-    FIG_H = 6     # inches
-    plt.rcParams['figure.figsize'] = [FIG_W, FIG_H]
-Text sizes are fixed globally in plot_config.mplstyle.
+Setup block (copy into each notebook, override as needed):
+    FIG_W     = 10    # inches — change freely
+    FIG_H     = 6     # inches — change freely
+    GRID      = False
+    FONT_SIZE = 18    # pt — change to rescale all text uniformly
+    set_font_size(FONT_SIZE)
 """
 
 import os as _os
@@ -50,6 +51,19 @@ COLORS = [
     '#7E6148',  # C8 brown
     '#949494',  # C9 gray
 ]
+
+def set_font_size(size):
+    """Override all text sizes uniformly. Call after import in each notebook setup cell."""
+    plt.rcParams.update({
+        'font.size':             size,
+        'axes.labelsize':        size,
+        'axes.titlesize':        size,
+        'xtick.labelsize':       size,
+        'ytick.labelsize':       size,
+        'legend.fontsize':       size * 0.75,
+        'legend.title_fontsize': size * 0.75,
+    })
+
 
 # ── Style constants for bespoke polar/radar charts ────────────────────────────
 RADAR_RC = {

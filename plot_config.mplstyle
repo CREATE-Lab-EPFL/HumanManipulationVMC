@@ -10,8 +10,8 @@ axes.labelsize        : 18
 axes.titlesize        : 18
 xtick.labelsize       : 18
 ytick.labelsize       : 18
-legend.fontsize       : 18
-legend.title_fontsize : 18
+legend.fontsize       : 13
+legend.title_fontsize : 13
 
 # Font family
 font.family : serif
@@ -35,12 +35,11 @@ grid.alpha : 0.3
 grid.linestyle : --
 
 # Legend
-legend.frameon : True
-legend.framealpha : 0.9
-legend.edgecolor : black
+legend.frameon      : False
+legend.borderaxespad: 0.2
 
 # Axes
-axes.labelpad : 4
+axes.labelpad : 2
 axes.titlepad : 12
 
 # NPG (Nature Publishing Group) color palette — colorblind-friendly, print-safe
