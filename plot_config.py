@@ -32,6 +32,31 @@ if _os.path.isdir(_MIKTEX_BIN):
 _REPO = _os.path.dirname(_os.path.abspath(__file__))
 plt.style.use(_os.path.join(_REPO, 'plot_config.mplstyle'))
 
+# Save every figure as SVG in addition to PDF. We wrap Figure.savefig once so that
+# both fig.savefig(...) and plt.savefig(...) emit a twin .svg with the SAME arguments
+# (bbox, dpi, pad, ...) -> the SVG is the same figure as the PDF.
+import matplotlib.figure as _mfig
+
+if not getattr(_mfig.Figure, '_twin_svg_patched', False):
+    _orig_savefig = _mfig.Figure.savefig
+
+    def _savefig_with_svg(self, fname, *args, **kwargs):
+        result = _orig_savefig(self, fname, *args, **kwargs)
+        try:
+            if isinstance(fname, (str, bytes, _os.PathLike)):
+                base, ext = _os.path.splitext(_os.fspath(fname))
+                # '' means matplotlib used savefig.format (pdf) -> still emit svg
+                if ext.lower() in ('.pdf', ''):
+                    svg_kwargs = dict(kwargs)
+                    svg_kwargs.pop('format', None)
+                    _orig_savefig(self, base + '.svg', *args, **svg_kwargs)
+        except Exception:
+            pass
+        return result
+
+    _mfig.Figure.savefig = _savefig_with_svg
+    _mfig.Figure._twin_svg_patched = True
+
 # ── Nature Communications column widths (inches) ───────────────────────────────
 FIG_W_SINGLE = 3.46   # 88 mm  — single column
 FIG_W_DOUBLE = 7.09   # 180 mm — double column
