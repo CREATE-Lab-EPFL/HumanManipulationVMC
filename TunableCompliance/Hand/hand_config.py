@@ -42,8 +42,8 @@ SIDE_A_SOFT = ['pinky', 'ring']   # K_LOW in ASYM_A, K_HIGH in ASYM_B
 SIDE_B_SOFT = ['index', 'middle'] # K_LOW in ASYM_B, K_HIGH in ASYM_A
 
 # ── Stiffness levels ──────────────────────────────────────────────────────────
-K_UNIFORM        = 30.0   # [N/m]        baseline uniform tip stiffness
-K_HIGH           = 150.0  # [N/m]        stiff-side stiffness
+K_UNIFORM        = 10.0   # [N/m]        baseline uniform tip stiffness
+K_HIGH           = 200.0  # [N/m]        stiff-side stiffness
 K_LOW            = 0.1    # [N/m]        compliant-side stiffness
 THUMB_ASYM_RATIO = 4      # [-]          thumb stiffness divisor in asymmetric phases (K_UNIFORM/RATIO)
 K_RETURN         = 0.1    # [N·m/rad]    joint stiffness for ramp back to HOME
@@ -82,7 +82,7 @@ CONDITIONS = ['soft', 'stiff', 'adaptive']
 
 # ── Stiffness levels ──────────────────────────────────────────────────────────
 K_BACKGROUND_DG  = 0.05   # [N·m/rad]    uniform background stiffness on all joints
-K_SOFT           = 0.05   # [N/m]        very compliant tip spring
+K_SOFT           = 0.1    # [N/m]        very compliant tip spring
 K_STIFF          = 150.0  # [N/m]        very stiff tip spring
 SOFT_DURATION    = 0.5    # [s]          (adaptive) time at K_SOFT before ramp starts
 K_RAMP_DURATION  = 1.0    # [s]          (adaptive) stiffness ramp duration
