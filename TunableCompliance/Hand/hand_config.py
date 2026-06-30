@@ -12,7 +12,7 @@ HOME_FINGER = np.zeros(3)
 FINGERTIPS  = ['thumb', 'index', 'middle', 'ring', 'pinky']
 
 # ── Shared joint regulation (both experiments) ────────────────────────────────
-K_ROT          = 0.1      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
+K_ROT          = 0.2      # [N·m/rad]    background joint stiffness (spread, thumb CMC)
 B_ROT          = 0.01     # [N·m·s/rad]  background joint damping
 B_TIP          = 0.01     # [N·s/m]      task-space damping
 FRICTION_TAU_MAX = 0.06   # [N·m]        max stiction compensation
