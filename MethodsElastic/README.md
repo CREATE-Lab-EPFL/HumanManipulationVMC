@@ -5,7 +5,9 @@ torsional springs. The UR5 applies a controlled pressing trajectory and the load
 cell records contact force, which is compared against model predictions.
 
 Method summary:
+
 - Elastic joints provide a known torsional stiffness at each finger joint.
+- Two physical elastic bands are benchmarked: a **soft** and a **hard** condition.
 - UR5 indentation yields force-displacement curves under repeatable contact.
 - The stiffness mapping from virtual joint space to tip space is validated by
   comparing model predictions with measured force.
@@ -14,9 +16,9 @@ Method summary:
 
 | File | Description |
 |------|-------------|
-| `elastic_band_sweep.py` | UR5 pressing with motors disengaged and elastic bands on all joints |
-| `20mm_mimic_real_springs.py` | UR5 pressing with motors engaged and a fixed virtual joint stiffness matched to the elastic-band average |
-| `instant_mimic_real_springs.py` | UR5 pressing with motors engaged and online stiffness updates via feed-forward inversion and `ref_descent` feedback |
+| `elastic_band_sweep.py` | UR5 pressing with motors disengaged and elastic bands (soft or hard, set via `SPRING`) on all joints |
+| `20mm_mimic_real_springs.py` | UR5 pressing with motors engaged and a fixed virtual joint stiffness matched to the soft/hard elastic-band average |
+| `instant_mimic_real_springs.py` | UR5 pressing with motors engaged and online stiffness updates via feed-forward inversion and `ref_descent` feedback, per soft/hard profile |
 | `plot_elastic_band.ipynb` | Analysis and plots |
 
 ## Analysis workflow (`plot_elastic_band.ipynb`)
