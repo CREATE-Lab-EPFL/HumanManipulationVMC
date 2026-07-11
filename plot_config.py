@@ -91,11 +91,13 @@ def set_font_size(size):
 
 
 # ── Style constants for bespoke polar/radar charts ────────────────────────────
+# Matches the look of draw_radar() below (unstyled matplotlib defaults from
+# plot_config.mplstyle): black spine, grid.color/grid.linewidth grid lines.
 RADAR_RC = {
-    'grid_color':     '0.80',
-    'grid_lw':        0.4,
-    'grid_ls':        ':',
-    'spine_color':    '#cccccc',
+    'grid_color':     '#b0b0b0',
+    'grid_lw':        1.0,
+    'grid_ls':        '--',
+    'spine_color':    'black',
     'tick_pad':       12,
     'fill_alpha_des': 0.12,
     'fill_alpha_trk': 0.18,
