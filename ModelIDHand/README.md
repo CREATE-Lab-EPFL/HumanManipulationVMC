@@ -4,8 +4,7 @@
 
 ## Motor layout (software order)
 
-The 13 torque-controlled motors are indexed 0–12. Wrist motors (hardware IDs 13, 14)
-run in position mode and are excluded from this table.
+The 13 torque-controlled motors are indexed 0–12. Wrist motors (hardware IDs 13, 14) run in position mode and are excluded from this table.
 
 | idx | motor |
 |-----|-------|
@@ -29,43 +28,23 @@ run in position mode and are excluded from this table.
 ## `hand_viz.py` — 3D visualizer
 
 ```bash
-python -m ModelIDHand.hand_viz   # runs built-in demos
+python -m ModelIDHand.hand_viz   # built-in demos
 ```
 
 ```python
 from ModelIDHand.hand_viz import plot_hand, HandVisualizer, random_trajectory, MOTOR_LIMITS, STYLES
 
-# Static single pose
-plot_hand(q_motor)
-plot_hand(q_motor, style="thick")           # named preset
-plot_hand(q_motor, style={"linestyle": ":", "linewidth": 3, "marker": "D"})  # custom dict
-
-# Random trajectory
-viz = HandVisualizer(style="dotted")
-viz.run(random_trajectory(n_waypoints=20, duration=10.0), duration=10.0)
-
-# Live source — any callable(t_elapsed) → q_motor(15,)
-viz.run(lambda t: latest_q)               # ROS callback, runs until window closed
-viz.run(lambda t: data[int(t * fps)])     # pre-recorded array
-
-# Manual loop
-while running:
-    viz.update(get_motor_angles())
+plot_hand(q_motor, style="thick")                  # static pose, named style preset
+HandVisualizer(style="dotted").run(random_trajectory(n_waypoints=20, duration=10.0))
+HandVisualizer().run(lambda t: latest_q)            # live source, e.g. a ROS callback
 ```
 
-### Finger styles
+`style` accepts a preset name (below) or a dict of matplotlib line kwargs. Structural elements (wrist, spokes, palm outline) always use a fixed gray style. `MOTOR_LIMITS` is a `(13, 2)` array of `[min, max]` motor bounds derived from `JOINT_LIMITS`.
 
-The `style` parameter applies to all finger/thumb chains. Structural elements (wrist, spokes, palm outline) always use the fixed gray style.
-
-| Name | Description |
-|------|-------------|
+| Style | Description |
+|-------|-------------|
 | `"default"` | solid line, round joints |
-| `"thick"` | heavier line and larger markers |
-| `"dotted"` | dotted line |
-| `"dashed"` | dashed line |
+| `"thick"` | heavier line, larger markers |
+| `"dotted"` / `"dashed"` | dotted / dashed line |
 | `"segmented"` | dash-dot line, square markers |
 | `"minimal"` | thin solid line, no markers |
-
-A plain dict of matplotlib line kwargs can be passed instead of a name (any key accepted by `ax.plot`).
-
-`MOTOR_LIMITS` is a `(13, 2)` array of `[min, max]` motor bounds derived from `JOINT_LIMITS`.
