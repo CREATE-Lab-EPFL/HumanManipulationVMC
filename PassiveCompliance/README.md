@@ -1,11 +1,6 @@
 # PassiveCompliance — Experimental Area
 
-Validates that VMC generates diverse, predictable stiffness profiles at the fingertip
-and palm through virtual springs alone, without hardware reconfiguration.
-Compliance acts as a bidirectional filter: outward (absorbs noise and impacts
-before contact), inward (smoothens deformations and provides adaptability).
-
-## Structure
+Validates that VMC generates diverse, predictable stiffness profiles at the fingertip and palm through virtual springs alone, without hardware reconfiguration. Compliance acts as a bidirectional filter: outward (absorbs noise and impacts before contact), inward (smooths deformations and provides adaptability).
 
 ```
 PassiveCompliance/
@@ -13,15 +8,9 @@ PassiveCompliance/
 └── Hand/     — ADAPT Hand experiments
 ```
 
----
-
 ## Finger/
 
-Each script runs a VMC controller to hold a reference configuration while an
-external motion presses the fingertip along a commanded direction. Virtual
-stiffness settings are swept and the script logs tip displacement, estimated
-force, and joint state to build force-displacement curves. Variants change the
-contact direction or starting pose.
+Each script holds a reference configuration under VMC while an external motion presses the fingertip along a commanded direction. Virtual stiffness is swept and tip displacement, estimated force, and joint state are logged to build force-displacement curves. Variants change contact direction or starting pose.
 
 | File | Description |
 |------|-------------|
@@ -36,63 +25,18 @@ contact direction or starting pose.
 | `plot_directional_stiffness.ipynb` | Plot directional stiffness experiment |
 | `plot_pose_sweep.ipynb` | Plot pose sweep experiment |
 
----
-
 ## Hand/
 
-All hand experiments require the ADAPT Hand on ROS2 (`dynamixel_node`).
-Shared configuration lives in a single `hand_config.py`.
+All hand experiments require the ADAPT Hand on ROS2 (`dynamixel_node`); shared configuration lives in `hand_config.py`.
 
-### Guitar (`guitar_playing_hand.py`)
+**`guitar_playing_hand.py`** — index, middle, and ring fingers are held closed at a fixed flexion pose under a torsional (joint-space) spring while the UR5 performs a single upward strum across the strings (audio captured externally). Thumb and pinky stay at a small neutral pose and are not involved. One run per stiffness condition, comparing [0.05, 0.2, 0.6] N·m/rad — joint stiffness is the only swept variable, isolating its effect on sound. Before each strum the controller briefly re-stabilizes at higher stiffness/damping for identical initial conditions, then softens to the test condition. Set `COLLECTED_DATA = True` to replay the arm protocol without overwriting saved CSVs.
 
-Three fingers (index, middle, ring) are held closed at a fixed flexion pose under
-a torsional (joint-space) spring. The UR5 performs a single upward Z stroke across
-the strings; audio is captured externally via the camera microphone. Thumb and pinky
-are held at a small neutral pose (2° on all joints) and are not involved in the
-strumming motion. One run is performed per stiffness condition; three conditions are
-compared: [0.05, 0.2, 0.6] N·m/rad.
-
-Key technical elements:
-- Torsional (joint-space) stiffness is the swept variable; task-space springs are
-  not used — the experiment isolates the effect of joint stiffness on sound.
-- Before each strum the script bumps stiffness to K_ROT with higher damping
-  (B_SETTLE) for a brief re-stabilisation period to guarantee identical initial
-  conditions, then softens to the condition K before the arm moves.
-- The stiffness condition is selected at startup; the script runs one strum and exits.
-- Set `COLLECTED_DATA = True` in the script to replay the arm protocol
-  without overwriting any saved CSV files.
+**`weight_compliance_hand.py`** — four fingers hold a fixed pose (`WEIGHT_POSE`) under joint-space springs (thumb stays neutral, unloaded) while the operator adds weights incrementally; each addition is logged over a 5 s convergence window. The hand ramps to the target pose once at the start, then softens to each stiffness condition (`STIFFNESS_CONDITIONS`) in turn — step 0 (no weight) is logged automatically as the baseline. Without a UR5 connected, gravity compensation falls back to identity rotation.
 
 | File | Description |
 |------|-------------|
-| `guitar_playing_hand.py` | Guitar strumming experiment — one strum per stiffness condition |
+| `guitar_playing_hand.py` | Guitar strumming — one strum per stiffness condition |
 | `plot_guitar.ipynb` | Joint angle and torque figures per condition |
-
-### Weight compliance (`weight_compliance_hand.py`)
-
-Four fingers are commanded to hold a fixed pose (WEIGHT_POSE) under joint-space
-springs. The operator adds weights incrementally; the script logs a 5 s convergence
-window after each addition. The hand is fixed (UR5 stationary or absent). The thumb
-is held at a small neutral pose (2° on all joints) and is not loaded.
-
-Key technical elements:
-- Torsional stiffness (STIFFNESS_CONDITIONS) is the swept variable.
-- The hand ramps to the target pose once at the start (K_ROT + B_SETTLE for fast
-  settling), then softens to the first condition K. Subsequent conditions change K only.
-- The operator presses ENTER to hang each of the three named weights (soft, medium,
-  hard). Step 0 (no weight) is logged automatically as the baseline before the loop.
-  The condition closes automatically after all three weight steps are logged.
-- With UR5 absent, UR5Receiver falls back to identity rotation for gravity
-  compensation; connect a stationary UR5 for accurate orientation.
-- Set `COLLECTED_DATA = True` in the script to step through the sequence
-  without overwriting any saved CSV files.
-
-| File | Description |
-|------|-------------|
-| `weight_compliance_hand.py` | Weight-loading experiment — logs joint angles per (K, weight) pair |
+| `weight_compliance_hand.py` | Weight-loading — logs joint angles per (stiffness, weight) pair |
 | `plot_weight.ipynb` | Deviation-from-target vs weight, per stiffness condition |
-
-### Configuration
-
-| File | Description |
-|------|-------------|
-| `hand_config.py` | All constants for both Hand experiments (UR5 poses, stiffness values, timing) |
+| `hand_config.py` | All constants for both experiments (UR5 poses, stiffness values, timing) |

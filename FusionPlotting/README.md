@@ -1,173 +1,60 @@
 # FusionPlotting
 
-Drive Autodesk Fusion 360 joints from an external Python script via a shared
-JSON bridge file.  Designed for the finger and ADAPT Hand designs under
-**CREATE Lab > Bioinspired Robotic Hands > Lorenzo Vignoli** in Fusion.
+Drive Autodesk Fusion 360 joints from an external Python script via a shared JSON bridge file. Built for the finger and ADAPT Hand CAD models under **CREATE Lab > Bioinspired Robotic Hands > Lorenzo Vignoli** in Fusion — used to generate pose figures from the CAD models.
 
----
-
-## Folder layout
+## Layout
 
 ```
 FusionPlotting/
-├── FusionAddin/
-│   └── FusionJointBridge/      ← copy this folder into Fusion's AddIns directory
-│       ├── FusionJointBridge.py
-│       ├── FusionJointBridge.manifest
-│       ├── JointHandler.py
-│       └── Units.py            ← all unit conversions live here
-├── Client/
-│   ├── JointClient.py          ← reusable bridge client class
-│   ├── _fusion_utils.py        ← FK helpers (motor → joint angles)
-│   ├── PosesFinger.py          ← hardcoded figure poses for the single-finger model
-│   ├── PosesHand.py            ← hardcoded figure poses for the full hand model
-│   ├── ExampleFinger.py        ← minimal usage example (finger)
-│   └── ExampleHand.py          ← minimal usage example (hand)
-├── Shared/
-│   └── commands.json           ← template; first run copies it to ~/FusionBridge/
-├── requirements.txt
-└── README.md
+├── FusionAddin/FusionJointBridge/   # copy into Fusion's AddIns directory
+├── Client/                          # Python-side scripts — see Client/README.md
+├── Shared/commands.json             # bridge-file template
+└── requirements.txt
 ```
 
----
+Both sides resolve to the same file with no configuration: `~/FusionBridge/commands.json` (`C:\Users\<you>\FusionBridge\commands.json` on Windows). `Shared/commands.json` is only a template — the client creates the real file on first use.
 
-## Bridge file location
+## Setup (Windows)
 
-Both the add-in and the client resolve to the same path without any
-configuration:
+1. Copy `FusionAddin/FusionJointBridge/` to `%AppData%\Autodesk\Autodesk Fusion 360\API\AddIns\`.
+2. In Fusion: **Tools → Add-Ins → My Add-Ins → FusionJointBridge → Run** (tick **Run on Startup** to persist).
+3. Find joint names in the Fusion browser (**Joints** tree, hover for tooltip) and set them in `Client/ExampleFinger.py` / `ExampleHand.py`.
 
-```
-C:\Users\<you>\FusionBridge\commands.json
-```
+## Running
 
-The `Shared/commands.json` in this repo is just the template.  `JointClient`
-creates the real file on first use.
-
----
-
-## Installing the add-in on Windows
-
-1. Copy the entire `FusionAddin/FusionJointBridge/` folder to:
-
-   ```
-   C:\Users\<you>\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns\
-   ```
-
-   The result should look like:
-
-   ```
-   …\AddIns\FusionJointBridge\FusionJointBridge.py
-   …\AddIns\FusionJointBridge\FusionJointBridge.manifest
-   …\AddIns\FusionJointBridge\JointHandler.py
-   …\AddIns\FusionJointBridge\Units.py
-   ```
-
-2. In Fusion 360: **Tools → Add-Ins → My Add-Ins → FusionJointBridge → Run**.
-
-   A message box confirms the add-in started and shows the bridge file path.
-
-3. To start automatically with Fusion, tick **Run on Startup** in the same dialog.
-
----
-
-## Finding joint names
-
-The add-in matches joints by the name shown in the **Fusion browser** (the
-left-side tree).  To find exact names:
-
-- Expand **Joints** in the browser.
-- Hover over a joint — the tooltip shows its name.
-- Or right-click → **Properties**.
-
-Update `FINGER_JOINTS` in `Client/ExampleFinger.py` and `HAND_JOINTS` in
-`Client/ExampleHand.py` to match.
-
----
-
-## Running the client
-
-No installation needed — the client uses only the Python standard library.
-
-**Send a hardcoded figure pose** (set `POSE = "figure_name"` at the top of the file, then run):
+No install needed — the client is pure standard library.
 
 ```powershell
-python FusionPlotting/Client/PosesFinger.py
-python FusionPlotting/Client/PosesHand.py
+python FusionPlotting/Client/PosesFinger.py   # hardcoded figure poses, finger
+python FusionPlotting/Client/PosesHand.py     # hardcoded figure poses, hand
 ```
 
-**Quick one-off examples:**
-
-```powershell
-python FusionPlotting/Client/ExampleFinger.py
-python FusionPlotting/Client/ExampleHand.py
-```
-
-Or in your own script:
+Or from your own script:
 
 ```python
 from FusionPlotting.Client.JointClient import JointClient
 
 client = JointClient()
 client.write_targets({"MCP": 45.0, "PIP": 30.0}, angle_unit="degrees")
-
-import time; time.sleep(0.5)
 print(client.read_current())
 ```
 
----
+See [Client/README.md](Client/README.md) for the full client reference.
 
-## Units
+## Units & bridge file
 
-The `"units"` block in `commands.json` declares what the client is writing.
-The add-in reads this block and converts to Fusion's internal units before
-applying.
-
-| Field    | Allowed values     | Fusion internal |
-|----------|--------------------|-----------------|
-| `angle`  | `"degrees"`, `"radians"` | radians   |
-| `length` | `"mm"`, `"cm"`     | cm              |
-
-All conversions happen in `FusionAddin/FusionJointBridge/Units.py` and
-nowhere else.
-
----
-
-## Bridge file schema
+The client declares units (`"degrees"`/`"radians"`, `"mm"`/`"cm"`) in the `"units"` block; the add-in converts to Fusion's internal units (radians, cm). All conversion logic lives in `FusionAddin/FusionJointBridge/Units.py`.
 
 ```jsonc
 {
-  "units": {
-    "angle":  "degrees",   // declared by the client; add-in converts from this
-    "length": "mm"
-  },
-  "targets": {             // client writes — add-in applies every 200 ms
-    "MCP": 30.0,
-    "PIP": 20.0
-  },
-  "current": {             // add-in writes after applying — client reads back
-    "MCP": 29.8,
-    "PIP": 19.6
-  },
-  "last_updated": "2026-05-30T12:00:00+00:00"
+  "units":   {"angle": "degrees", "length": "mm"},
+  "targets": {"MCP": 30.0, "PIP": 20.0},    // client writes; add-in applies every POLL_INTERVAL (default 0.2 s)
+  "current": {"MCP": 29.8, "PIP": 19.6}     // add-in writes back after applying
 }
 ```
 
----
-
-## Tuning the poll rate
-
-Edit `POLL_INTERVAL` (seconds) near the top of
-`FusionAddin/FusionJointBridge/FusionJointBridge.py`.  Default is **0.2 s**
-(5 Hz).  Lower values increase responsiveness but add more Fusion main-thread
-wake-ups.
-
----
-
 ## Troubleshooting
 
-| Symptom | Fix |
-|---------|-----|
-| Joint not moving | Check that the name in the JSON exactly matches the Fusion browser name (case-sensitive). Errors are logged to `~/FusionBridge/addin.log`. |
-| "No values read back" | Make sure the add-in is running (**Tools → Add-Ins → Run**) and the design with those joints is the active document. |
-| `addin.log` shows "Unsupported joint type" | The joint is not revolute or slider. Cylindrical is also handled; others are not. |
-| Changes not visible | Try a manual viewport orbit — Fusion sometimes needs user input to redraw. |
+- **Joint not moving** — name must exactly match the Fusion browser (case-sensitive); check `~/FusionBridge/addin.log`.
+- **No values read back** — the add-in must be running and the target design must be the active document.
+- **"Unsupported joint type"** — only revolute, slider, and cylindrical joints are handled.

@@ -1,16 +1,6 @@
 # ProprioceptiveSensing — Experimental Area
 
-Contact force and object stiffness estimated from kinematics and virtual stiffness
-alone — no external force sensors required. The deformation that absorbs impacts
-is the same that encodes contact force.
-
-Method summary:
-- Tip force is inferred from virtual spring deflection and the stiffness model.
-- Tip pose is computed from forward kinematics to relate deformation to contact.
-- Object compliance is estimated from paired measurements taken at different
-	virtual compliance settings.
-
-## Structure
+Contact force and object stiffness estimated from kinematics and virtual stiffness alone — no external force sensors. The deformation that absorbs impacts is the same signal that encodes contact force: tip force comes from virtual-spring deflection and the stiffness model, tip pose from forward kinematics.
 
 ```
 ProprioceptiveSensing/
@@ -18,32 +8,18 @@ ProprioceptiveSensing/
 └── Hand/       — ADAPT Hand experiments
 ```
 
----
-
 ## Finger/
 
-The finger experiment calibrates motor efficiency by relating commanded torque
-to observed motion and force. That calibration is then used with virtual
-stiffness and kinematics to infer contact force from deformation.
-
-Logged signals include motor commands, joint state, estimated tip force, and
-reference trajectories used for validation.
+Calibrates motor efficiency by relating commanded torque to observed motion and force, then uses that calibration with virtual stiffness and kinematics to infer contact force from deformation. Logs motor commands, joint state, estimated tip force, and reference trajectories used for validation.
 
 | File | Description |
 |------|-------------|
 | `finger_eta.py` | Motor efficiency identification and force estimation validation |
 | `plot_finger_eta.ipynb` | Plot finger eta experiment |
 
----
-
 ## Hand/
 
-The hand experiment squeezes an object using a low and a high virtual
-compliance setting. An additive compliance model uses the paired measurements
-to solve for object compliance without external sensing.
-
-Logged signals include joint state, tip pose, inferred force, and the applied
-compliance schedule.
+Squeezes an object at a low and a high virtual compliance setting; an additive compliance model uses the paired measurements to solve for object compliance without external sensing. Logs joint state, tip pose, inferred force, and the applied compliance schedule.
 
 | File | Description |
 |------|-------------|

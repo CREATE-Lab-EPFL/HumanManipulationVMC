@@ -1,12 +1,6 @@
 # TunableCompliance — Experimental Area
 
-Shows that VMC enables real-time stiffness modulation across the full soft-to-rigid
-spectrum, adapting to task phases (approach, hold, release), object properties,
-and contact events — all without hardware changes and while preserving passivity.
-Includes single-finger characterisation and full-hand in-hand manipulation and
-dynamic-grasp studies.
-
-## Structure
+Shows that VMC enables real-time stiffness modulation across the full soft-to-rigid spectrum, adapting to task phase (approach, hold, release), object properties, and contact events — without hardware changes and while preserving passivity. Includes single-finger characterisation and full-hand in-hand manipulation and dynamic-grasp studies.
 
 ```
 TunableCompliance/
@@ -14,22 +8,9 @@ TunableCompliance/
 └── Hand/       — ADAPT Hand experiments
 ```
 
----
-
 ## Finger/
 
-Finger experiments run a contact detector based on deformation and force
-estimates, then adjust virtual stiffness on contact. The repulsive shaping
-variant adds a nonlinear repulsive element in task space to raise apparent
-stiffness beyond the baseline while maintaining passivity. Scripts log
-displacement, force estimates, and controller state for comparison.
-
-Key technical elements:
-- Contact detection uses changes in deformation and force estimate trends.
-- Stiffness schedules switch between softer and stiffer phases based on state.
-- Repulsive shaping adds a nonlinear virtual element that activates beyond a
-	displacement threshold to increase apparent stiffness without violating
-	passive behavior.
+A contact detector based on deformation and force-estimate trends triggers virtual-stiffness switches between softer and stiffer schedules. The repulsive-shaping variant adds a nonlinear Cartesian element that activates only above a displacement threshold, raising apparent stiffness beyond baseline while staying passive. Scripts log displacement, force estimates, and controller state.
 
 | File | Description |
 |------|-------------|
@@ -38,21 +19,9 @@ Key technical elements:
 | `plot_stiffening_contact.ipynb` | Plot stiffening contact experiment |
 | `plot_repulsive_stiffness_shaping.ipynb` | Plot repulsive stiffness shaping experiment |
 
----
-
 ## Hand/
 
-Hand experiments use a simple state machine that assigns different fingertip
-stiffness patterns across hand sides to bias object motion. Dynamic grasping
-updates stiffness schedules during UR5 transport based on contact and task
-phase. Scripts log joint state and task events for analysis.
-
-Key technical elements:
-- Asymmetric fingertip stiffness creates differential contact forces to drive
-	in-hand reorientation.
-- A schedule-based controller adjusts stiffness during approach, transport, and
-	release phases.
-- Analysis compares trajectory outcomes and grasp stability across conditions.
+A state machine assigns different fingertip-stiffness patterns across sides of the hand to bias object motion (in-hand reorientation), and adjusts stiffness schedules during UR5 transport based on task phase (dynamic grasping). Scripts log joint state and task events; analysis compares trajectory outcomes and grasp stability across conditions.
 
 | File | Description |
 |------|-------------|
