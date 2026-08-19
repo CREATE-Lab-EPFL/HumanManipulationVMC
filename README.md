@@ -81,7 +81,7 @@ python3 PassiveCompliance/Finger/passive_stiffness_sweep.py
 python3 ADAPT-StiffControl/grasp_adaptation.py
 ```
 
-**Requirements**: ROS2 Humble with the `dynamixel_interface` package, plus:
+**Requirements**: ROS2 Humble with the `dynamixel_interface` package — download with `git clone git@github.com:CREATE-Lab-EPFL/ros2_dynamixel.git` — plus:
 
 ```bash
 pip install numpy scipy sympy pandas matplotlib scienceplots \
