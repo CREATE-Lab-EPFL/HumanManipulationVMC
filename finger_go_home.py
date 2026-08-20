@@ -24,7 +24,7 @@ MOTOR_MCP = 1   # first motor  → joint_positions[0]
 MOTOR_PIP = 2   # second motor → joint_positions[1]
 MOTOR_IDS = [MOTOR_MCP, MOTOR_PIP]
 
-# ── Control table addresses (XL330-M288) ─────────────────────────────────────
+# ── Control table addresses (XC330-T288-T) ───────────────────────────────────
 ADDR_TORQUE_ENABLE    = 64
 ADDR_OPERATING_MODE   = 11
 ADDR_GOAL_POSITION    = 116

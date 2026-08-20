@@ -13,12 +13,12 @@
 import argparse
 from dynamixel_sdk import PortHandler, PacketHandler, GroupSyncWrite, COMM_SUCCESS
 
-# Dynamixel XL330 settings
+# Dynamixel XC330 settings
 BAUDRATE = 2000000
 DEVICE_PORT = '/dev/ttyUSB0'
 PROTOCOL_VERSION = 2.0
 
-# Control table addresses (XL330-M288)
+# Control table addresses (XC330-T288-T)
 ADDR_TORQUE_ENABLE = 64
 ADDR_OPERATING_MODE = 11
 ADDR_GOAL_POSITION = 116
